@@ -4,7 +4,6 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const quotes = [
   "The best thing to hold onto in life is each other.",
@@ -17,14 +16,32 @@ const quotes = [
 export function Hero() {
   const glassButtonClasses = "bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20";
   const [quoteIndex, setQuoteIndex] = React.useState(0);
+  const [typedQuote, setTypedQuote] = React.useState('');
 
   React.useEffect(() => {
-    const interval = setInterval(() => {
+    const quoteRotationInterval = setInterval(() => {
       setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
-    }, 5000);
+    }, 5000); // Change quote every 5 seconds
 
-    return () => clearInterval(interval);
+    return () => clearInterval(quoteRotationInterval);
   }, []);
+
+  React.useEffect(() => {
+    setTypedQuote(''); // Reset for new quote
+    let currentText = '';
+    let charIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (charIndex < quotes[quoteIndex].length) {
+        currentText += quotes[quoteIndex][charIndex];
+        setTypedQuote(currentText);
+        charIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50); // Typing speed
+
+    return () => clearInterval(typingInterval);
+  }, [quoteIndex]);
   
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
@@ -39,18 +56,10 @@ export function Hero() {
           </h1>
         </div>
         <div className="mt-2 max-w-2xl h-24 flex items-center justify-center">
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={quoteIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="text-lg text-neutral-300"
-            >
-              {quotes[quoteIndex]}
-            </motion.p>
-          </AnimatePresence>
+          <p className="text-lg text-neutral-300">
+            {typedQuote}
+            <span className="animate-pulse">|</span>
+          </p>
         </div>
         <div className="mt-8 flex flex-row gap-4">
           <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
