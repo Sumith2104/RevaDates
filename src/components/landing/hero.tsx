@@ -66,12 +66,6 @@ export function Hero() {
       </div>
       <div className="container mx-auto flex flex-col items-center justify-center text-center px-4">
         <h2 className="text-4xl font-bold tracking-tight text-neutral-200 mb-4">Get started</h2>
-        <div className="mb-8 max-w-2xl h-8 flex items-center justify-center">
-          <p className="text-lg text-neutral-300">
-            {typedPhrase}
-            <span className="animate-pulse">|</span>
-          </p>
-        </div>
         <div className="flex flex-row gap-4">
           <Button asChild size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/signup">Sign up</Link>
@@ -79,6 +73,12 @@ export function Hero() {
           <Button asChild size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/login">Login</Link>
           </Button>
+        </div>
+        <div className="mb-8 max-w-2xl h-8 flex items-center justify-center mt-8">
+          <p className="text-lg text-neutral-300">
+            {typedPhrase}
+            <span className="animate-pulse">|</span>
+          </p>
         </div>
       </div>
     </div>
