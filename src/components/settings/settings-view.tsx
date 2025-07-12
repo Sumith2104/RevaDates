@@ -20,7 +20,7 @@ export function SettingsView() {
       <Card>
         <CardHeader>
           <CardTitle>Discovery Settings</CardTitle>
-          <CardDescription>Control who you see on MatchMake AI.</CardDescription>
+          <CardDescription>Control who you see on RevaDates.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="space-y-4">

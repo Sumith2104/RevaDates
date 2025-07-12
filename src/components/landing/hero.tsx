@@ -14,7 +14,7 @@ export function Hero() {
         <div className="mb-6 flex items-center justify-center gap-4">
           <Heart className="h-12 w-12 text-primary" />
           <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-            MatchMake AI
+            RevaDates
           </h1>
         </div>
         <p className="mt-2 max-w-2xl text-lg text-neutral-300">

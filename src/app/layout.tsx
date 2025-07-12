@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'MatchMake AI',
+  title: 'RevaDates',
   description: 'Find your perfect match with the power of AI',
 };
 
