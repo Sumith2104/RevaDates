@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -59,19 +60,19 @@ export function Hero() {
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]"></div>
       </div>
       <div className="container mx-auto flex flex-col items-center justify-center text-center px-4">
-        <div className="mt-2 max-w-2xl h-24 flex items-center justify-center">
-          <p className="text-lg text-neutral-300">
-            {typedQuote}
-            <span className="animate-pulse">|</span>
-          </p>
-        </div>
-        <div className="mt-8 flex flex-row gap-4">
+        <div className="flex flex-row gap-4">
           <Button asChild size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/signup">Sign up</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/login">Login</Link>
           </Button>
+        </div>
+        <div className="mt-8 max-w-2xl h-24 flex items-center justify-center">
+          <p className="text-lg text-neutral-300">
+            {typedQuote}
+            <span className="animate-pulse">|</span>
+          </p>
         </div>
       </div>
     </div>
