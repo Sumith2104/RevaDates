@@ -1,14 +1,15 @@
 'use client';
 import Link from 'next/link';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Heart } from 'lucide-react';
 
-export function LoginForm() {
+export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   return (
-    <Card className="mx-auto max-w-sm w-full">
+    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Login</CardTitle>
@@ -45,4 +46,5 @@ export function LoginForm() {
       </CardContent>
     </Card>
   );
-}
+});
+LoginForm.displayName = 'LoginForm';
