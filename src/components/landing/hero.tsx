@@ -1,11 +1,30 @@
 'use client';
 
 import Link from 'next/link';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const quotes = [
+  "The best thing to hold onto in life is each other.",
+  "You know you're in love when you can't fall asleep because reality is finally better than your dreams.",
+  "Love is composed of a single soul inhabiting two bodies.",
+  "To love and be loved is to feel the sun from both sides.",
+  "In the arithmetic of love, one plus one equals everything, and two minus one equals nothing."
+];
 
 export function Hero() {
   const glassButtonClasses = "bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20";
+  const [quoteIndex, setQuoteIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
@@ -19,11 +38,20 @@ export function Hero() {
             RevaDates
           </h1>
         </div>
-        <p className="mt-2 max-w-2xl text-lg text-neutral-300">
-          Discover meaningful connections with a little help from AI.
-          <br />
-          Your journey to finding 'the one' starts here.
-        </p>
+        <div className="mt-2 max-w-2xl h-24 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={quoteIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="text-lg text-neutral-300"
+            >
+              {quotes[quoteIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
           <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
             <Link href="/signup">Sign up</Link>
