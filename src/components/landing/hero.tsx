@@ -4,6 +4,7 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
+import { LandingHeader } from './landing-header';
 
 const quotes = [
   "The best thing to hold onto in life is each other.",
@@ -18,7 +19,6 @@ const DELETING_SPEED = 30;
 const PAUSE_DURATION = 1000; // Pause after typing, before deleting
 
 export function Hero() {
-  const glassButtonClasses = "bg-white/10 backdrop-blur-md hover:bg-white/20";
   const [quoteIndex, setQuoteIndex] = React.useState(0);
   const [typedQuote, setTypedQuote] = React.useState('');
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -39,7 +39,6 @@ export function Hero() {
         if (typedQuote.length < currentQuote.length) {
           setTypedQuote((prev) => currentQuote.slice(0, prev.length + 1));
         } else {
-          // Finished typing, pause then start deleting
           timeoutId = setTimeout(() => setIsDeleting(true), PAUSE_DURATION);
         }
       }
@@ -55,29 +54,16 @@ export function Hero() {
   
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
+      <LandingHeader />
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]"></div>
       </div>
       <div className="container mx-auto flex flex-col items-center justify-center text-center px-4">
-        <div className="mb-6 flex items-center justify-center gap-4">
-          <Heart className="h-12 w-12 text-primary" />
-          <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-            RevaDates
-          </h1>
-        </div>
         <div className="mt-2 max-w-2xl h-24 flex items-center justify-center">
           <p className="text-lg text-neutral-300">
             {typedQuote}
             <span className="animate-pulse">|</span>
           </p>
-        </div>
-        <div className="mt-8 flex flex-row gap-4">
-          <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
-            <Link href="/signup">Sign up</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className={`font-semibold rounded-full ${glassButtonClasses}`}>
-            <Link href="/login">Login</Link>
-          </Button>
         </div>
       </div>
     </div>
