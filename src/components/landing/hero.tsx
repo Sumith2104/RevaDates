@@ -24,23 +24,40 @@ const TYPING_SPEED = 50;
 export function Hero() {
   const [activePhrase, setActivePhrase] = React.useState('');
   const [typedPhrase, setTypedPhrase] = React.useState('');
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [phraseIndex, setPhraseIndex] = React.useState(0);
 
   React.useEffect(() => {
     // Select a random phrase on component mount
     setActivePhrase(phrases[Math.floor(Math.random() * phrases.length)]);
   }, []);
 
-  React.useEffect(() => {
-    if (!activePhrase) return;
+   React.useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-    if (typedPhrase.length < activePhrase.length) {
-      const timeoutId = setTimeout(() => {
-        setTypedPhrase(activePhrase.slice(0, typedPhrase.length + 1));
-      }, TYPING_SPEED);
-      return () => clearTimeout(timeoutId);
+    if (isDeleting) {
+      if (typedPhrase.length > 0) {
+        timeoutId = setTimeout(() => {
+          setTypedPhrase(typedPhrase.slice(0, -1));
+        }, TYPING_SPEED / 2);
+      } else {
+        setIsDeleting(false);
+        setPhraseIndex((prev) => (prev + 1) % phrases.length);
+        setActivePhrase(phrases[(phraseIndex + 1) % phrases.length]);
+      }
+    } else {
+      if (typedPhrase.length < activePhrase.length) {
+        timeoutId = setTimeout(() => {
+          setTypedPhrase(activePhrase.slice(0, typedPhrase.length + 1));
+        }, TYPING_SPEED);
+      } else {
+        timeoutId = setTimeout(() => setIsDeleting(true), 1500);
+      }
     }
-  }, [typedPhrase, activePhrase]);
-  
+
+    return () => clearTimeout(timeoutId);
+  }, [typedPhrase, activePhrase, isDeleting, phraseIndex]);
+
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
       <LandingHeader />
@@ -49,6 +66,12 @@ export function Hero() {
       </div>
       <div className="container mx-auto flex flex-col items-center justify-center text-center px-4">
         <h2 className="text-4xl font-bold tracking-tight text-neutral-200 mb-4">Get started</h2>
+        <div className="mb-8 max-w-2xl h-8 flex items-center justify-center">
+          <p className="text-lg text-neutral-300">
+            {typedPhrase}
+            <span className="animate-pulse">|</span>
+          </p>
+        </div>
         <div className="flex flex-row gap-4">
           <Button asChild size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/signup">Sign up</Link>
@@ -56,12 +79,6 @@ export function Hero() {
           <Button asChild size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">
             <Link href="/login">Login</Link>
           </Button>
-        </div>
-        <div className="mt-8 max-w-2xl h-24 flex items-center justify-center">
-          <p className="text-lg text-neutral-300">
-            {typedPhrase}
-            <span className="animate-pulse">|</span>
-          </p>
         </div>
       </div>
     </div>
