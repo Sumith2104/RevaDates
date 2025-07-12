@@ -13,35 +13,45 @@ const quotes = [
   "In the arithmetic of love, one plus one equals everything, and two minus one equals nothing."
 ];
 
+const TYPING_SPEED = 50;
+const DELETING_SPEED = 30;
+const PAUSE_DURATION = 1000; // Pause after typing, before deleting
+
 export function Hero() {
   const glassButtonClasses = "bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20";
   const [quoteIndex, setQuoteIndex] = React.useState(0);
   const [typedQuote, setTypedQuote] = React.useState('');
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
-    const quoteRotationInterval = setInterval(() => {
-      setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
-    }, 5000); // Change quote every 5 seconds
+    let timeoutId: NodeJS.Timeout;
 
-    return () => clearInterval(quoteRotationInterval);
-  }, []);
-
-  React.useEffect(() => {
-    setTypedQuote(''); // Reset for new quote
-    let currentText = '';
-    let charIndex = 0;
-    const typingInterval = setInterval(() => {
-      if (charIndex < quotes[quoteIndex].length) {
-        currentText += quotes[quoteIndex][charIndex];
-        setTypedQuote(currentText);
-        charIndex++;
+    const handleTyping = () => {
+      const currentQuote = quotes[quoteIndex];
+      if (isDeleting) {
+        if (typedQuote.length > 0) {
+          setTypedQuote((prev) => prev.slice(0, -1));
+        } else {
+          setIsDeleting(false);
+          setQuoteIndex((prev) => (prev + 1) % quotes.length);
+        }
       } else {
-        clearInterval(typingInterval);
+        if (typedQuote.length < currentQuote.length) {
+          setTypedQuote((prev) => currentQuote.slice(0, prev.length + 1));
+        } else {
+          // Finished typing, pause then start deleting
+          timeoutId = setTimeout(() => setIsDeleting(true), PAUSE_DURATION);
+        }
       }
-    }, 50); // Typing speed
+    };
 
-    return () => clearInterval(typingInterval);
-  }, [quoteIndex]);
+    const typingInterval = setInterval(handleTyping, isDeleting ? DELETING_SPEED : TYPING_SPEED);
+
+    return () => {
+      clearInterval(typingInterval);
+      clearTimeout(timeoutId);
+    };
+  }, [typedQuote, isDeleting, quoteIndex]);
   
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
