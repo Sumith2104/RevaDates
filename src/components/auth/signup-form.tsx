@@ -23,7 +23,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   if (step === 'otp') {
     return (
-      <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
+      <Card className="mx-auto max-w-sm w-full border-none" ref={ref} {...props}>
          <form action="/dashboard" method="GET">
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -46,7 +46,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
+    <Card className="mx-auto max-w-sm w-full border-none" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -57,11 +57,11 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="first-name">First name</Label>
-              <Input id="first-name" placeholder="Max" required />
+              <Input id="first-name" placeholder="First name" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="last-name">Last name</Label>
-              <Input id="last-name" placeholder="Robinson" required />
+              <Input id="last-name" placeholder="Last name" required />
             </div>
           </div>
           <div className="grid gap-2">
