@@ -4,54 +4,42 @@
 import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
 import { LandingHeader } from './landing-header';
 
-const quotes = [
-  "The best thing to hold onto in life is each other.",
-  "You know you're in love when you can't fall asleep because reality is finally better than your dreams.",
-  "Love is composed of a single soul inhabiting two bodies.",
-  "To love and be loved is to feel the sun from both sides.",
-  "In the arithmetic of love, one plus one equals everything, and two minus one equals nothing."
+const phrases = [
+  "Get Naked Now",
+  "Enter the Nude Zone",
+  "Reveal Your True Self",
+  "Join the Bare Side",
+  "Strip Down Today",
+  "Uncover and Connect",
+  "Start Nude Adventures",
+  "Show It All",
+  "No Clothes, No Rules",
+  "Dive Into Nudity"
 ];
 
 const TYPING_SPEED = 50;
-const DELETING_SPEED = 30;
-const PAUSE_DURATION = 1000; // Pause after typing, before deleting
 
 export function Hero() {
-  const [quoteIndex, setQuoteIndex] = React.useState(0);
-  const [typedQuote, setTypedQuote] = React.useState('');
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [activePhrase, setActivePhrase] = React.useState('');
+  const [typedPhrase, setTypedPhrase] = React.useState('');
 
   React.useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    // Select a random phrase on component mount
+    setActivePhrase(phrases[Math.floor(Math.random() * phrases.length)]);
+  }, []);
 
-    const handleTyping = () => {
-      const currentQuote = quotes[quoteIndex];
-      if (isDeleting) {
-        if (typedQuote.length > 0) {
-          setTypedQuote((prev) => prev.slice(0, -1));
-        } else {
-          setIsDeleting(false);
-          setQuoteIndex((prev) => (prev + 1) % quotes.length);
-        }
-      } else {
-        if (typedQuote.length < currentQuote.length) {
-          setTypedQuote((prev) => currentQuote.slice(0, prev.length + 1));
-        } else {
-          timeoutId = setTimeout(() => setIsDeleting(true), PAUSE_DURATION);
-        }
-      }
-    };
+  React.useEffect(() => {
+    if (!activePhrase) return;
 
-    const typingInterval = setInterval(handleTyping, isDeleting ? DELETING_SPEED : TYPING_SPEED);
-
-    return () => {
-      clearInterval(typingInterval);
-      clearTimeout(timeoutId);
-    };
-  }, [typedQuote, isDeleting, quoteIndex]);
+    if (typedPhrase.length < activePhrase.length) {
+      const timeoutId = setTimeout(() => {
+        setTypedPhrase(activePhrase.slice(0, typedPhrase.length + 1));
+      }, TYPING_SPEED);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [typedPhrase, activePhrase]);
   
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
@@ -71,7 +59,7 @@ export function Hero() {
         </div>
         <div className="mt-8 max-w-2xl h-24 flex items-center justify-center">
           <p className="text-lg text-neutral-300">
-            {typedQuote}
+            {typedPhrase}
             <span className="animate-pulse">|</span>
           </p>
         </div>
