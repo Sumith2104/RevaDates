@@ -7,16 +7,16 @@ import { Button } from '@/components/ui/button';
 import { LandingHeader } from './landing-header';
 
 const phrases = [
-  "Get Naked Now",
-  "Enter the Nude Zone",
-  "Reveal Your True Self",
-  "Join the Bare Side",
-  "Strip Down Today",
-  "Uncover and Connect",
-  "Start Nude Adventures",
-  "Show It All",
-  "No Clothes, No Rules",
-  "Dive Into Nudity"
+  "Take It All Off",
+  "Bare It All",
+  "Show Some Skin",
+  "Lose the Layers",
+  "Drop Everything Now",
+  "Reveal Your Body",
+  "Strip Without Shame",
+  "Go All Natural",
+  "Nothing Left On",
+  "Feel Fully Free"
 ];
 
 const TYPING_SPEED = 50;
