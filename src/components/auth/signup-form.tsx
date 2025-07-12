@@ -12,7 +12,7 @@ import { Calendar as CalendarIcon, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-export function SignupForm() {
+export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [date, setDate] = React.useState<Date>();
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
 
@@ -23,7 +23,7 @@ export function SignupForm() {
 
   if (step === 'otp') {
     return (
-      <Card className="mx-auto max-w-sm w-full">
+      <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
          <form action="/dashboard" method="GET">
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -46,7 +46,7 @@ export function SignupForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full">
+    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -117,4 +117,5 @@ export function SignupForm() {
       </CardContent>
     </Card>
   );
-}
+});
+SignupForm.displayName = 'SignupForm';
