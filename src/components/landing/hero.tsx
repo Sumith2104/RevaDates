@@ -24,10 +24,10 @@ export function Hero() {
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
           <Button asChild size="lg" className="font-semibold">
-            <Link href="/signup">Get Started</Link>
+            <Link href="/signup">Sign up</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="font-semibold">
-            <Link href="/login">I have an account</Link>
+            <Link href="/login">Login</Link>
           </Button>
         </div>
       </div>
