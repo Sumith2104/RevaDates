@@ -52,7 +52,7 @@ export function Hero() {
             </motion.p>
           </AnimatePresence>
         </div>
-        <div className="mt-8 flex flex-col sm:flex-row gap-4">
+        <div className="mt-8 flex flex-row gap-4">
           <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
             <Link href="/signup">Sign up</Link>
           </Button>
