@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
 
 export function Hero() {
+  const glassButtonClasses = "bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20";
+  
   return (
     <div className="flex h-screen w-full items-center justify-center bg-black">
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
@@ -23,10 +25,10 @@ export function Hero() {
           Your journey to finding 'the one' starts here.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          <Button asChild size="lg" className="font-semibold">
+          <Button asChild size="lg" className={`font-semibold rounded-full ${glassButtonClasses}`}>
             <Link href="/signup">Sign up</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="font-semibold">
+          <Button asChild size="lg" variant="outline" className={`font-semibold rounded-full ${glassButtonClasses}`}>
             <Link href="/login">Login</Link>
           </Button>
         </div>
