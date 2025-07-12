@@ -65,6 +65,14 @@ export function Hero() {
             <span className="animate-pulse">|</span>
           </p>
         </div>
+        <div className="mt-8 flex flex-row gap-4">
+          <Button asChild size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">
+            <Link href="/signup">Sign up</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">
+            <Link href="/login">Login</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
