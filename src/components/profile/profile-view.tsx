@@ -42,7 +42,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-2 gap-8">
+        <CardContent className="grid grid-cols-1 gap-8">
           <div className="grid grid-cols-2 gap-4 h-fit">
             {user.photos.map((photo, index) => (
               <div key={index} className="aspect-square relative rounded-lg overflow-hidden">

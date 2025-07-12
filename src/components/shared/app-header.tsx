@@ -21,15 +21,7 @@ export function AppHeader() {
           <Heart className="h-6 w-6 text-primary" />
           <span>RevaDates</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-2">
-          {navItems.map((item) => (
-            <Button key={item.href} variant="ghost" size="icon" asChild>
-                <Link href={item.href} aria-label={item.label}>
-                    <item.icon className={cn('h-5 w-5', pathname === item.href ? 'text-primary' : 'text-foreground/60')} />
-                </Link>
-            </Button>
-          ))}
-        </nav>
+        {/* Desktop nav removed for mobile-only experience */}
       </div>
     </header>
   );
