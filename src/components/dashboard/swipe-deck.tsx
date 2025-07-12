@@ -73,7 +73,7 @@ export function SwipeDeck({ users: initialUsers }: { users: UserProfile[] }) {
                 }
               }}
             >
-              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card border">
+              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                 <Image
                   src={activeUser.photos[0]}
                   alt={activeUser.name}
@@ -98,13 +98,13 @@ export function SwipeDeck({ users: initialUsers }: { users: UserProfile[] }) {
         </AnimatePresence>
       </div>
       <div className="flex items-center justify-center gap-4">
-        <Button onClick={() => handleSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-2 border-destructive text-destructive hover:bg-destructive/10">
+        <Button onClick={() => handleSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10">
           <X className="h-8 w-8" />
         </Button>
-        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0} className="h-12 w-12 rounded-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
-        <Button onClick={() => handleSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-2 border-green-500 text-green-500 hover:bg-green-500/10">
+        <Button onClick={() => handleSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10">
           <Heart className="h-8 w-8 fill-green-500" />
         </Button>
       </div>

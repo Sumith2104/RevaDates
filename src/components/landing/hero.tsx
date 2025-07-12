@@ -18,7 +18,7 @@ const DELETING_SPEED = 30;
 const PAUSE_DURATION = 1000; // Pause after typing, before deleting
 
 export function Hero() {
-  const glassButtonClasses = "bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20";
+  const glassButtonClasses = "bg-white/10 backdrop-blur-md hover:bg-white/20";
   const [quoteIndex, setQuoteIndex] = React.useState(0);
   const [typedQuote, setTypedQuote] = React.useState('');
   const [isDeleting, setIsDeleting] = React.useState(false);
