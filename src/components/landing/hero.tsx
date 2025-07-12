@@ -25,7 +25,7 @@ export function Hero() {
           Your journey to finding 'the one' starts here.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          <Button asChild size="lg" className={`font-semibold rounded-full ${glassButtonClasses}`}>
+          <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
             <Link href="/signup">Sign up</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className={`font-semibold rounded-full ${glassButtonClasses}`}>
