@@ -51,7 +51,7 @@ export function Hero() {
           setTypedPhrase(activePhrase.slice(0, typedPhrase.length + 1));
         }, TYPING_SPEED);
       } else {
-        timeoutId = setTimeout(() => setIsDeleting(true), 1500);
+        timeoutId = setTimeout(() => setIsDeleting(true), 5000);
       }
     }
 
