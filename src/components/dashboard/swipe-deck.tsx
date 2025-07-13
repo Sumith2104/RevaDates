@@ -75,7 +75,7 @@ export function SwipeDeck({ users: initialUsers }: { users: UserProfile[] }) {
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                 <Image
-                  src={activeUser.photos[0]}
+                  src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : `https://placehold.co/600x800`}
                   alt={activeUser.name}
                   fill
                   priority
