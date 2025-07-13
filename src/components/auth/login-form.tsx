@@ -36,8 +36,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     if (queryError || !data) {
       setError('Invalid email or password. Please try again.');
     } else {
-      // In a real app, you would set up a session here.
-      // For now, we'll just navigate to the dashboard.
+      localStorage.setItem('currentUserId', data.id);
       router.push('/dashboard');
     }
   };

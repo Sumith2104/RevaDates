@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,6 +17,7 @@ export function SettingsView() {
   const router = useRouter();
 
   const handleLogout = () => {
+    localStorage.removeItem('currentUserId');
     router.push('/');
   };
 

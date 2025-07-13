@@ -77,7 +77,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
     
-    const { error: insertError } = await supabase.from('profiles').insert({
+    const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
         email,
         phone,
@@ -85,16 +85,17 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: 'Welcome to RevaDates! Please update your bio.',
         photos: [],
-    });
+    }).select().single();
 
     setIsLoading(false);
 
     if (insertError) {
         setError(insertError.message);
-    } else {
-        // In a real app, you would now create a session for the new user.
-        // For now, we redirect to the dashboard where a hardcoded ID is still used.
+    } else if (newUser) {
+        localStorage.setItem('currentUserId', newUser.id);
         router.push('/dashboard');
+    } else {
+        setError('Could not create account. Please try again.');
     }
   };
 
