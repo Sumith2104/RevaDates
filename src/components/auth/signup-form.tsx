@@ -3,19 +3,45 @@
 
 import Link from 'next/link';
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart } from 'lucide-react';
+import { Heart, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
+  const [generatedOtp, setGeneratedOtp] = React.useState('');
+  const [enteredOtp, setEnteredOtp] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+  const router = useRouter();
+  const { toast } = useToast();
 
   const handleDetailsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    setGeneratedOtp(otp);
+    
+    toast({
+        title: "Verification Code",
+        description: `Your OTP is: ${otp}`,
+    });
+    
     setStep('otp');
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    if (enteredOtp === generatedOtp) {
+        router.push('/dashboard');
+    } else {
+        setError("Invalid OTP. Please try again.");
+    }
   };
 
   const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i);
@@ -38,21 +64,39 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   if (step === 'otp') {
     return (
       <Card className="mx-auto max-w-sm w-full border-none" ref={ref} {...props}>
-         <form action="/dashboard" method="GET">
+         <form onSubmit={handleOtpSubmit}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Verify your email</CardTitle>
-            <CardDescription>Enter the 6-digit code we sent to your email address.</CardDescription>
+            <CardDescription>Enter the 4-digit code we sent to your email address.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="otp">Verification Code</Label>
-              <Input id="otp" type="text" inputMode="numeric" maxLength={6} placeholder="Your Verification Code" required />
+              <Input 
+                id="otp" 
+                type="text" 
+                inputMode="numeric" 
+                maxLength={4} 
+                placeholder="Your Verification Code" 
+                required 
+                value={enteredOtp}
+                onChange={(e) => setEnteredOtp(e.target.value)}
+              />
             </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
             <Button type="submit" className="w-full">Verify & Sign Up</Button>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-              <Button variant="link" onClick={() => setStep('details')}>Go Back</Button>
+              <Button variant="link" type="button" onClick={() => { setStep('details'); setError(null); }}>Go Back</Button>
           </CardFooter>
         </form>
       </Card>

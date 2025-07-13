@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Heart } from 'lucide-react';
 
 export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
+  const router = useRouter();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push('/dashboard');
+  }
+
   return (
     <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
       <CardHeader className="text-center">
@@ -16,7 +24,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         <CardDescription>Enter your email below to login to your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4" action="/dashboard" method="GET">
+        <form className="grid gap-4" onSubmit={handleLogin}>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="Your Email" required />
