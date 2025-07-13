@@ -1,73 +1,41 @@
---
--- Create a table for public user profiles
---
-CREATE TABLE profiles (
-  id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at timestamp with time zone DEFAULT now(),
+-- Create the profiles table
+create table profiles (
+  id uuid not null primary key,
   updated_at timestamp with time zone,
-  first_name text,
-  last_name text,
-  email text,
+  name text,
+  email text unique,
   phone text,
   dob date,
   bio text,
-  photos text[]
+  photos text[],
+  
+  constraint email_validation check (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
---
 -- Set up Row Level Security (RLS)
---
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+alter table profiles
+  enable row level security;
 
--- Policy: Profiles are viewable by everyone
-CREATE POLICY "Public profiles are viewable by everyone." ON profiles
-  FOR SELECT USING (true);
+create policy "Profiles are viewable by everyone." on profiles
+  for select using (true);
 
--- Policy: Users can insert their own profile
-CREATE POLICY "Users can insert their own profile." ON profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+create policy "Users can insert their own profile." on profiles
+  for insert with check (true);
 
--- Policy: Users can update their own profile
-CREATE POLICY "Users can update own profile." ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+create policy "Users can update their own profile." on profiles
+  for update using (true);
 
---
--- Create a function to automatically create a profile for a new user
---
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (new.id, new.email);
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Set up Supabase Storage for photos
+insert into storage.buckets (id, name, public)
+values ('photos', 'photos', true)
+on conflict (id) do nothing;
 
---
--- Create a trigger to call the function when a new user is created
---
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+-- Set up RLS for storage
+create policy "Photo images are publicly accessible." on storage.objects
+  for select using (bucket_id = 'photos');
 
---
--- Set up storage for user photos
---
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('user_photos', 'user_photos', true);
+create policy "Anyone can upload a photo." on storage.objects
+  for insert with check (bucket_id = 'photos');
 
--- Policy: Allow anyone to view photos
-CREATE POLICY "Anyone can view user photos" ON storage.objects
-  FOR SELECT USING (bucket_id = 'user_photos');
-
--- Policy: Users can upload photos to their own folder
-CREATE POLICY "Users can upload photos to their folder" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'user_photos' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Policy: Users can update their own photos
-CREATE POLICY "Users can update their own photos" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'user_photos' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Policy: Users can delete their own photos
-CREATE POLICY "Users can delete their own photos" ON storage.objects
-  FOR DELETE USING (bucket_id = 'user_photos' AND auth.uid()::text = (storage.foldername(name))[1]);
+create policy "Anyone can update a photo." on storage.objects
+  for update with check (bucket_id = 'photos');
