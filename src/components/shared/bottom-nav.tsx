@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Heart, User, Settings } from 'lucide-react';
+import { Heart, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
@@ -10,7 +10,7 @@ export function BottomNav() {
 
   const navItems = [
     { href: '/dashboard', icon: Heart, label: 'Discover' },
-    { href: '/profile', icon: User, label: 'Profile' },
+    { href: '/chats', icon: MessageSquare, label: 'Chats' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ];
 
