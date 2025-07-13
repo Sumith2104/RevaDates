@@ -33,7 +33,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="otp">Verification Code</Label>
-              <Input id="otp" type="text" inputMode="numeric" maxLength={6} required />
+              <Input id="otp" type="text" inputMode="numeric" maxLength={6} placeholder="Your Verification Code" required />
             </div>
             <Button type="submit" className="w-full">Verify & Sign Up</Button>
           </CardContent>
@@ -57,20 +57,20 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="first-name">First name</Label>
-              <Input id="first-name" placeholder="First name" required />
+              <Input id="first-name" placeholder="Your First Name" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="last-name">Last name</Label>
-              <Input id="last-name" placeholder="Last name" required />
+              <Input id="last-name" placeholder="Your Last Name" required />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required />
+            <Input id="email" type="email" placeholder="Your Email" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" placeholder="123-456-7890" required />
+            <Input id="phone" type="tel" placeholder="Your Phone Number" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="dob">Date of Birth</Label>
@@ -102,7 +102,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required />
+            <Input id="password" type="password" placeholder="Your Password" required />
           </div>
           <Button type="submit" className="w-full">
             Create an account

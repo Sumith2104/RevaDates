@@ -43,7 +43,7 @@ export function AiAssistView() {
               <Textarea
                 id="profileDescription"
                 name="profileDescription"
-                placeholder="Tell us about yourself..."
+                placeholder="Your Profile Description..."
                 rows={8}
                 required
               />

@@ -54,7 +54,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             <div>
               <Label>Name</Label>
               {isEditing ? (
-                <Input name="name" value={user.name} onChange={handleInputChange} className="text-lg" />
+                <Input name="name" value={user.name} onChange={handleInputChange} className="text-lg" placeholder="Your Name" />
               ) : (
                 <p className="text-2xl font-semibold">{user.name}, {age}</p>
               )}
@@ -62,7 +62,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             <div>
               <Label htmlFor="bio">About Me</Label>
               {isEditing ? (
-                <Textarea id="bio" name="bio" value={user.bio} onChange={handleInputChange} rows={6} />
+                <Textarea id="bio" name="bio" value={user.bio} onChange={handleInputChange} rows={6} placeholder="Your About Me" />
               ) : (
                 <p className="text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
               )}
@@ -71,11 +71,11 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               <>
                 <div>
                   <Label>Email</Label>
-                  <Input name="email" type="email" value={user.email} onChange={handleInputChange} />
+                  <Input name="email" type="email" value={user.email} onChange={handleInputChange} placeholder="Your Email" />
                 </div>
                 <div>
                   <Label>Phone</Label>
-                  <Input name="phone" type="tel" value={user.phone} onChange={handleInputChange} />
+                  <Input name="phone" type="tel" value={user.phone} onChange={handleInputChange} placeholder="Your Phone" />
                 </div>
               </>
             )}

@@ -19,7 +19,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         <form className="grid gap-4" action="/dashboard" method="GET">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required />
+            <Input id="email" type="email" placeholder="Your Email" required />
           </div>
           <div className="grid gap-2">
             <div className="flex items-center">
@@ -28,7 +28,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                 Forgot your password?
               </Link>
             </div>
-            <Input id="password" type="password" required />
+            <Input id="password" type="password" placeholder="Your Password" required />
           </div>
           <Button type="submit" className="w-full">
             Login
