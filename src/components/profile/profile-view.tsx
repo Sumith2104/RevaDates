@@ -21,7 +21,7 @@ type User = {
     email: string;
     phone: string;
     dob: Date;
-    photos: string[];
+    photos: string[] | null;
     bio: string;
 };
 
@@ -105,7 +105,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       .getPublicUrl(filePath);
       
     if (publicUrl) {
-      const updatedPhotos = [...user.photos, publicUrl];
+      const updatedPhotos = [...(user.photos || []), publicUrl];
       const updatedUser = { ...user, photos: updatedPhotos };
       setUser(updatedUser);
       // Immediately save the profile after successful upload
@@ -123,6 +123,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   };
 
   const age = differenceInYears(new Date(), user.dob);
+  const userPhotos = user.photos || [];
 
   return (
     <div className="container mx-auto max-w-4xl p-4">
@@ -140,12 +141,12 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             <div>
               <Label>Photos</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                {user.photos.map((photo, index) => (
+                {userPhotos.map((photo, index) => (
                   <div key={photo || index} className="aspect-square relative rounded-lg overflow-hidden">
                     <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
                   </div>
                 ))}
-                {isEditing && user.photos.length < 4 && (
+                {isEditing && userPhotos.length < 4 && (
                   <div 
                     className="aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50"
                     onClick={() => fileInputRef.current?.click()}
