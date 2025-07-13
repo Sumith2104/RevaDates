@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { getProfileSuggestions } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +25,7 @@ function SubmitButton() {
 }
 
 export function AiAssistView() {
-  const [state, formAction] = useFormState(getProfileSuggestions, initialState);
+  const [state, formAction] = useActionState(getProfileSuggestions, initialState);
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
