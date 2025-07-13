@@ -72,6 +72,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     const lastName = formData.get('lastName') as string;
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
+    const password = formData.get('password') as string;
     const dobYear = formData.get('dobYear') as string;
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
@@ -85,6 +86,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         name: `${firstName} ${lastName}`,
         email,
         phone,
+        password, // Storing password directly. Should be hashed in a real app.
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: 'Welcome to RevaDates! Please update your bio.',
         photos: [],
