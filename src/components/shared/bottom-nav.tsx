@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -21,17 +22,15 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center justify-center gap-1 text-xs text-foreground/70"
+            className="flex flex-col items-center justify-center text-foreground/70"
+            aria-label={item.label}
           >
             <item.icon
               className={cn(
-                'h-6 w-6',
+                'h-7 w-7',
                 pathname === item.href ? 'text-primary fill-primary/20' : ''
               )}
             />
-            <span className={cn(pathname === item.href ? 'font-bold text-primary' : '')}>
-              {item.label}
-            </span>
           </Link>
         ))}
       </nav>
