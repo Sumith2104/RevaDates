@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { sendEmail } from './email';
+import { createClient } from '@/lib/supabase/server';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -15,6 +16,20 @@ export async function sendOtpEmail(email: string) {
       error: 'Invalid email address provided.',
       otp: null,
     };
+  }
+  
+  const supabase = createClient();
+  const { data: existingUser, error: fetchError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', validatedFields.data.email)
+    .single();
+
+  if(existingUser) {
+    return {
+      error: 'An account with this email already exists.',
+      otp: null,
+    }
   }
 
   try {
