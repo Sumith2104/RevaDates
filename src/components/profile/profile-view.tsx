@@ -1,14 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wand2, Edit, Save } from 'lucide-react';
+import { Edit, Save } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 
 type User = {
@@ -79,12 +78,6 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                 </div>
               </>
             )}
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/profile/ai-assist">
-                <Wand2 className="mr-2 h-4 w-4" />
-                Get AI Profile Suggestions
-              </Link>
-            </Button>
           </div>
         </CardContent>
       </Card>
