@@ -8,10 +8,16 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Shield, LogOut, Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function SettingsView() {
   const [ageRange, setAgeRange] = React.useState([25, 40]);
   const [distance, setDistance] = React.useState([50]);
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.push('/');
+  };
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
@@ -86,7 +92,7 @@ export function SettingsView() {
                 Blocked Users
             </Button>
             <Separator />
-            <Button variant="destructive" className="w-full justify-start gap-2">
+            <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 Logout
             </Button>
