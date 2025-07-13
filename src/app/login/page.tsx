@@ -10,7 +10,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      if (target.closest('[data-radix-popper-content-wrapper]')) {
+        return;
+      }
+      if (formRef.current && !formRef.current.contains(target)) {
         router.back();
       }
     }

@@ -10,7 +10,12 @@ export default function SignupPage() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      // Prevent closing if clicking inside a Radix Popover (used by ShadCN Calendar/Select)
+      if (target.closest('[data-radix-popper-content-wrapper]')) {
+        return;
+      }
+      if (formRef.current && !formRef.current.contains(target)) {
         router.back();
       }
     }
