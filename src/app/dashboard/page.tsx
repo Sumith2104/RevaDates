@@ -7,12 +7,11 @@ import { differenceInYears } from 'date-fns';
 
 export default async function DashboardPage() {
   const supabase = createClient();
-  const currentUserId = '11111111-1111-1111-1111-111111111111';
 
+  // Fetch all profiles to ensure there's data to display
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('*')
-    .neq('id', currentUserId);
+    .select('*');
 
   if (error) {
     console.error('Error fetching profiles:', error);
@@ -20,6 +19,17 @@ export default async function DashboardPage() {
     return (
       <AppShell>
         <SwipeDeck users={[]} />
+      </AppShell>
+    );
+  }
+
+  if (!profiles || profiles.length === 0) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+          <p className="text-xl font-medium">No profiles found.</p>
+          <p className="mt-2">Sign up to see more profiles!</p>
+        </div>
       </AppShell>
     );
   }
