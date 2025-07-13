@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload } from 'lucide-react';
+import { Edit, Save, Upload, Loader2 } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
 type User = {
     id: string;
@@ -29,6 +30,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const [user, setUser] = React.useState(initialUser);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
   const supabase = createClient();
   const { toast } = useToast();
@@ -38,33 +40,40 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
   
-  const handleSave = async () => {
-    // Here you would typically update the user data in your database
-    // For now, we just exit editing mode
+  const updateUserProfile = async (updatedUser: User) => {
+    setSaving(true);
     const { data, error } = await supabase
         .from('profiles')
         .update({
-            name: user.name,
-            bio: user.bio,
-            email: user.email,
-            phone: user.phone,
-            photos: user.photos,
+            name: updatedUser.name,
+            bio: updatedUser.bio,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            photos: updatedUser.photos,
         })
-        .eq('id', user.id);
+        .eq('id', updatedUser.id);
 
+    setSaving(false);
     if (error) {
         toast({
             variant: 'destructive',
             title: 'Error saving profile',
             description: error.message,
         });
-    } else {
-        toast({
-            title: 'Profile Saved',
-            description: 'Your profile has been updated.',
-        });
-        setIsEditing(false);
-        router.refresh();
+        return false;
+    } 
+    return true;
+  }
+  
+  const handleSave = async () => {
+    const success = await updateUserProfile(user);
+    if (success) {
+      toast({
+          title: 'Profile Saved',
+          description: 'Your profile has been updated.',
+      });
+      setIsEditing(false);
+      router.refresh();
     }
   };
 
@@ -73,7 +82,9 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (!file) return;
 
     setUploading(true);
-    const filePath = `${user.id}/${Date.now()}_${file.name}`;
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `${user.id}/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('photos')
@@ -95,7 +106,17 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       
     if (publicUrl) {
       const updatedPhotos = [...user.photos, publicUrl];
-      setUser({ ...user, photos: updatedPhotos });
+      const updatedUser = { ...user, photos: updatedPhotos };
+      setUser(updatedUser);
+      // Immediately save the profile after successful upload
+      const success = await updateUserProfile(updatedUser);
+       if (success) {
+        toast({
+            title: 'Photo Uploaded',
+            description: 'Your new photo has been added.',
+        });
+        router.refresh();
+      }
     }
     
     setUploading(false);
@@ -109,8 +130,8 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         <CardHeader>
           <div className="flex justify-between items-start">
             <CardTitle className="text-3xl">My Profile</CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)}>
-              {isEditing ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
+            <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)} disabled={saving}>
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : isEditing ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
               <span className="sr-only">{isEditing ? 'Save Profile' : 'Edit Profile'}</span>
             </Button>
           </div>
@@ -118,9 +139,9 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         <CardContent className="grid grid-cols-1 gap-8">
             <div>
               <Label>Photos</Label>
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 {user.photos.map((photo, index) => (
-                  <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
+                  <div key={photo || index} className="aspect-square relative rounded-lg overflow-hidden">
                     <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
                   </div>
                 ))}
@@ -130,8 +151,8 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <div className="text-center">
-                        {uploading ? <p>Uploading...</p> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
-                        <p className="text-sm text-muted-foreground mt-2">Add Photo</p>
+                        {uploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
+                        <p className="text-sm text-muted-foreground mt-2">{uploading ? 'Uploading...' : 'Add Photo'}</p>
                     </div>
                     <input
                       type="file"
