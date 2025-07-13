@@ -7,11 +7,14 @@ import { differenceInYears } from 'date-fns';
 
 export default async function DashboardPage() {
   const supabase = createClient();
+  // In a real app, this would come from the user's session
+  const currentUserId = '11111111-1111-1111-1111-111111111111';
 
-  // Fetch all profiles to ensure there's data to display
+  // Fetch all profiles except the current user's
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('*');
+    .select('*')
+    .neq('id', currentUserId); // Exclude the current user
 
   if (error) {
     console.error('Error fetching profiles:', error);
@@ -27,8 +30,8 @@ export default async function DashboardPage() {
     return (
       <AppShell>
         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-          <p className="text-xl font-medium">No profiles found.</p>
-          <p className="mt-2">Sign up to see more profiles!</p>
+          <p className="text-xl font-medium">No other profiles found.</p>
+          <p className="mt-2">Check back later or invite some friends!</p>
         </div>
       </AppShell>
     );
