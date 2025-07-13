@@ -179,7 +179,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             <div>
               <Label htmlFor="bio">About Me</Label>
               {isEditing ? (
-                <Textarea id="bio" name="bio" value={user.bio} onChange={handleInputChange} rows={6} placeholder="Your About Me" />
+                <Textarea id="bio" name="bio" value={user.bio || ''} onChange={handleInputChange} rows={6} placeholder="Your About Me" />
               ) : (
                 <p className="text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
               )}
