@@ -77,12 +77,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
     
-    // In a real app, you'd have a proper user ID from an auth system.
-    // For now, we'll create a hardcoded one for demonstration.
-    const id = '11111111-1111-1111-1111-111111111111';
-
-    const { error: insertError } = await supabase.from('profiles').upsert({
-        id,
+    const { error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
         email,
         phone,
@@ -97,6 +92,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     if (insertError) {
         setError(insertError.message);
     } else {
+        // In a real app, you would now create a session for the new user.
+        // For now, we redirect to the dashboard where a hardcoded ID is still used.
         router.push('/dashboard');
     }
   };
