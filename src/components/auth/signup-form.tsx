@@ -127,7 +127,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                 type="text" 
                 inputMode="numeric" 
                 maxLength={4} 
-                placeholder="Your Verification Code" 
+                placeholder="****" 
                 required 
                 value={enteredOtp}
                 onChange={(e) => setEnteredOtp(e.target.value)}
@@ -174,20 +174,20 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="first-name">First name</Label>
-              <Input id="first-name" name="firstName" placeholder="Your First Name" required />
+              <Input id="first-name" name="firstName" placeholder="John" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="last-name">Last name</Label>
-              <Input id="last-name" name="lastName" placeholder="Your Last Name" required />
+              <Input id="last-name" name="lastName" placeholder="Doe" required />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" name="email" placeholder="Your Email" required />
+            <Input id="email" type="email" name="email" placeholder="m@example.com" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" name="phone" placeholder="Your Phone Number" required />
+            <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required />
           </div>
           <div className="grid gap-2">
             <Label>Date of Birth</Label>
@@ -232,7 +232,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" placeholder="Your Password" required />
+            <Input id="password" type="password" name="password" required />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -22,7 +22,7 @@ export default async function ProfilePage() {
     console.error('Profile fetch error:', error);
     // This is a placeholder user. A real app should handle this more gracefully.
     const currentUser = {
-        id: '0',
+        id: '11111111-1111-1111-1111-111111111111',
         name: 'New User',
         email: 'new@example.com',
         phone: '555-0100',
