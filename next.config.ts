@@ -1,8 +1,5 @@
 
 import type {NextConfig} from 'next';
-import { config } from 'dotenv';
-
-config();
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -22,11 +19,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname,
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : '',
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
       }
-    ],
+    ].filter(pattern => !!pattern.hostname),
   },
 };
 

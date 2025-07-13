@@ -1,8 +1,5 @@
 
 import type {NextConfig} from 'next';
-import { config } from 'dotenv';
-
-config();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -22,13 +19,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: supabaseUrl ? new URL(supabaseUrl).hostname : '',
+      // Add Supabase storage domain only if the URL is set
+      ...(supabaseUrl ? [{
+        protocol: 'https' as const,
+        hostname: new URL(supabaseUrl).hostname,
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
-      }
-    ].filter(pattern => pattern.hostname), // Filter out patterns without a hostname
+      }] : []),
+    ],
   },
 };
 
