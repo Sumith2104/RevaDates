@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createBrowserClient } from '@supabase/supabase-js';
 
 export function createClient() {
   return createBrowserClient(
