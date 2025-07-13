@@ -8,30 +8,45 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, AlertCircle } from 'lucide-react';
+import { Heart, AlertCircle, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { sendOtpEmail } from '@/lib/actions';
 
 export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
   const [generatedOtp, setGeneratedOtp] = React.useState('');
   const [enteredOtp, setEnteredOtp] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleDetailsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    setGeneratedOtp(otp);
+    setError(null);
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const currentEmail = formData.get('email') as string;
+    setEmail(currentEmail);
     
-    toast({
-        title: "Verification Code",
-        description: `Your OTP is: ${otp}`,
-    });
-    
-    setStep('otp');
+    const result = await sendOtpEmail(currentEmail);
+
+    setIsLoading(false);
+
+    if (result.error || !result.otp) {
+      setError(result.error || "An unknown error occurred.");
+    } else {
+      setGeneratedOtp(result.otp);
+      setStep('otp');
+      toast({
+          title: "Verification Code Sent",
+          description: `A code has been sent to ${currentEmail}.`,
+      });
+    }
   };
 
   const handleOtpSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,12 +78,12 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   if (step === 'otp') {
     return (
-      <Card className="mx-auto max-w-sm w-full border-none" ref={ref} {...props}>
+      <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
          <form onSubmit={handleOtpSubmit}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Verify your email</CardTitle>
-            <CardDescription>Enter the 4-digit code we sent to your email address.</CardDescription>
+            <CardDescription>Enter the 4-digit code we sent to {email}.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
@@ -104,7 +119,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full border-none" ref={ref} {...props}>
+    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -112,28 +127,35 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleDetailsSubmit} className="grid gap-4">
+          {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="first-name">First name</Label>
-              <Input id="first-name" placeholder="Your First Name" required />
+              <Input id="first-name" name="firstName" placeholder="Your First Name" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="last-name">Last name</Label>
-              <Input id="last-name" placeholder="Your Last Name" required />
+              <Input id="last-name" name="lastName" placeholder="Your Last Name" required />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Your Email" required />
+            <Input id="email" type="email" name="email" placeholder="Your Email" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" placeholder="Your Phone Number" required />
+            <Input id="phone" type="tel" name="phone" placeholder="Your Phone Number" required />
           </div>
           <div className="grid gap-2">
             <Label>Date of Birth</Label>
             <div className="grid grid-cols-3 gap-2">
-              <Select>
+              <Select name="dobMonth">
                 <SelectTrigger>
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
@@ -145,7 +167,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select>
+              <Select name="dobDay">
                 <SelectTrigger>
                   <SelectValue placeholder="Day" />
                 </SelectTrigger>
@@ -157,7 +179,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select>
+              <Select name="dobYear">
                 <SelectTrigger>
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
@@ -173,9 +195,10 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="Your Password" required />
+            <Input id="password" type="password" name="password" placeholder="Your Password" required />
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create an account
           </Button>
         </form>
