@@ -7,22 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Loader2, AlertCircle } from 'lucide-react';
+import { Heart, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     const { data, error: queryError } = await supabase
       .from('profiles')
@@ -34,15 +33,23 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     setIsLoading(false);
 
     if (queryError || !data) {
-      setError('Invalid email or password. Please try again.');
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: 'Invalid email or password. Please try again.',
+      });
     } else {
       localStorage.setItem('currentUserId', data.id);
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+      });
       router.push('/dashboard');
     }
   };
 
   return (
-    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
+    <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Login</CardTitle>
@@ -50,13 +57,6 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={handleLogin}>
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Login Failed</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input 

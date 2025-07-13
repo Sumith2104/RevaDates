@@ -8,10 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, AlertCircle, Loader2 } from 'lucide-react';
+import { Heart, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 
@@ -20,7 +19,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [generatedOtp, setGeneratedOtp] = React.useState('');
   const [enteredOtp, setEnteredOtp] = React.useState('');
   const [formData, setFormData] = React.useState<FormData | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -28,7 +26,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
 
     const currentFormData = new FormData(e.currentTarget);
@@ -40,7 +37,11 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     setIsLoading(false);
 
     if (result.error || !result.otp) {
-      setError(result.error || "An unknown error occurred.");
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result.error || 'An unknown error occurred.',
+      });
     } else {
       setGeneratedOtp(result.otp);
       setStep('otp');
@@ -53,17 +54,24 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
 
     if (enteredOtp !== generatedOtp) {
-        setError("Invalid OTP. Please try again.");
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Invalid OTP. Please try again.',
+        });
         setIsLoading(false);
         return;
     }
     
     if (!formData) {
-        setError("An unexpected error occurred. Please go back and try again.");
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'An unexpected error occurred. Please go back and try again.',
+        });
         setIsLoading(false);
         return;
     }
@@ -90,12 +98,24 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     setIsLoading(false);
 
     if (insertError) {
-        setError(insertError.message);
+        toast({
+          variant: 'destructive',
+          title: 'Signup Failed',
+          description: insertError.message,
+        });
     } else if (newUser) {
         localStorage.setItem('currentUserId', newUser.id);
+        toast({
+          title: 'Account Created!',
+          description: 'Welcome to RevaDates!',
+        });
         router.push('/dashboard');
     } else {
-        setError('Could not create account. Please try again.');
+        toast({
+          variant: 'destructive',
+          title: 'Signup Failed',
+          description: 'Could not create account. Please try again.',
+        });
     }
   };
 
@@ -112,7 +132,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   if (step === 'otp') {
     return (
-      <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
+      <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
          <form onSubmit={handleOtpSubmit}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -131,24 +151,16 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                 required 
                 value={enteredOtp}
                 onChange={(e) => setEnteredOtp(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify & Sign Up
             </Button>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-              <Button variant="link" type="button" onClick={() => { setStep('details'); setError(null); }}>Go Back</Button>
+              <Button variant="link" type="button" onClick={() => { setStep('details'); }}>Go Back</Button>
           </CardFooter>
         </form>
       </Card>
@@ -156,7 +168,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full" ref={ref} {...props}>
+    <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -164,35 +176,28 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleDetailsSubmit} className="grid gap-4">
-          {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="first-name">First name</Label>
-              <Input id="first-name" name="firstName" placeholder="John" required />
+              <Input id="first-name" name="firstName" placeholder="John" required disabled={isLoading} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="last-name">Last name</Label>
-              <Input id="last-name" name="lastName" placeholder="Doe" required />
+              <Input id="last-name" name="lastName" placeholder="Doe" required disabled={isLoading} />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" name="email" placeholder="m@example.com" required />
+            <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required />
+            <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <Label>Date of Birth</Label>
             <div className="grid grid-cols-3 gap-2">
-              <Select name="dobMonth" required>
+              <Select name="dobMonth" required disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
@@ -204,7 +209,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select name="dobDay" required>
+              <Select name="dobDay" required disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Day" />
                 </SelectTrigger>
@@ -216,7 +221,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select name="dobYear" required>
+              <Select name="dobYear" required disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
@@ -232,7 +237,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" required />
+            <Input id="password" type="password" name="password" required disabled={isLoading} />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
