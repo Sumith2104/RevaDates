@@ -19,36 +19,37 @@ create policy "Public profiles are viewable by everyone." on profiles
   for select using (true);
 
 create policy "Users can insert their own profile." on profiles
-  for insert with check (true); -- Simplified for no auth
+  for insert with check (true);
 
 create policy "Users can update own profile." on profiles
-  for update using (true); -- Simplified for no auth
+  for update using (true);
 
--- This trigger automatically updates the updated_at column when a profile is changed.
-create trigger handle_updated_at before update on profiles
-  for each row execute procedure moddatetime (updated_at);
+-- This trigger automatically creates a profile for new users.
+-- See https://supabase.com/docs/guides/auth/managing-user-data#using-triggers for more details.
+-- create function public.handle_new_user()
+-- returns trigger as $$
+-- begin
+--   insert into public.profiles (id, name)
+--   values (new.id, new.raw_user_meta_data->>'full_name');
+--   return new;
+-- end;
+-- $$ language plpgsql security definer;
+-- create trigger on_auth_user_created
+--   after insert on auth.users
+--   for each row execute procedure public.handle_new_user();
 
 
 -- Set up Storage!
--- Create a public bucket for photos.
 insert into storage.buckets (id, name, public)
-values ('photos', 'photos', true)
-on conflict (id) do nothing;
+  values ('photos', 'photos', true);
 
 -- Set up access policies for storage.
 -- See https://supabase.com/docs/guides/storage/security/access-control for more details.
-create policy "Anyone can upload to photos."
-  on storage.objects for insert to authenticated, anon
-  with check ( bucket_id = 'photos' );
+create policy "Photos are publicly accessible." on storage.objects
+  for select using (bucket_id = 'photos');
 
-create policy "Anyone can update their own photos."
-  on storage.objects for update to authenticated, anon
-  using ( bucket_id = 'photos' );
+create policy "Anyone can upload a photo." on storage.objects
+  for insert with check (bucket_id = 'photos');
 
-create policy "Anyone can see the photos."
-  on storage.objects for select to authenticated, anon
-  using ( bucket_id = 'photos' );
-
-create policy "Anyone can delete their own photos."
-  on storage.objects for delete to authenticated, anon
-  using ( bucket_id = 'photos' );
+create policy "Anyone can update a photo." on storage.objects
+  for update with check (bucket_id = 'photos');
