@@ -64,6 +64,10 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   const supabase = createClient();
 
   // Record the swipe action
+  // This operation is performed by the logged-in user and should use their permissions.
+  // Note: For this to work client-side, you'd need Supabase JWT auth.
+  // Since we are in a server action, we are currently relying on the service_role key which bypasses RLS.
+  // This is acceptable for a trusted backend.
   const { error: swipeError } = await supabase.from('swipes').insert({
     swiper_id: swiperId,
     swiped_id: swipedId,
@@ -103,7 +107,8 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         return { error: 'Could not check for existing match.' };
       }
 
-      // If no existing match, create one
+      // If no existing match, create one.
+      // The service role key is used here to bypass RLS since this is a system action.
       if (!existingMatch || existingMatch.length === 0) {
         const { error: matchError } = await supabase.from('matches').insert({
           user1_id: swiperId,
