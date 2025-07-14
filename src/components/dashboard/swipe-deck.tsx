@@ -4,11 +4,14 @@
 import * as React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
-import Image from 'next/image';
+import Link from 'next/link';
 import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
+
 
 interface AnimatedCardProps {
   children: React.ReactNode;
@@ -25,8 +28,6 @@ function AnimatedCard({
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
-  const likeOpacity = useTransform(x, [0, 100], [0, 1]);
-  const rejectOpacity = useTransform(x, [0, -100], [0, 1]);
   
   return (
     <motion.div
@@ -52,18 +53,6 @@ function AnimatedCard({
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
     >
       <div className="relative w-full h-full">
-        <motion.div
-          style={{ opacity: likeOpacity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-400 pointer-events-none"
-        >
-          <Heart className="h-32 w-32" fill="currentColor" />
-        </motion.div>
-        <motion.div
-          style={{ opacity: rejectOpacity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-destructive pointer-events-none"
-        >
-          <X className="h-32 w-32" />
-        </motion.div>
         {children}
       </div>
     </motion.div>
@@ -165,14 +154,16 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               dragEndVelocity={dragEndVelocity}
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
-                <Image
-                  src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : `https://placehold.co/600x800`}
-                  alt={activeUser.name}
-                  fill
-                  priority
-                  className="object-cover pointer-events-none"
-                  data-ai-hint="person portrait"
-                />
+                 <Avatar className="w-full h-full rounded-2xl">
+                    <AvatarImage 
+                        src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
+                        alt={activeUser.name}
+                        className="object-cover w-full h-full"
+                    />
+                    <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold">
+                        {getInitials(activeUser.name)}
+                    </AvatarFallback>
+                </Avatar>
                 <motion.div 
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
                     initial={{ height: '33.33%' }}
@@ -181,9 +172,11 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                 >
                   <div className="flex justify-between items-center">
                     <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                    <Button variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
-                      <MessageSquare className="h-6 w-6" />
-                      <span className="sr-only">Chat</span>
+                    <Button asChild variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
+                        <Link href="/chats">
+                            <MessageSquare className="h-6 w-6" />
+                            <span className="sr-only">Chat</span>
+                        </Link>
                     </Button>
                   </div>
                   <AnimatePresence>
