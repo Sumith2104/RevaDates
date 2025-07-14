@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -28,14 +29,33 @@ export default function DashboardPage() {
       if (!currentUserId) return;
 
       const supabase = createClient();
+      
+      // Get IDs of users the current user has already swiped on
+      const { data: swipedUsersData, error: swipedError } = await supabase
+        .from('swipes')
+        .select('swiped_id')
+        .eq('swiper_id', currentUserId);
+
+      if (swipedError) {
+        console.error('Error fetching swiped users:', swipedError);
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+      const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+
+      // Fetch profiles, excluding the current user and those already swiped on
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
-        .neq('id', currentUserId); // Exclude the current user
+        .neq('id', currentUserId)
+        .not('id', 'in', `(${swipedUserIds.join(',')})`);
+
 
       if (error) {
         console.error('Error fetching profiles:', error);
         setUsers([]); // Set to empty array on error
+        setLoading(false);
         return;
       }
 
@@ -47,17 +67,20 @@ export default function DashboardPage() {
         }));
         setUsers(mappedUsers);
       }
+       setLoading(false);
     }
 
-    fetchProfiles();
+    if (currentUserId) {
+        fetchProfiles();
+    }
   }, [currentUserId]);
 
 
-  if (users === null) {
+  if (loading || users === null) {
       return (
           <AppShell>
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                  <p className="text-xl font-medium">Loading profiles...</p>
+                  <p className="text-xl font-medium">Finding profiles for you...</p>
               </div>
           </AppShell>
       )
@@ -67,7 +90,7 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-          <p className="text-xl font-medium">No other profiles found.</p>
+          <p className="text-xl font-medium">No new profiles found.</p>
           <p className="mt-2">Check back later or invite some friends!</p>
         </div>
       </AppShell>
@@ -76,7 +99,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <SwipeDeck users={users} />
+      <SwipeDeck users={users} currentUserId={currentUserId!} />
     </AppShell>
   );
 }

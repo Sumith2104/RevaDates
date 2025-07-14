@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -6,18 +7,50 @@ import { UserProfile } from '@/lib/types';
 import Image from 'next/image';
 import { Heart, X, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { handleSwipeAction } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
-export function SwipeDeck({ users: initialUsers }: { users: UserProfile[] }) {
+interface SwipeDeckProps {
+  users: UserProfile[];
+  currentUserId: string;
+}
+
+export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [direction, setDirection] = React.useState<'left' | 'right' | null>(null);
+  const { toast } = useToast();
 
   const activeIndex = users.length - 1;
   const activeUser = users[activeIndex];
 
-  const handleSwipe = (swipeDirection: 'left' | 'right') => {
+  const handleSwipe = async (swipeDirection: 'left' | 'right') => {
     if (activeIndex < 0) return;
+
+    const swipedUser = users[activeIndex];
+    const action = swipeDirection === 'right' ? 'liked' : 'rejected';
+
     setDirection(swipeDirection);
+    
+    const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
+    if (result.error) {
+       toast({
+        variant: "destructive",
+        title: "Something went wrong",
+        description: result.error,
+       });
+       // Optionally reset the card state if swipe fails
+       setDirection(null);
+       return;
+    }
+
+    if (result.match) {
+        toast({
+            title: "It's a Match! 🎉",
+            description: `You and ${swipedUser.name} have liked each other.`,
+        });
+    }
+
     setTimeout(() => {
         setHistory(prev => [users[activeIndex], ...prev]);
         setUsers(prev => prev.slice(0, prev.length - 1));
@@ -26,10 +59,12 @@ export function SwipeDeck({ users: initialUsers }: { users: UserProfile[] }) {
   };
   
   const handleUndo = () => {
+    // Note: A true undo would require reverting the database action,
+    // which is a more complex feature. This is a UI-only undo for now.
     if (history.length > 0) {
       const lastUser = history[0];
       setHistory(prev => prev.slice(1));
-      setUsers(prev => [lastUser, ...prev]);
+      setUsers(prev => [...prev, lastUser].sort(() => Math.random() - 0.5)); // shuffle back in
     }
   };
 

@@ -1,8 +1,10 @@
+
 'use server';
 
 import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -52,4 +54,71 @@ export async function sendOtpEmail(email: string) {
     console.error('Failed to send email:', e);
     return { error: 'Failed to send verification email. Please try again.', otp: null };
   }
+}
+
+export async function handleSwipeAction(swiperId: string, swipedId: string, action: 'liked' | 'rejected') {
+  if (!swiperId || !swipedId) {
+    return { error: 'Invalid user IDs provided.' };
+  }
+
+  const supabase = createClient();
+
+  // Record the swipe action
+  const { error: swipeError } = await supabase.from('swipes').insert({
+    swiper_id: swiperId,
+    swiped_id: swipedId,
+    action,
+  });
+
+  if (swipeError) {
+    console.error('Error recording swipe:', swipeError);
+    return { error: 'Could not record your swipe.' };
+  }
+
+  // If it was a 'like', check for a mutual like
+  if (action === 'liked') {
+    const { data: mutualLike, error: checkError } = await supabase
+      .from('swipes')
+      .select('id')
+      .eq('swiper_id', swipedId) // The other person
+      .eq('swiped_id', swiperId) // You
+      .eq('action', 'liked')
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') { // Ignore 'No rows found' error
+      console.error('Error checking for mutual like:', checkError);
+      return { error: 'Could not check for a match.' };
+    }
+    
+    if (mutualLike) {
+      // It's a match! Check if match already exists
+      const { data: existingMatch, error: matchCheckError } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`(user1_id.eq.${swiperId},user2_id.eq.${swipedId}),(user1_id.eq.${swipedId},user2_id.eq.${swiperId})`)
+        .limit(1);
+
+      if (matchCheckError && matchCheckError.code !== 'PGRST116') {
+        console.error('Error checking for existing match:', matchCheckError);
+        return { error: 'Could not check for existing match.' };
+      }
+
+      // If no existing match, create one
+      if (!existingMatch || existingMatch.length === 0) {
+        const { error: matchError } = await supabase.from('matches').insert({
+          user1_id: swiperId,
+          user2_id: swipedId,
+        });
+
+        if (matchError) {
+          console.error('Error creating match:', matchError);
+          return { error: 'Could not create the match.' };
+        }
+        revalidatePath('/chats');
+        return { match: true };
+      }
+    }
+  }
+
+  return { success: true };
 }
