@@ -1,6 +1,16 @@
 
 import type {NextConfig} from 'next';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseHostname = '';
+if (supabaseUrl) {
+  try {
+    supabaseHostname = new URL(supabaseUrl).hostname;
+  } catch (e) {
+    console.error('Invalid NEXT_PUBLIC_SUPABASE_URL:', e);
+  }
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -17,13 +27,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : '',
+      // Add Supabase storage domain only if the URL is set and valid
+      ...(supabaseHostname ? [{
+        protocol: 'https' as const,
+        hostname: supabaseHostname,
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
-      }
-    ].filter(pattern => !!pattern.hostname),
+      }] : []),
+    ],
   },
 };
 
