@@ -10,49 +10,81 @@ import { Button } from '@/components/ui/button';
 import { handleSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
-function AnimatedCard({ children, onSwipe, sensitivity = 100 }: { children: React.ReactNode, onSwipe: (direction: 'left' | 'right') => void, sensitivity?: number }) {
+interface AnimatedCardProps {
+  children: React.ReactNode;
+  onSwipe: (direction: 'left' | 'right') => void;
+  sensitivity?: number;
+  swipeTrigger?: 'left' | 'right' | null;
+  onSwipeComplete?: () => void;
+}
+
+function AnimatedCard({
+  children,
+  onSwipe,
+  sensitivity = 100,
+  swipeTrigger = null,
+  onSwipeComplete,
+}: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const rejectOpacity = useTransform(x, [0, -100], [0, 1]);
 
-  function handleDragEnd(_: any, info: { offset: { x: number }, velocity: { x: number } }) {
+  function handleDragEnd(_: any, info: { offset: { x: number } }) {
     if (Math.abs(info.offset.x) > sensitivity) {
-      if (info.offset.x > 0) {
-        onSwipe('right');
-      } else {
-        onSwipe('left');
-      }
+      const direction = info.offset.x > 0 ? 'right' : 'left';
+      onSwipe(direction);
     } else {
-      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
     }
   }
+
+  React.useEffect(() => {
+    if (!swipeTrigger) return;
+
+    const finalX = swipeTrigger === 'right' ? 1000 : -1000;
+
+    animate(x, finalX, {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+      onComplete: () => {
+        onSwipe(swipeTrigger);
+        if (onSwipeComplete) {
+          onSwipeComplete();
+        }
+      },
+    });
+  // The dependency array is intentionally limited to swipeTrigger to only react to button clicks.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swipeTrigger]);
 
   return (
     <motion.div
       className="absolute inset-0 cursor-grab"
       style={{ x, rotateY }}
       drag="x"
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.6}
-      whileTap={{ cursor: "grabbing" }}
+      whileTap={{ cursor: 'grabbing' }}
       onDragEnd={handleDragEnd}
-      exit={{
-        x: x.get() > 0 ? '100vw' : '-100vw',
-        opacity: 0,
-        transition: { duration: 0.3 }
-      }}
     >
-        <div className="relative w-full h-full">
-            <motion.div style={{ opacity: likeOpacity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-400 pointer-events-none">
-                <Heart className="h-32 w-32" fill="currentColor" />
-            </motion.div>
-            <motion.div style={{ opacity: rejectOpacity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-destructive pointer-events-none">
-                <X className="h-32 w-32" />
-            </motion.div>
-            
-            {children}
-        </div>
+      <div className="relative w-full h-full">
+        <motion.div
+          style={{ opacity: likeOpacity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-400 pointer-events-none"
+        >
+          <Heart className="h-32 w-32" fill="currentColor" />
+        </motion.div>
+        <motion.div
+          style={{ opacity: rejectOpacity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-destructive pointer-events-none"
+        >
+          <X className="h-32 w-32" />
+        </motion.div>
+
+        {children}
+      </div>
     </motion.div>
   );
 }
@@ -66,19 +98,20 @@ interface SwipeDeckProps {
 export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
   const [history, setHistory] = React.useState<UserProfile[]>([]);
+  const [swipeTrigger, setSwipeTrigger] = React.useState<'left' | 'right' | null>(null);
   const { toast } = useToast();
 
   const activeIndex = users.length - 1;
   const activeUser = users[activeIndex];
   
-  const handleSwipe = async (swipeDirection: 'left' | 'right') => {
+  const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
 
     const swipedUser = users[activeIndex];
-    const action = swipeDirection === 'right' ? 'liked' : 'rejected';
+    const action = direction === 'right' ? 'liked' : 'rejected';
 
-    setHistory(prev => [users[activeIndex], ...prev]);
-    setUsers(prev => prev.slice(0, prev.length - 1));
+    setHistory(prev => [swipedUser, ...prev]);
+    setUsers(prev => prev.slice(0, -1));
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
     if (result.error) {
@@ -87,7 +120,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         title: "Something went wrong",
         description: result.error,
        });
-       setUsers(initialUsers);
+       // Revert state on error
+       setUsers(prev => [swipedUser, ...prev]);
        setHistory(prev => prev.slice(1));
        return;
     }
@@ -108,10 +142,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     }
   };
 
-  const triggerSwipe = (direction: 'left' | 'right') => {
-    handleSwipe(direction);
-  };
-
   React.useEffect(() => {
     setUsers(initialUsers);
   }, [initialUsers]);
@@ -125,6 +155,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
             <AnimatedCard
               key={activeUser.id}
               onSwipe={handleSwipe}
+              swipeTrigger={swipeTrigger}
+              onSwipeComplete={() => setSwipeTrigger(null)}
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                 <Image
@@ -151,13 +183,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         </AnimatePresence>
       </div>
       <div className="flex items-center justify-center gap-4">
-        <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser}>
+        <Button onClick={() => setSwipeTrigger('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || swipeTrigger !== null}>
           <X className="h-8 w-8" />
         </Button>
-        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || swipeTrigger !== null} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
-        <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser}>
+        <Button onClick={() => setSwipeTrigger('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || swipeTrigger !== null}>
           <Heart className="h-8 w-8 fill-green-500" />
         </Button>
       </div>
