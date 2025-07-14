@@ -5,7 +5,7 @@ import * as React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Image from 'next/image';
-import { Heart, X, Undo2 } from 'lucide-react';
+import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -192,7 +192,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   data-ai-hint="person portrait"
                 />
                 <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end">
-                  <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                    <Button variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
+                      <MessageSquare className="h-6 w-6" />
+                      <span className="sr-only">Chat</span>
+                    </Button>
+                  </div>
                   <p className="text-white/90 mt-1 line-clamp-2">{activeUser.bio}</p>
                   <p className="text-white/70 text-sm mt-2">{activeUser.distance} miles away</p>
                 </div>
