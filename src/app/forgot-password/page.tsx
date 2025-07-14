@@ -12,6 +12,9 @@ export default function ForgotPasswordPage() {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement;
+       if (target.closest('[data-radix-popper-content-wrapper]')) {
+        return;
+      }
       if (formRef.current && !formRef.current.contains(target)) {
         router.back();
       }

@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { v4 as uuidv4 } from 'uuid';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -125,7 +124,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
 }
 
 
-export async function sendPasswordResetEmail(email: string) {
+export async function sendPasswordResetOtp(email: string) {
     const validatedFields = EmailSchema.safeParse({ email });
     if (!validatedFields.success) {
         return { error: 'Invalid email address.' };
@@ -133,48 +132,44 @@ export async function sendPasswordResetEmail(email: string) {
 
     const supabase = createClient();
     
-    // 1. Check if user exists
     const { data: user, error: userError } = await supabase
         .from('profiles')
         .select('id, email')
         .eq('email', validatedFields.data.email)
         .single();
     
-    // Don't reveal if user exists or not for security, just return success
     if (userError || !user) {
-        console.log(`Password reset requested for non-existent user: ${email}`);
+        // Don't reveal if user exists, just return success.
+        console.log(`Password reset OTP requested for non-existent or error user: ${email}`);
         return { success: true };
     }
 
-    // 2. Generate and store reset token
-    const token = uuidv4();
-    const expires = new Date(new Date().getTime() + 3600 * 1000); // 1 hour from now
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expires = new Date(new Date().getTime() + 600 * 1000); // 10 minutes from now
 
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password_reset_token: token,
+            password_reset_token: otp, // Storing OTP in the token column
             password_reset_token_expires_at: expires.toISOString(),
         })
         .eq('id', user.id);
 
     if (updateError) {
-        console.error("Error storing password reset token:", updateError);
-        return { error: 'Could not create a reset token. Please try again.' };
+        console.error("Error storing password reset OTP:", updateError);
+        return { error: 'Could not create a reset code. Please try again.' };
     }
 
-    // 3. Send email
-    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=${token}`;
     try {
         await sendEmail({
             to: user.email,
-            subject: 'Reset Your RevaDates Password',
+            subject: 'Your RevaDates Password Reset Code',
             html: `
                 <div style="font-family: Arial, sans-serif; color: #333;">
                   <h2>Password Reset Request</h2>
-                  <p>We received a request to reset your password. Click the link below to set a new one:</p>
-                  <p><a href="${resetLink}" style="color: #007bff; text-decoration: none;">Reset Your Password</a></p>
-                  <p>This link will expire in 1 hour.</p>
+                  <p>Your 4-digit verification code is:</p>
+                  <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${otp}</p>
+                  <p>This code will expire in 10 minutes.</p>
                   <p>If you did not request this, please ignore this email.</p>
                 </div>
             `,
@@ -182,44 +177,45 @@ export async function sendPasswordResetEmail(email: string) {
         return { success: true };
     } catch (e) {
         console.error("Failed to send password reset email:", e);
-        return { error: "Could not send the password reset email. Please try again later." };
+        return { error: "Could not send the password reset code. Please try again later." };
     }
 }
 
 const PasswordResetSchema = z.object({
-  token: z.string().uuid(),
+  email: z.string().email(),
+  otp: z.string().length(4, 'OTP must be 4 digits.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
-export async function resetPassword(token: string, password: string) {
-    const validatedFields = PasswordResetSchema.safeParse({ token, password });
+export async function resetPasswordWithOtp(email: string, otp: string, password: string) {
+    const validatedFields = PasswordResetSchema.safeParse({ email, otp, password });
     if (!validatedFields.success) {
-        return { error: 'Invalid request. Please try again.' };
+        const firstError = validatedFields.error.errors[0]?.message;
+        return { error: firstError || 'Invalid input. Please try again.' };
     }
 
     const supabase = createClient();
 
-    // 1. Find user by token and check expiry
     const { data: user, error: tokenError } = await supabase
         .from('profiles')
         .select('id, password_reset_token_expires_at')
-        .eq('password_reset_token', validatedFields.data.token)
+        .eq('email', validatedFields.data.email)
+        .eq('password_reset_token', validatedFields.data.otp)
         .single();
 
     if (tokenError || !user) {
-        return { error: 'Invalid or expired reset token.' };
+        return { error: 'Invalid or expired reset code.' };
     }
 
     const expires = new Date(user.password_reset_token_expires_at);
     if (expires < new Date()) {
-        return { error: 'Invalid or expired reset token.' };
+        return { error: 'Invalid or expired reset code.' };
     }
 
-    // 2. Update password and clear token
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password: validatedFields.data.password, // Remember to HASH passwords in a real app!
+            password: validatedFields.data.password,
             password_reset_token: null,
             password_reset_token_expires_at: null,
         })

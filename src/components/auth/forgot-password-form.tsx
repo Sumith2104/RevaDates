@@ -8,19 +8,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Heart, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sendPasswordResetEmail } from '@/lib/actions';
+import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
 
 export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const { toast } = useToast();
-  const [email, setEmail] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const router = useRouter();
 
-  const handleRequest = async (e: React.FormEvent) => {
+  const [step, setStep] = React.useState<'enter-email' | 'enter-otp'>('enter-email');
+  const [email, setEmail] = React.useState('');
+  const [otp, setOtp] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSuccess, setIsSuccess] = React.useState(false);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const result = await sendPasswordResetEmail(email);
+    const result = await sendPasswordResetOtp(email);
 
     setIsLoading(false);
 
@@ -31,25 +39,107 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
             description: result.error,
         });
     } else {
-        setIsSubmitted(true);
+        setStep('enter-otp');
+        toast({
+            title: 'Verification Code Sent',
+            description: 'If an account exists, a code has been sent.',
+        });
     }
   };
 
-  if (isSubmitted) {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+        toast({ variant: 'destructive', title: "Passwords don't match" });
+        return;
+    }
+    
+    setIsLoading(true);
+    const result = await resetPasswordWithOtp(email, otp, password);
+    setIsLoading(false);
+
+    if (result.error) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+    } else {
+        toast({ title: 'Success', description: 'Your password has been reset.' });
+        setIsSuccess(true);
+    }
+  }
+
+  if (isSuccess) {
     return (
         <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>If an account with that email exists, we've sent a link to reset your password.</CardDescription>
+            <CardTitle className="text-2xl">Password Reset</CardTitle>
+            <CardDescription>Your password has been changed successfully.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/login">Back to Login</Link>
+            <Button asChild className="w-full" onClick={() => router.push('/login')}>
+              Proceed to Login
             </Button>
           </CardContent>
         </Card>
     );
+  }
+
+  if (step === 'enter-otp') {
+    return (
+        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
+            <CardHeader className="text-center">
+                <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
+                <CardTitle className="text-2xl">Reset Password</CardTitle>
+                <CardDescription>Enter the code sent to your email and your new password.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form className="grid gap-4" onSubmit={handleOtpSubmit}>
+                    <div className="grid gap-2">
+                        <Label htmlFor="otp">Verification Code</Label>
+                        <Input
+                        id="otp"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="****"
+                        required
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">New Password</Label>
+                        <Input
+                        id="password"
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input
+                        id="confirm-password"
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isLoading}
+                        />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Reset Password
+                    </Button>
+                    <Button variant="link" type="button" onClick={() => setStep('enter-email')}>
+                        Back
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    )
   }
 
   return (
@@ -57,10 +147,10 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
       <CardHeader className="text-center">
         <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
         <CardTitle className="text-2xl">Forgot Password</CardTitle>
-        <CardDescription>Enter your email and we'll send you a link to reset your password.</CardDescription>
+        <CardDescription>Enter your email and we'll send you a code to reset your password.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4" onSubmit={handleRequest}>
+        <form className="grid gap-4" onSubmit={handleEmailSubmit}>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -75,7 +165,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send Reset Link
+            Send Code
           </Button>
            <Button variant="link" asChild>
                 <Link href="/login">Back to Login</Link>
