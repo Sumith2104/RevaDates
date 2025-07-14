@@ -29,46 +29,21 @@ function AnimatedCard({
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const rejectOpacity = useTransform(x, [0, -100], [0, 1]);
-  const [isExiting, setIsExiting] = React.useState(false);
 
   React.useEffect(() => {
-    if (!swipeTrigger || isExiting) return;
-
-    setIsExiting(true);
-    const finalX = swipeTrigger === 'right' ? 1000 : -1000;
-
-    animate(x, finalX, {
-      type: 'spring',
-      stiffness: 400,
-      damping: 40,
-      onComplete: () => {
-        onSwipe(swipeTrigger);
-        if (onSwipeComplete) {
-          onSwipeComplete();
-        }
-      },
-    });
+    if (!swipeTrigger) return;
+    onSwipe(swipeTrigger);
+    if (onSwipeComplete) {
+      onSwipeComplete();
+    }
   // The dependency array is intentionally limited to swipeTrigger to only react to button clicks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swipeTrigger, isExiting]);
+  }, [swipeTrigger]);
 
   function handleDragEnd(_: any, info: { offset: { x: number } }) {
-    if (isExiting) return;
-
     if (Math.abs(info.offset.x) > sensitivity) {
       const direction = info.offset.x > 0 ? 'right' : 'left';
-      setIsExiting(true);
-      
-      const finalX = direction === 'right' ? 1000 : -1000;
-       animate(x, finalX, {
-          type: 'spring',
-          stiffness: 400,
-          damping: 40,
-          onComplete: () => {
-              onSwipe(direction);
-          }
-       });
-
+      onSwipe(direction);
     } else {
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
     }
@@ -83,10 +58,14 @@ function AnimatedCard({
       dragElastic={0.6}
       whileTap={{ cursor: 'grabbing' }}
       onDragEnd={handleDragEnd}
-      // Add initial and animate props for entering animation
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
-      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+      exit={{ 
+        x: (x.getVelocity() > 0 ? 1 : -1) * 500,
+        opacity: 0,
+        scale: 0.9,
+        transition: { duration: 0.3 } 
+      }}
     >
       <div className="relative w-full h-full">
         <motion.div
@@ -132,6 +111,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
 
     setHistory(prev => [swipedUser, ...prev]);
     setUsers(prev => prev.slice(0, -1));
+    setSwipeTrigger(null);
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
     if (result.error) {
@@ -178,17 +158,11 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   React.useEffect(() => {
     setUsers(initialUsers);
   }, [initialUsers]);
-
-  const triggerSwipe = (direction: 'left' | 'right') => {
-    if (swipeTrigger === null) {
-      setSwipeTrigger(direction);
-    }
-  };
   
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
       <div className="relative w-full aspect-[3/4]" style={{ perspective: 800 }}>
-        <AnimatePresence onExitComplete={() => setSwipeTrigger(null)}>
+        <AnimatePresence>
           {activeUser ? (
             <AnimatedCard
               key={activeUser.id}
@@ -227,13 +201,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         </AnimatePresence>
       </div>
       <div className="flex items-center justify-center gap-4">
-        <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || swipeTrigger !== null}>
+        <Button onClick={() => setSwipeTrigger('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || swipeTrigger !== null}>
           <X className="h-8 w-8" />
         </Button>
         <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || swipeTrigger !== null || isUndoing} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
-        <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || swipeTrigger !== null}>
+        <Button onClick={() => setSwipeTrigger('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || swipeTrigger !== null}>
           <Heart className="h-8 w-8 fill-green-500" />
         </Button>
       </div>
