@@ -42,7 +42,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
         setStep('enter-otp');
         toast({
             title: 'Verification Code Sent',
-            description: 'If an account exists, a code has been sent.',
+            description: 'A code has been sent to your email.',
         });
     }
   };
