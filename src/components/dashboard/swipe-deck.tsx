@@ -14,12 +14,14 @@ interface AnimatedCardProps {
   children: React.ReactNode;
   onSwipe: (direction: 'left' | 'right') => void;
   onTap?: () => void;
+  dragEndVelocity: number;
 }
 
 function AnimatedCard({
   children,
   onSwipe,
   onTap,
+  dragEndVelocity,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
@@ -41,7 +43,7 @@ function AnimatedCard({
       }}
       onTap={onTap}
       exit={{
-        x: (x.getVelocity() > 0 ? 1 : -1) * 500,
+        x: dragEndVelocity > 0 ? 500 : -500,
         opacity: 0,
         scale: 0.9,
         transition: { duration: 0.3 } 
@@ -79,6 +81,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [isUndoing, setIsUndoing] = React.useState(false);
   const [isBioVisible, setIsBioVisible] = React.useState(false);
+  const [dragEndVelocity, setDragEndVelocity] = React.useState(0);
   const { toast } = useToast();
 
   const activeIndex = users.length - 1;
@@ -86,6 +89,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
+
+    // Set velocity for exit animation
+    setDragEndVelocity(direction === 'right' ? 1 : -1);
 
     setIsBioVisible(false); // Hide bio for the next card
     const swipedUser = users[activeIndex];
@@ -156,6 +162,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               key={activeUser.id}
               onSwipe={handleSwipe}
               onTap={() => setIsBioVisible(v => !v)}
+              dragEndVelocity={dragEndVelocity}
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                 <Image
