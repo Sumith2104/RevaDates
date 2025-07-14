@@ -75,8 +75,8 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
             <CardDescription>Your password has been changed successfully.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="w-full" onClick={() => router.push('/login')}>
-              Proceed to Login
+            <Button className="w-full" onClick={() => router.push('/login')}>
+              Login
             </Button>
           </CardContent>
         </Card>
