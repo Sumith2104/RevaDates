@@ -16,6 +16,7 @@ interface AnimatedCardProps {
   sensitivity?: number;
   swipeTrigger?: 'left' | 'right' | null;
   onSwipeComplete?: () => void;
+  onTap?: () => void;
 }
 
 function AnimatedCard({
@@ -24,6 +25,7 @@ function AnimatedCard({
   sensitivity = 100,
   swipeTrigger = null,
   onSwipeComplete,
+  onTap,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
@@ -58,6 +60,7 @@ function AnimatedCard({
       dragElastic={0.6}
       whileTap={{ cursor: 'grabbing' }}
       onDragEnd={handleDragEnd}
+      onTap={onTap}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
       exit={{ 
@@ -98,6 +101,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [swipeTrigger, setSwipeTrigger] = React.useState<'left' | 'right' | null>(null);
   const [isUndoing, setIsUndoing] = React.useState(false);
+  const [isBioVisible, setIsBioVisible] = React.useState(false);
   const { toast } = useToast();
 
   const activeIndex = users.length - 1;
@@ -106,6 +110,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
 
+    setIsBioVisible(false); // Hide bio for the next card
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
@@ -137,6 +142,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const handleUndo = async () => {
     if (history.length === 0 || isUndoing) return;
 
+    setIsBioVisible(false);
     setIsUndoing(true);
     const lastUser = history[0];
     const result = await handleUndoSwipeAction(currentUserId, lastUser.id);
@@ -157,7 +163,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
 
   React.useEffect(() => {
     setUsers(initialUsers);
+    setIsBioVisible(false);
   }, [initialUsers]);
+
+  React.useEffect(() => {
+    // Reset bio visibility when the active user changes
+    setIsBioVisible(false);
+  }, [activeUser?.id]);
   
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
@@ -169,6 +181,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               onSwipe={handleSwipe}
               swipeTrigger={swipeTrigger}
               onSwipeComplete={() => setSwipeTrigger(null)}
+              onTap={() => setIsBioVisible(v => !v)}
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                 <Image
@@ -179,7 +192,12 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   className="object-cover pointer-events-none"
                   data-ai-hint="person portrait"
                 />
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end">
+                <motion.div 
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
+                    initial={{ height: '33.33%' }}
+                    animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
                   <div className="flex justify-between items-center">
                     <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
                     <Button variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
@@ -187,9 +205,20 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                       <span className="sr-only">Chat</span>
                     </Button>
                   </div>
-                  <p className="text-white/90 mt-1 line-clamp-2">{activeUser.bio}</p>
+                  <AnimatePresence>
+                    {isBioVisible && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
+                            exit={{ opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
+                        </motion.div>
+                    )}
+                  </AnimatePresence>
                   <p className="text-white/70 text-sm mt-2">{activeUser.distance} miles away</p>
-                </div>
+                </motion.div>
               </div>
             </AnimatedCard>
           ) : (
