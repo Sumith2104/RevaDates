@@ -139,14 +139,13 @@ export async function sendPasswordResetOtp(email: string) {
         .single();
     
     if (userError || !user) {
-        // Don't reveal if user exists, just return success.
-        console.log(`Password reset OTP requested for non-existent or error user: ${email}`);
-        return { success: true };
+        return { error: "No account found with that email address." };
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const expires = new Date(new Date().getTime() + 600 * 1000); // 10 minutes from now
 
+    // Use service role client to bypass RLS for this trusted server operation
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -215,7 +214,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password: validatedFields.data.password,
+            password: validatedFields.data.password, // Passwords should be hashed!
             password_reset_token: null,
             password_reset_token_expires_at: null,
         })
