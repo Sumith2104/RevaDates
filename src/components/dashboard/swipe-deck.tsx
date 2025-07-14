@@ -30,15 +30,6 @@ function AnimatedCard({
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const rejectOpacity = useTransform(x, [0, -100], [0, 1]);
 
-  function handleDragEnd(_: any, info: { offset: { x: number } }) {
-    if (Math.abs(info.offset.x) > sensitivity) {
-      const direction = info.offset.x > 0 ? 'right' : 'left';
-      onSwipe(direction);
-    } else {
-      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
-    }
-  }
-
   React.useEffect(() => {
     if (!swipeTrigger) return;
 
@@ -59,6 +50,15 @@ function AnimatedCard({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swipeTrigger]);
 
+  function handleDragEnd(_: any, info: { offset: { x: number } }) {
+    if (Math.abs(info.offset.x) > sensitivity) {
+      const direction = info.offset.x > 0 ? 'right' : 'left';
+      onSwipe(direction);
+    } else {
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    }
+  }
+  
   return (
     <motion.div
       className="absolute inset-0 cursor-grab"
