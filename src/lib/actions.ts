@@ -230,3 +230,24 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
 
     return { success: true };
 }
+
+export async function handleUndoSwipeAction(swiperId: string, swipedId: string) {
+  if (!swiperId || !swipedId) {
+    return { error: 'Invalid user IDs provided for undo.' };
+  }
+
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('swipes')
+    .delete()
+    .eq('swiper_id', swiperId)
+    .eq('swiped_id', swipedId);
+
+  if (error) {
+    console.error('Error undoing swipe:', error);
+    return { error: 'Could not undo your last swipe.' };
+  }
+
+  return { success: true };
+}

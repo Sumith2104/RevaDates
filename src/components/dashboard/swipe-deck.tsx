@@ -7,7 +7,7 @@ import type { UserProfile } from '@/lib/types';
 import Image from 'next/image';
 import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { handleSwipeAction } from '@/lib/actions';
+import { handleSwipeAction, handleUndoSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface AnimatedCardProps {
@@ -118,6 +118,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const [users, setUsers] = React.useState(initialUsers);
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [swipeTrigger, setSwipeTrigger] = React.useState<'left' | 'right' | null>(null);
+  const [isUndoing, setIsUndoing] = React.useState(false);
   const { toast } = useToast();
 
   const activeIndex = users.length - 1;
@@ -153,13 +154,26 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     }
   };
   
-  const handleUndo = () => {
-    if (history.length > 0) {
-      const lastUser = history[0];
+  const handleUndo = async () => {
+    if (history.length === 0 || isUndoing) return;
+
+    setIsUndoing(true);
+    const lastUser = history[0];
+    const result = await handleUndoSwipeAction(currentUserId, lastUser.id);
+    
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "Undo failed",
+        description: result.error,
+      });
+    } else {
       setHistory(prev => prev.slice(1));
       setUsers(prev => [...prev, lastUser]);
     }
+    setIsUndoing(false);
   };
+
 
   React.useEffect(() => {
     setUsers(initialUsers);
@@ -216,7 +230,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || swipeTrigger !== null}>
           <X className="h-8 w-8" />
         </Button>
-        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || swipeTrigger !== null} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || swipeTrigger !== null || isUndoing} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
         <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || swipeTrigger !== null}>
