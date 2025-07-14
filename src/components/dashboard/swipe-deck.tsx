@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Image from 'next/image';
 import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
@@ -13,43 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 interface AnimatedCardProps {
   children: React.ReactNode;
   onSwipe: (direction: 'left' | 'right') => void;
-  sensitivity?: number;
-  swipeTrigger?: 'left' | 'right' | null;
-  onSwipeComplete?: () => void;
   onTap?: () => void;
 }
 
 function AnimatedCard({
   children,
   onSwipe,
-  sensitivity = 100,
-  swipeTrigger = null,
-  onSwipeComplete,
   onTap,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const rejectOpacity = useTransform(x, [0, -100], [0, 1]);
-
-  React.useEffect(() => {
-    if (!swipeTrigger) return;
-    onSwipe(swipeTrigger);
-    if (onSwipeComplete) {
-      onSwipeComplete();
-    }
-  // The dependency array is intentionally limited to swipeTrigger to only react to button clicks.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swipeTrigger]);
-
-  function handleDragEnd(_: any, info: { offset: { x: number } }) {
-    if (Math.abs(info.offset.x) > sensitivity) {
-      const direction = info.offset.x > 0 ? 'right' : 'left';
-      onSwipe(direction);
-    } else {
-      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
-    }
-  }
   
   return (
     <motion.div
@@ -59,16 +34,20 @@ function AnimatedCard({
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.6}
       whileTap={{ cursor: 'grabbing' }}
-      onDragEnd={handleDragEnd}
+      onDragEnd={(_, info) => {
+        if (Math.abs(info.offset.x) > 100) {
+          onSwipe(info.offset.x > 0 ? 'right' : 'left');
+        }
+      }}
       onTap={onTap}
-      initial={{ scale: 0.95, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
-      exit={{ 
+      exit={{
         x: (x.getVelocity() > 0 ? 1 : -1) * 500,
         opacity: 0,
         scale: 0.9,
         transition: { duration: 0.3 } 
       }}
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
     >
       <div className="relative w-full h-full">
         <motion.div
@@ -83,7 +62,6 @@ function AnimatedCard({
         >
           <X className="h-32 w-32" />
         </motion.div>
-
         {children}
       </div>
     </motion.div>
@@ -99,7 +77,6 @@ interface SwipeDeckProps {
 export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
   const [history, setHistory] = React.useState<UserProfile[]>([]);
-  const [swipeTrigger, setSwipeTrigger] = React.useState<'left' | 'right' | null>(null);
   const [isUndoing, setIsUndoing] = React.useState(false);
   const [isBioVisible, setIsBioVisible] = React.useState(false);
   const { toast } = useToast();
@@ -115,8 +92,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     const action = direction === 'right' ? 'liked' : 'rejected';
 
     setHistory(prev => [swipedUser, ...prev]);
+    // Optimistically update the UI
     setUsers(prev => prev.slice(0, -1));
-    setSwipeTrigger(null);
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
     if (result.error) {
@@ -160,7 +137,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     setIsUndoing(false);
   };
 
-
   React.useEffect(() => {
     setUsers(initialUsers);
     setIsBioVisible(false);
@@ -179,8 +155,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
             <AnimatedCard
               key={activeUser.id}
               onSwipe={handleSwipe}
-              swipeTrigger={swipeTrigger}
-              onSwipeComplete={() => setSwipeTrigger(null)}
               onTap={() => setIsBioVisible(v => !v)}
             >
               <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
@@ -230,13 +204,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         </AnimatePresence>
       </div>
       <div className="flex items-center justify-center gap-4">
-        <Button onClick={() => setSwipeTrigger('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || swipeTrigger !== null}>
+        <Button onClick={() => handleSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser}>
           <X className="h-8 w-8" />
         </Button>
-        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || swipeTrigger !== null || isUndoing} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
-        <Button onClick={() => setSwipeTrigger('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || swipeTrigger !== null}>
+        <Button onClick={() => handleSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser}>
           <Heart className="h-8 w-8 fill-green-500" />
         </Button>
       </div>
