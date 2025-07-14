@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { handleSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
-// New sub-component for handling the card animation logic
 function AnimatedCard({ children, onSwipe, sensitivity = 100 }: { children: React.ReactNode, onSwipe: (direction: 'left' | 'right') => void, sensitivity?: number }) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
@@ -44,9 +43,7 @@ function AnimatedCard({ children, onSwipe, sensitivity = 100 }: { children: Reac
         transition: { duration: 0.3 }
       }}
     >
-        {/* Container for the card content and the feedback icons */}
         <div className="relative w-full h-full">
-            {/* Feedback Icons */}
             <motion.div style={{ opacity: likeOpacity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-400 pointer-events-none">
                 <Heart className="h-32 w-32" fill="currentColor" />
             </motion.div>
@@ -54,7 +51,6 @@ function AnimatedCard({ children, onSwipe, sensitivity = 100 }: { children: Reac
                 <X className="h-32 w-32" />
             </motion.div>
             
-            {/* Card Content passed as children */}
             {children}
         </div>
     </motion.div>
@@ -81,7 +77,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     const swipedUser = users[activeIndex];
     const action = swipeDirection === 'right' ? 'liked' : 'rejected';
 
-    // Optimistically update UI
     setHistory(prev => [users[activeIndex], ...prev]);
     setUsers(prev => prev.slice(0, prev.length - 1));
 
@@ -92,7 +87,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         title: "Something went wrong",
         description: result.error,
        });
-       // Revert UI change on error
        setUsers(initialUsers);
        setHistory(prev => prev.slice(1));
        return;
@@ -107,8 +101,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   };
   
   const handleUndo = () => {
-    // Note: A true undo would require reverting the database action.
-    // This is a UI-only undo for now.
     if (history.length > 0) {
       const lastUser = history[0];
       setHistory(prev => prev.slice(1));
