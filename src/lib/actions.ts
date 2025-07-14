@@ -63,12 +63,15 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
 
   const supabase = createClient();
 
-  // Record the swipe action
-  const { error: swipeError } = await supabase.from('swipes').insert({
-    swiper_id: swiperId,
-    swiped_id: swipedId,
-    action,
-  });
+  // Upsert the swipe action to prevent unique constraint errors on re-swiping
+  const { error: swipeError } = await supabase.from('swipes').upsert(
+    {
+      swiper_id: swiperId,
+      swiped_id: swipedId,
+      action: action,
+    },
+    { onConflict: 'swiper_id,swiped_id' }
+  );
 
   if (swipeError) {
     console.error('Error recording swipe:', swipeError);
