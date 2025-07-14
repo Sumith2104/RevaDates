@@ -14,6 +14,14 @@ export function createClient() {
   // This setup is simple as we are not passing cookies for auth.
   return createServerClient(
     supabaseUrl,
-    supabaseServiceKey
+    supabaseServiceKey,
+    {
+        auth: {
+            // Not using Supabase Auth, so we can bypass RLS for server-side actions
+            // by using the service_role key.
+            persistSession: false,
+            autoRefreshToken: false,
+        }
+    }
   );
 }
