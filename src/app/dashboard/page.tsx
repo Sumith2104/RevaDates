@@ -9,29 +9,6 @@ import type { UserProfile } from '@/lib/types';
 import { differenceInYears } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
-// Helper function to parse POINT data if it comes as a string
-function parsePoint(location: any): { lat: number; lng: number } | null {
-  if (!location) return null;
-  // Handle GeoJSON object from PostGIS
-  if (typeof location === 'object' && location.type === 'Point' && Array.isArray(location.coordinates)) {
-    return { lng: location.coordinates[0], lat: location.coordinates[1] };
-  }
-  // Handle string format like 'POINT(-74.0060 40.7128)'
-  if (typeof location === 'string' && location.startsWith('POINT')) {
-    const coords = location.replace('POINT(', '').replace(')', '').split(' ');
-    const lng = parseFloat(coords[0]);
-    const lat = parseFloat(coords[1]);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      return { lat, lng };
-    }
-  }
-  // Handle plain object { lat, lng }
-  if (typeof location === 'object' && 'lat' in location && 'lng' in location) {
-    return location;
-  }
-  return null;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
@@ -61,11 +38,16 @@ export default function DashboardPage() {
         .eq('id', currentUserId)
         .single();
       
-      if (currentUserError || !currentUserProfile || !currentUserProfile.location) {
-        setLocationError(true);
-        setUsers([]);
-        setLoading(false);
-        return;
+      if (currentUserError) {
+          console.error("Error fetching current user:", currentUserError);
+          setUsers([]);
+          setLoading(false);
+          return;
+      }
+      
+      const hasLocation = currentUserProfile && currentUserProfile.location;
+      if (!hasLocation) {
+        setLocationError(true); // Keep the flag to show a dismissible notice later
       }
 
       // Get IDs of users the current user has already swiped on
@@ -82,30 +64,46 @@ export default function DashboardPage() {
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
       
-      // Use the RPC function to get nearby profiles
-      const { data: nearbyProfiles, error: rpcError } = await supabase.rpc(
-        'find_nearby_profiles',
-        {
-          current_user_id: currentUserId,
-          radius_meters: 50000, // 50km radius
-        }
-      );
+      let profiles: any[] = [];
+      let rpcError = null;
+
+      if (hasLocation) {
+        // Use the RPC function to get nearby profiles
+        const { data: nearbyProfiles, error } = await supabase.rpc(
+          'find_nearby_profiles',
+          {
+            current_user_id: currentUserId,
+            radius_meters: 50000, // 50km radius
+          }
+        );
+        profiles = nearbyProfiles;
+        rpcError = error;
+      } else {
+        // Fallback: get all other profiles if location is not available
+        const { data: allProfiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .not('id', 'eq', currentUserId);
+        profiles = allProfiles;
+        rpcError = error;
+      }
+
 
       if (rpcError) {
-        console.error('Error fetching nearby profiles:', rpcError);
+        console.error('Error fetching profiles:', rpcError);
         setUsers([]);
         setLoading(false);
         return;
       }
 
       // Filter out users that have been swiped on
-      const profiles = nearbyProfiles.filter(p => !swipedUserIds.includes(p.id));
+      const filteredProfiles = profiles.filter(p => !swipedUserIds.includes(p.id));
 
-      if (profiles) {
-        const mappedUsers: UserProfile[] = profiles.map(profile => ({
+      if (filteredProfiles) {
+        const mappedUsers: UserProfile[] = filteredProfiles.map(profile => ({
           ...profile,
           age: differenceInYears(new Date(), new Date(profile.dob)),
-          distance: Math.round(profile.distance_meters / 1000), // Convert meters to km
+          distance: profile.distance_meters ? Math.round(profile.distance_meters / 1000) : null,
         }));
         setUsers(mappedUsers);
       }

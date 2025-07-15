@@ -5,7 +5,7 @@ export interface UserProfile {
   age: number;
   photos: string[];
   bio: string;
-  distance: number;
+  distance: number | null;
   location?: any; // Can be string or object
   distance_meters?: number;
 }
