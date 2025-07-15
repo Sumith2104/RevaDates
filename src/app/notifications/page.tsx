@@ -85,9 +85,9 @@ export default function NotificationsPage() {
                     </div>
                 )}
                  {!loading && !error && notifications.length > 0 && (
-                     <div className="space-y-2">
+                     <div className="space-y-4">
                         {notifications.map((notif) => (
-                           <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg ${notif.is_read ? 'bg-transparent' : 'bg-muted'}`}>
+                           <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg bg-muted`}>
                                 <div className="relative">
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage src={notif.sender?.photos?.[0] || ''} alt={notif.sender?.name} />
@@ -98,7 +98,7 @@ export default function NotificationsPage() {
                                     </div>
                                 </div>
                                 <div className="flex-grow">
-                                    <p className="text-sm">{notif.message}</p>
+                                    <p className="text-sm font-semibold">{notif.message}</p>
                                     <p className="text-xs text-muted-foreground mt-1">
                                         {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
                                     </p>
