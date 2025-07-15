@@ -208,20 +208,11 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
             <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                <Avatar className="w-full h-full rounded-2xl">
                   <AvatarImage 
-                      asChild
                       src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
                       alt={activeUser.name}
-                  >
-                     <Image
-                        src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : 'https://placehold.co/600x800.png'}
-                        alt={activeUser.name}
-                        className="object-cover w-full h-full"
-                        width={600}
-                        height={800}
-                        priority={true} // Preload the visible image
-                     />
-                  </AvatarImage>
-                  <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold">
+                      className="object-cover w-full h-full"
+                  />
+                  <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold flex items-center justify-center">
                       {getInitials(activeUser.name)}
                   </AvatarFallback>
               </Avatar>
