@@ -23,39 +23,38 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const updateUserLocation = (userId: string): Promise<void> => {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-        console.log("Geolocation is not supported by this browser.");
-        resolve(); // Resolve promise even if geolocation is not supported
-        return;
+            console.log("Geolocation is not supported by this browser.");
+            resolve(); // Resolve promise even if geolocation is not supported
+            return;
         }
 
         navigator.geolocation.getCurrentPosition(
-        async (position) => {
-            const { latitude, longitude } = position.coords;
-            const locationString = `POINT(${longitude} ${latitude})`;
-            
-            const { error } = await supabase
-                .from('profiles')
-                .update({ location: locationString })
-                .eq('id', userId);
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const locationString = `POINT(${longitude} ${latitude})`;
+                
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ location: locationString })
+                    .eq('id', userId);
 
-            if (error) {
-                console.error("Error updating location:", error.message);
+                if (error) {
+                    console.error("Error updating location:", error.message);
+                }
+                resolve();
+            },
+            (error) => {
+                console.error("Error getting location:", error.message);
+                toast({
+                    variant: 'default',
+                    title: 'Location Skipped',
+                    description: "Could not access your location. You can enable it in settings for better matches.",
+                });
+                resolve(); // Resolve promise even on error
             }
-            resolve();
-        },
-        (error) => {
-            console.error("Error getting location:", error.message);
-            toast({
-                variant: 'default',
-                title: 'Location Skipped',
-                description: "Could not access your location. You can enable it in settings for better matches.",
-            });
-            resolve(); // Resolve promise even on error
-        }
         );
     });
   };
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +76,10 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       });
     } else {
       localStorage.setItem('currentUserId', data.id);
+      
+      // Wait for location update to complete before moving on
       await updateUserLocation(data.id);
+      
       setIsLoading(false);
       toast({
         title: 'Login Successful',
