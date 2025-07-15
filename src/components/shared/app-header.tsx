@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, User } from 'lucide-react';
+import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function AppHeader() {
@@ -12,12 +12,20 @@ export function AppHeader() {
           <Heart className="h-6 w-6 text-primary" />
           <span>RevaDates</span>
         </Link>
-        <Button asChild variant="ghost" size="icon">
-          <Link href="/profile">
-            <User className="h-6 w-6" />
-            <span className="sr-only">Profile</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="icon">
+            <Link href="#">
+              <Bell className="h-6 w-6" />
+              <span className="sr-only">Notifications</span>
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/profile">
+              <User className="h-6 w-6" />
+              <span className="sr-only">Profile</span>
+            </Link>
+          </Button>
+        </div>
       </div>
     </header>
   );
