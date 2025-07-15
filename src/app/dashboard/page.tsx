@@ -68,6 +68,13 @@ export default function DashboardPage() {
           age: differenceInYears(new Date(), new Date(profile.dob)),
           distance: profile.distance_meters ? Math.round(profile.distance_meters) : null,
         }));
+        
+        // Shuffle the mapped users array
+        for (let i = mappedUsers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [mappedUsers[i], mappedUsers[j]] = [mappedUsers[j], mappedUsers[i]];
+        }
+        
         setUsers(mappedUsers);
       }
        setLoading(false);
