@@ -229,6 +229,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                             <Input
                                 key={index}
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 name="otp"
                                 maxLength={1}
                                 value={data}

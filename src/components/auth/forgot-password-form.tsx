@@ -141,6 +141,8 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                               <Input
                                 key={index}
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 name="otp"
                                 maxLength={1}
                                 value={data}
