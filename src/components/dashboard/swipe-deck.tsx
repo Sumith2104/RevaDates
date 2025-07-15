@@ -194,6 +194,15 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     setIsBioVisible(false);
   }, [activeUser?.id]);
   
+  const formatDistance = (distanceInMeters: number | null) => {
+    if (distanceInMeters === null) return null;
+    if (distanceInMeters < 1000) {
+      return `${distanceInMeters} meters away`;
+    }
+    const distanceInKm = (distanceInMeters / 1000).toFixed(1);
+    return `${distanceInKm} km away`;
+  };
+  
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
       <div className="relative w-full aspect-[3/4]" style={{ perspective: 800 }}>
@@ -249,7 +258,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   )}
                 </AnimatePresence>
                 {activeUser.distance !== null && (
-                    <p className="text-white/70 text-sm mt-2">{activeUser.distance} meters away</p>
+                    <p className="text-white/70 text-sm mt-2">{formatDistance(activeUser.distance)}</p>
                 )}
               </motion.div>
             </div>
