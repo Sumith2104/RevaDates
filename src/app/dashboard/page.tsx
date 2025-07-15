@@ -49,7 +49,6 @@ export default function DashboardPage() {
         'find_nearby_profiles',
         {
           current_user_id: currentUserId,
-          radius_meters: 50000, // This radius is only applied if the current user has a location
         }
       );
 
