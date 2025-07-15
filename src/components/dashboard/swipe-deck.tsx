@@ -5,7 +5,7 @@ import * as React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
-import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
+import { Heart, X, Undo2, MessageSquare, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,10 @@ function AnimatedCard({
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
+
+  const likeOpacity = useTransform(x, [50, 120], [0, 1]);
+  const passOpacity = useTransform(x, [-120, -50], [1, 0]);
+
   const isSwiping = React.useRef(false);
 
   const handleDragEnd = (_: any, info: { offset: { x: number } }) => {
@@ -77,6 +81,22 @@ function AnimatedCard({
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
     >
       <div className="relative w-full h-full">
+         {/* LIKE Overlay */}
+        <motion.div
+          style={{ opacity: likeOpacity }}
+          className="absolute top-6 left-6 bg-white/90 text-green-600 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[-10deg] z-10 flex items-center gap-2"
+        >
+          LIKE <Heart className="h-5 w-5 fill-current" />
+        </motion.div>
+
+        {/* PASS Overlay */}
+        <motion.div
+          style={{ opacity: passOpacity }}
+          className="absolute top-6 right-6 bg-white/90 text-red-600 border-2 border-red-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[10deg] z-10 flex items-center gap-2"
+        >
+          PASS <X className="h-5 w-5" />
+        </motion.div>
+
         {children}
       </div>
     </motion.div>
