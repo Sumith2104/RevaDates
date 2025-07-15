@@ -20,24 +20,39 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const updateUserLocation = async (userId: string) => {
-    if (!navigator.geolocation) {
-      console.log("Geolocation is not supported by this browser.");
-      return;
-    }
+  const updateUserLocation = (userId: string): Promise<void> => {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+        console.log("Geolocation is not supported by this browser.");
+        resolve(); // Resolve promise even if geolocation is not supported
+        return;
+        }
 
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      const locationString = `POINT(${longitude} ${latitude})`;
-      
-      await supabase
-        .from('profiles')
-        .update({ location: locationString })
-        .eq('id', userId);
-        
-    }, (error) => {
-      console.error("Error getting location:", error.message);
-      // Optionally inform the user that location could not be updated
+        navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            const locationString = `POINT(${longitude} ${latitude})`;
+            
+            const { error } = await supabase
+                .from('profiles')
+                .update({ location: locationString })
+                .eq('id', userId);
+
+            if (error) {
+                console.error("Error updating location:", error.message);
+            }
+            resolve();
+        },
+        (error) => {
+            console.error("Error getting location:", error.message);
+            toast({
+                variant: 'default',
+                title: 'Location Skipped',
+                description: "Could not access your location. You can enable it in settings for better matches.",
+            });
+            resolve(); // Resolve promise even on error
+        }
+        );
     });
   };
 
@@ -53,9 +68,8 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       .eq('password', password) // In a real app, passwords should be hashed!
       .single();
 
-    setIsLoading(false);
-
     if (queryError || !data) {
+      setIsLoading(false);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
@@ -64,6 +78,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     } else {
       localStorage.setItem('currentUserId', data.id);
       await updateUserLocation(data.id);
+      setIsLoading(false);
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
