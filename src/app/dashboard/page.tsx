@@ -46,10 +46,7 @@ export default function DashboardPage() {
       }
       
       const hasLocation = currentUserProfile && currentUserProfile.location;
-      if (!hasLocation) {
-        setLocationError(true); // Keep the flag to show a dismissible notice later
-      }
-
+      
       // Get IDs of users the current user has already swiped on
       const { data: swipedUsersData, error: swipedError } = await supabase
         .from('swipes')
@@ -64,8 +61,8 @@ export default function DashboardPage() {
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
       
-      let profiles: any[] = [];
-      let rpcError = null;
+      let profiles: any[] | null = [];
+      let fetchError = null;
 
       if (hasLocation) {
         // Use the RPC function to get nearby profiles
@@ -77,27 +74,28 @@ export default function DashboardPage() {
           }
         );
         profiles = nearbyProfiles;
-        rpcError = error;
+        fetchError = error;
       } else {
         // Fallback: get all other profiles if location is not available
+        setLocationError(true); // Set flag to show a dismissible notice later if needed
         const { data: allProfiles, error } = await supabase
           .from('profiles')
           .select('*')
           .not('id', 'eq', currentUserId);
         profiles = allProfiles;
-        rpcError = error;
+        fetchError = error;
       }
 
 
-      if (rpcError) {
-        console.error('Error fetching profiles:', rpcError);
+      if (fetchError) {
+        console.error('Error fetching profiles:', fetchError);
         setUsers([]);
         setLoading(false);
         return;
       }
 
       // Filter out users that have been swiped on
-      const filteredProfiles = profiles.filter(p => !swipedUserIds.includes(p.id));
+      const filteredProfiles = profiles ? profiles.filter(p => !swipedUserIds.includes(p.id)) : [];
 
       if (filteredProfiles) {
         const mappedUsers: UserProfile[] = filteredProfiles.map(profile => ({
@@ -126,16 +124,8 @@ export default function DashboardPage() {
       )
   }
 
-  if (locationError) {
-    return (
-        <AppShell>
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                <p className="text-xl font-medium">Please Enable Location</p>
-                <p className="mt-2">We need your location to find people nearby. Please enable location services in your browser or device settings and log in again.</p>
-            </div>
-        </AppShell>
-    )
-  }
+  // This is a soft-error, we still show profiles, but maybe show a banner later.
+  // if (locationError) { ... }
 
   if (!users || users.length === 0) {
     return (
