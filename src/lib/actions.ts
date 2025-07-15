@@ -107,7 +107,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     // Check for a mutual like (match)
     const { data: mutualLike, error: checkError } = await supabase
       .from('swipes')
-      .select('id')
+      .select('swiper_id') // just need to check for existence
       .eq('swiper_id', swipedId) // The other person
       .eq('swiped_id', swiperId) // You
       .eq('action', 'liked')
