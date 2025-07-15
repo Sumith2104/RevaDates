@@ -223,7 +223,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               >
                 <div className="flex justify-between items-center">
                   <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                  <Button asChild variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
+                  <Button 
+                    asChild 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                       <Link href="/chats">
                           <MessageSquare className="h-6 w-6" />
                           <span className="sr-only">Chat</span>
