@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
 import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
@@ -17,38 +17,62 @@ interface AnimatedCardProps {
   children: React.ReactNode;
   onSwipe: (direction: 'left' | 'right') => void;
   onTap?: () => void;
-  dragEndVelocity: number;
+  triggerSwipeDirection: 'left' | 'right' | null;
+  setTriggerSwipeDirection: (val: 'left' | 'right' | null) => void;
 }
 
 function AnimatedCard({
   children,
   onSwipe,
   onTap,
-  dragEndVelocity,
+  triggerSwipeDirection,
+  setTriggerSwipeDirection,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
-  
+  const isSwiping = React.useRef(false);
+
+  const handleDragEnd = (_: any, info: { offset: { x: number } }) => {
+    if (isSwiping.current || triggerSwipeDirection) return;
+
+    if (Math.abs(info.offset.x) > 100) {
+      const direction = info.offset.x > 0 ? 'right' : 'left';
+      isSwiping.current = true;
+      animate(x, direction === 'right' ? 500 : -500, {
+        duration: 0.5,
+        onComplete: () => {
+          onSwipe(direction);
+        },
+      });
+    } else {
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    }
+  };
+
+  React.useEffect(() => {
+    if (!triggerSwipeDirection) return;
+
+    isSwiping.current = true;
+    animate(x, triggerSwipeDirection === 'right' ? 500 : -500, {
+      duration: 0.5,
+      onComplete: () => {
+        onSwipe(triggerSwipeDirection);
+        setTriggerSwipeDirection(null);
+        isSwiping.current = false;
+      },
+    });
+  }, [triggerSwipeDirection, onSwipe, setTriggerSwipeDirection, x]);
+
   return (
     <motion.div
       className="absolute inset-0 cursor-grab"
       style={{ x, rotateY }}
-      drag="x"
+      drag={!triggerSwipeDirection}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.6}
       whileTap={{ cursor: 'grabbing' }}
-      onDragEnd={(_, info) => {
-        if (Math.abs(info.offset.x) > 100) {
-          onSwipe(info.offset.x > 0 ? 'right' : 'left');
-        }
-      }}
+      onDragEnd={handleDragEnd}
       onTap={onTap}
-      exit={{
-        x: dragEndVelocity > 0 ? 500 : -500,
-        opacity: 0,
-        scale: 0.9,
-        transition: { duration: 0.5 } 
-      }}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
     >
@@ -70,7 +94,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [isUndoing, setIsUndoing] = React.useState(false);
   const [isBioVisible, setIsBioVisible] = React.useState(false);
-  const [dragEndVelocity, setDragEndVelocity] = React.useState(0);
+  const [triggerSwipeDirection, setTriggerSwipeDirection] = React.useState<'left' | 'right' | null>(null);
   const { toast } = useToast();
 
   const activeIndex = users.length - 1;
@@ -78,16 +102,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
-
-    // Set velocity for exit animation
-    setDragEndVelocity(direction === 'right' ? 1 : -1);
-
-    setIsBioVisible(false); // Hide bio for the next card
+    
+    setIsBioVisible(false);
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
     setHistory(prev => [swipedUser, ...prev]);
-    // Optimistically update the UI
+    // State update now happens after animation in onSwipe callback
     setUsers(prev => prev.slice(0, -1));
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
@@ -132,6 +153,11 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     setIsUndoing(false);
   };
 
+  const triggerSwipe = (direction: 'left' | 'right') => {
+    if (!activeUser) return;
+    setTriggerSwipeDirection(direction);
+  }
+
   React.useEffect(() => {
     setUsers(initialUsers);
     setIsBioVisible(false);
@@ -145,73 +171,72 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
       <div className="relative w-full aspect-[3/4]" style={{ perspective: 800 }}>
-        <AnimatePresence>
-          {activeUser ? (
-            <AnimatedCard
-              key={activeUser.id}
-              onSwipe={handleSwipe}
-              onTap={() => setIsBioVisible(v => !v)}
-              dragEndVelocity={dragEndVelocity}
-            >
-              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
-                 <Avatar className="w-full h-full rounded-2xl">
-                    <AvatarImage 
-                        src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
-                        alt={activeUser.name}
-                        className="object-cover w-full h-full"
-                    />
-                    <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold">
-                        {getInitials(activeUser.name)}
-                    </AvatarFallback>
-                </Avatar>
-                <motion.div 
-                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
-                    initial={{ height: '33.33%' }}
-                    animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
-                    transition={{ type: "tween", duration: 0.5, ease: "easeInOut" }}
-                >
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                    <Button asChild variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
-                        <Link href="/chats">
-                            <MessageSquare className="h-6 w-6" />
-                            <span className="sr-only">Chat</span>
-                        </Link>
-                    </Button>
-                  </div>
-                  <AnimatePresence>
-                    {isBioVisible && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
-                            exit={{ opacity: 0, y: 10, transition: { duration: 0.3 } }}
-                            className="overflow-hidden"
-                        >
-                            <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
-                        </motion.div>
-                    )}
-                  </AnimatePresence>
-                  <p className="text-white/70 text-sm mt-2">{activeUser.distance} miles away</p>
-                </motion.div>
-              </div>
-            </AnimatedCard>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                <p className="text-xl font-medium">No more profiles to show.</p>
-                <p className="mt-2">Check back later or adjust your filters.</p>
+        {activeUser ? (
+          <AnimatedCard
+            key={activeUser.id}
+            onSwipe={handleSwipe}
+            onTap={() => setIsBioVisible(v => !v)}
+            triggerSwipeDirection={triggerSwipeDirection}
+            setTriggerSwipeDirection={setTriggerSwipeDirection}
+          >
+            <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
+               <Avatar className="w-full h-full rounded-2xl">
+                  <AvatarImage 
+                      src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
+                      alt={activeUser.name}
+                      className="object-cover w-full h-full"
+                  />
+                  <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold">
+                      {getInitials(activeUser.name)}
+                  </AvatarFallback>
+              </Avatar>
+              <motion.div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
+                  initial={{ height: '33.33%' }}
+                  animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
+                  transition={{ type: "tween", duration: 0.5, ease: "easeInOut" }}
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                  <Button asChild variant="ghost" size="icon" className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20">
+                      <Link href="/chats">
+                          <MessageSquare className="h-6 w-6" />
+                          <span className="sr-only">Chat</span>
+                      </Link>
+                  </Button>
+                </div>
+                <AnimatePresence>
+                  {isBioVisible && (
+                      <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
+                          exit={{ opacity: 0, y: 10, transition: { duration: 0.3 } }}
+                          className="overflow-hidden"
+                      >
+                          <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
+                      </motion.div>
+                  )}
+                </AnimatePresence>
+                <p className="text-white/70 text-sm mt-2">{activeUser.distance} miles away</p>
+              </motion.div>
             </div>
-          )}
-        </AnimatePresence>
+          </AnimatedCard>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+              <p className="text-xl font-medium">No more profiles to show.</p>
+              <p className="mt-2">Check back later or adjust your filters.</p>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-center gap-4">
-        <Button onClick={() => handleSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser}>
+        <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
           <X className="h-8 w-8" />
         </Button>
-        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+        <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing || !!triggerSwipeDirection} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
           <Undo2 className="h-6 w-6" />
         </Button>
-        <Button onClick={() => handleSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser}>
-          <Heart className="h-8 w-8 fill-green-500" />
+        <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
+          <Heart className="h-8 w-8 fill-current text-green-500" />
         </Button>
       </div>
     </div>
