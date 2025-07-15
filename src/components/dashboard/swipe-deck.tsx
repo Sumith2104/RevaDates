@@ -228,9 +228,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     variant="ghost" 
                     size="icon" 
                     className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20"
-                    onClick={(e) => e.stopPropagation()}
                   >
-                      <Link href="/chats">
+                      <Link href="/chats" onClick={(e) => e.stopPropagation()}>
                           <MessageSquare className="h-6 w-6" />
                           <span className="sr-only">Chat</span>
                       </Link>
