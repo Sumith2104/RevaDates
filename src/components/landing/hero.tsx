@@ -6,12 +6,16 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from './landing-header';
 
+// const phrases = [""];
+
 const phrases = [
   "Take It All Off",
   "Bare It All",
   "Show Some Skin",
+  "Thirsty For Water",
   "Lose the Layers",
   "Drop Everything Now",
+  "Feel The Curve",
   "Reveal Your Body",
   "Strip Without Shame",
   "Go All Natural",
