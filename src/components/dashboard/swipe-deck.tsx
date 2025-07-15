@@ -249,7 +249,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   )}
                 </AnimatePresence>
                 {activeUser.distance !== null && (
-                    <p className="text-white/70 text-sm mt-2">{activeUser.distance} km away</p>
+                    <p className="text-white/70 text-sm mt-2">{activeUser.distance} meters away</p>
                 )}
               </motion.div>
             </div>

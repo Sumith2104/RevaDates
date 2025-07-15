@@ -67,7 +67,7 @@ export default function DashboardPage() {
         const mappedUsers: UserProfile[] = filteredProfiles.map(profile => ({
           ...profile,
           age: differenceInYears(new Date(), new Date(profile.dob)),
-          distance: profile.distance_meters ? Math.round(profile.distance_meters / 1000) : null,
+          distance: profile.distance_meters ? Math.round(profile.distance_meters) : null,
         }));
         setUsers(mappedUsers);
       }
