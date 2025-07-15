@@ -5,7 +5,7 @@ import * as React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
-import { Heart, X, Undo2, MessageSquare, Info } from 'lucide-react';
+import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ function AnimatedCard({
   setTriggerSwipeDirection,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
+  const y = useMotionValue(0); // Lock Y axis
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
 
   const likeOpacity = useTransform(x, [50, 120], [0, 1]);
@@ -44,12 +45,15 @@ function AnimatedCard({
       isSwiping.current = true;
       animate(x, direction === 'right' ? 500 : -500, {
         duration: 0.5,
+        ease: 'easeInOut',
         onComplete: () => {
           onSwipe(direction);
         },
       });
     } else {
+      // Snap back
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
+      animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
     }
   };
 
@@ -59,6 +63,7 @@ function AnimatedCard({
     isSwiping.current = true;
     animate(x, triggerSwipeDirection === 'right' ? 500 : -500, {
       duration: 0.5,
+      ease: 'easeInOut',
       onComplete: () => {
         onSwipe(triggerSwipeDirection);
         setTriggerSwipeDirection(null);
@@ -70,10 +75,10 @@ function AnimatedCard({
   return (
     <motion.div
       className="absolute inset-0 cursor-grab"
-      style={{ x, rotateY }}
-      drag={!triggerSwipeDirection}
+      style={{ x, y, rotateY }}
+      drag="x" // Lock drag to horizontal only
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.6}
+      dragElastic={0.5}
       whileTap={{ cursor: 'grabbing' }}
       onDragEnd={handleDragEnd}
       onTap={onTap}
@@ -81,7 +86,7 @@ function AnimatedCard({
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
     >
       <div className="relative w-full h-full">
-         {/* LIKE Overlay */}
+        {/* LIKE Overlay */}
         <motion.div
           style={{ opacity: likeOpacity }}
           className="absolute top-6 left-6 bg-white/90 text-green-600 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[-10deg] z-10 flex items-center gap-2"
@@ -214,7 +219,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
                   initial={{ height: '33.33%' }}
                   animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
-                  transition={{ type: "tween", duration: 0.5, ease: "easeInOut" }}
+                  transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
               >
                 <div className="flex justify-between items-center">
                   <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
@@ -230,7 +235,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                       <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
-                          exit={{ opacity: 0, y: 10, transition: { duration: 0.3 } }}
+                          exit={{ opacity: 0, y: 10, transition: { duration: 0.4 } }}
                           className="overflow-hidden"
                       >
                           <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
