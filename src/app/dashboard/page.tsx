@@ -14,7 +14,6 @@ export default function DashboardPage() {
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [locationError, setLocationError] = React.useState(false);
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -31,22 +30,6 @@ export default function DashboardPage() {
 
       const supabase = createClient();
 
-      // First, get the current user's profile to check for location
-      const { data: currentUserProfile, error: currentUserError } = await supabase
-        .from('profiles')
-        .select('location')
-        .eq('id', currentUserId)
-        .single();
-      
-      if (currentUserError) {
-          console.error("Error fetching current user:", currentUserError);
-          setUsers([]);
-          setLoading(false);
-          return;
-      }
-      
-      const hasLocation = currentUserProfile && currentUserProfile.location;
-      
       // Get IDs of users the current user has already swiped on
       const { data: swipedUsersData, error: swipedError } = await supabase
         .from('swipes')
@@ -61,41 +44,24 @@ export default function DashboardPage() {
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
       
-      let profiles: any[] | null = [];
-      let fetchError = null;
+      // Use the RPC function to get all profiles, sorted by location availability and distance
+      const { data: nearbyProfiles, error: rpcError } = await supabase.rpc(
+        'find_nearby_profiles',
+        {
+          current_user_id: currentUserId,
+          radius_meters: 50000, // This radius is only applied if the current user has a location
+        }
+      );
 
-      if (hasLocation) {
-        // Use the RPC function to get nearby profiles
-        const { data: nearbyProfiles, error } = await supabase.rpc(
-          'find_nearby_profiles',
-          {
-            current_user_id: currentUserId,
-            radius_meters: 50000, // 50km radius
-          }
-        );
-        profiles = nearbyProfiles;
-        fetchError = error;
-      } else {
-        // Fallback: get all other profiles if location is not available
-        setLocationError(true); // Set flag to show a dismissible notice later if needed
-        const { data: allProfiles, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .not('id', 'eq', currentUserId);
-        profiles = allProfiles;
-        fetchError = error;
-      }
-
-
-      if (fetchError) {
-        console.error('Error fetching profiles:', fetchError);
+      if (rpcError) {
+        console.error('Error fetching profiles via RPC:', rpcError);
         setUsers([]);
         setLoading(false);
         return;
       }
 
       // Filter out users that have been swiped on
-      const filteredProfiles = profiles ? profiles.filter(p => !swipedUserIds.includes(p.id)) : [];
+      const filteredProfiles = nearbyProfiles ? nearbyProfiles.filter(p => !swipedUserIds.includes(p.id)) : [];
 
       if (filteredProfiles) {
         const mappedUsers: UserProfile[] = filteredProfiles.map(profile => ({
@@ -124,14 +90,11 @@ export default function DashboardPage() {
       )
   }
 
-  // This is a soft-error, we still show profiles, but maybe show a banner later.
-  // if (locationError) { ... }
-
   if (!users || users.length === 0) {
     return (
       <AppShell>
         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-          <p className="text-xl font-medium">No new profiles found nearby.</p>
+          <p className="text-xl font-medium">No new profiles found.</p>
           <p className="mt-2">Try increasing your distance range in Settings, or check back later!</p>
         </div>
       </AppShell>
