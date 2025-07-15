@@ -205,14 +205,14 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
             triggerSwipeDirection={triggerSwipeDirection}
             setTriggerSwipeDirection={setTriggerSwipeDirection}
           >
-            <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
-               <Avatar className="w-full h-full rounded-2xl">
+            <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card">
+               <Avatar className="w-full h-full rounded-lg">
                   <AvatarImage 
                       src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
                       alt={activeUser.name}
                       className="object-cover w-full h-full"
                   />
-                  <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold flex items-center justify-center">
+                  <AvatarFallback className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
                       {getInitials(activeUser.name)}
                   </AvatarFallback>
               </Avatar>
