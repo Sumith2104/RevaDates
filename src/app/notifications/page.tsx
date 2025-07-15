@@ -24,7 +24,7 @@ type Notification = {
 
 const AnimatedNotificationItem = ({ children }: { children: React.ReactNode }) => {
     const ref = React.useRef(null);
-    const inView = useInView(ref, { once: true, amount: 0.5 });
+    const inView = useInView(ref, { once: false, amount: 0.5 });
 
     const variants = {
         hidden: { opacity: 0, scale: 0.8 },
