@@ -9,6 +9,7 @@ import { Bell, Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { motion, useInView } from 'framer-motion';
 
 type Notification = {
     id: string;
@@ -20,6 +21,28 @@ type Notification = {
         photos: string[] | null;
     } | null;
 }
+
+const AnimatedNotificationItem = ({ children }: { children: React.ReactNode }) => {
+    const ref = React.useRef(null);
+    const inView = useInView(ref, { once: true, amount: 0.5 });
+
+    const variants = {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: { opacity: 1, scale: 1 },
+    };
+
+    return (
+        <motion.div
+            ref={ref}
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            variants={variants}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+        >
+            {children}
+        </motion.div>
+    );
+};
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
@@ -87,23 +110,25 @@ export default function NotificationsPage() {
                  {!loading && !error && notifications.length > 0 && (
                      <div className="space-y-4">
                         {notifications.map((notif) => (
-                           <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg bg-muted`}>
-                                <div className="relative">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={notif.sender?.photos?.[0] || ''} alt={notif.sender?.name} />
-                                        <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
-                                    </Avatar>
-                                     <div className="absolute -bottom-1 -right-1 bg-pink-500 rounded-full p-1 border-2 border-background">
-                                        <Heart className="h-3 w-3 text-white fill-white" />
+                           <AnimatedNotificationItem key={notif.id}>
+                               <div className="flex items-start gap-4 p-4 rounded-lg bg-muted">
+                                    <div className="relative">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={notif.sender?.photos?.[0] || ''} alt={notif.sender?.name} />
+                                            <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
+                                        </Avatar>
+                                         <div className="absolute -bottom-1 -right-1 bg-pink-500 rounded-full p-1 border-2 border-background">
+                                            <Heart className="h-3 w-3 text-white fill-white" />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex-grow">
-                                    <p className="text-sm font-semibold">{notif.message}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                                    </p>
-                                </div>
-                           </div>
+                                    <div className="flex-grow">
+                                        <p className="text-sm font-semibold">{notif.message}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                                        </p>
+                                    </div>
+                               </div>
+                           </AnimatedNotificationItem>
                         ))}
                      </div>
                  )}
