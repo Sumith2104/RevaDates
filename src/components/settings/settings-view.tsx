@@ -74,13 +74,6 @@ export function SettingsView() {
                 </Label>
                 <Switch id="new-matches" defaultChecked />
             </div>
-            <div className="flex items-center justify-between">
-                <Label htmlFor="new-messages" className="flex items-center gap-2 cursor-pointer">
-                    <Bell className="h-4 w-4" />
-                    New Messages
-                </Label>
-                <Switch id="new-messages" defaultChecked />
-            </div>
         </CardContent>
       </Card>
 
