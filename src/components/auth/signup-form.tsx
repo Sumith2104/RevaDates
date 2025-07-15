@@ -18,12 +18,13 @@ import { motion } from 'framer-motion';
 export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
   const [generatedOtp, setGeneratedOtp] = React.useState('');
-  const [enteredOtp, setEnteredOtp] = React.useState('');
+  const [enteredOtp, setEnteredOtp] = React.useState(new Array(4).fill(""));
   const [formData, setFormData] = React.useState<FormData | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
   const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -96,7 +97,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (enteredOtp !== generatedOtp) {
+    if (enteredOtp.join("") !== generatedOtp) {
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -164,6 +165,35 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     }
   };
 
+  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+    if (isNaN(Number(element.value))) return;
+
+    const newOtp = [...enteredOtp];
+    newOtp[index] = element.value;
+    setEnteredOtp(newOtp);
+
+    // Focus next input
+    if (element.nextSibling && element.value) {
+      (element.nextSibling as HTMLInputElement).focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace" && !enteredOtp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+  
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const paste = e.clipboardData.getData('text');
+    if (paste.length === 4 && /^\d+$/.test(paste)) {
+        e.preventDefault();
+        const newOtp = paste.split('');
+        setEnteredOtp(newOtp);
+        inputRefs.current[3]?.focus();
+    }
+  };
+
   const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i);
   const months = [
     { value: '01', label: 'January' }, { value: '02', label: 'February' },
@@ -193,19 +223,27 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="otp">Verification Code</Label>
-                <Input 
-                  id="otp" 
-                  type="text" 
-                  inputMode="numeric" 
-                  maxLength={4} 
-                  placeholder="****" 
-                  required 
-                  value={enteredOtp}
-                  onChange={(e) => setEnteredOtp(e.target.value)}
-                  disabled={isLoading}
-                />
+                 <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                    {enteredOtp.map((data, index) => {
+                        return (
+                            <Input
+                                key={index}
+                                type="text"
+                                name="otp"
+                                maxLength={1}
+                                value={data}
+                                onChange={(e) => handleOtpChange(e.target, index)}
+                                onFocus={(e) => e.target.select()}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                ref={(el) => (inputRefs.current[index] = el)}
+                                className="w-12 h-12 text-center text-lg rounded-lg"
+                                disabled={isLoading}
+                            />
+                        );
+                    })}
+                </div>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || enteredOtp.join("").length !== 4}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Verify & Sign Up
               </Button>

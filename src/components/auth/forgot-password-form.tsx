@@ -18,12 +18,14 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
 
   const [step, setStep] = React.useState<'enter-email' | 'enter-otp'>('enter-email');
   const [email, setEmail] = React.useState('');
-  const [otp, setOtp] = React.useState('');
+  const [otp, setOtp] = React.useState(new Array(4).fill(""));
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
+  
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
     }
     
     setIsLoading(true);
-    const result = await resetPasswordWithOtp(email, otp, password);
+    const result = await resetPasswordWithOtp(email, otp.join(""), password);
     setIsLoading(false);
 
     if (result.error) {
@@ -66,6 +68,35 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
         setIsSuccess(true);
     }
   }
+
+  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+    if (isNaN(Number(element.value))) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = element.value;
+    setOtp(newOtp);
+
+    // Focus next input
+    if (element.nextSibling && element.value) {
+      (element.nextSibling as HTMLInputElement).focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+  
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const paste = e.clipboardData.getData('text');
+    if (paste.length === 4 && /^\d+$/.test(paste)) {
+        e.preventDefault();
+        const newOtp = paste.split('');
+        setOtp(newOtp);
+        inputRefs.current[3]?.focus();
+    }
+  };
   
   const cardVariants = {
     initial: { opacity: 0, scale: 0.9 },
@@ -104,17 +135,25 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                 <form className="grid gap-4" onSubmit={handleOtpSubmit}>
                     <div className="grid gap-2">
                         <Label htmlFor="otp">Verification Code</Label>
-                        <Input
-                        id="otp"
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={4}
-                        placeholder="****"
-                        required
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        disabled={isLoading}
-                        />
+                        <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                          {otp.map((data, index) => {
+                            return (
+                              <Input
+                                key={index}
+                                type="text"
+                                name="otp"
+                                maxLength={1}
+                                value={data}
+                                onChange={(e) => handleOtpChange(e.target, index)}
+                                onFocus={(e) => e.target.select()}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                ref={(el) => (inputRefs.current[index] = el)}
+                                className="w-12 h-12 text-center text-lg rounded-lg"
+                                disabled={isLoading}
+                              />
+                            );
+                          })}
+                        </div>
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="password">New Password</Label>
@@ -138,7 +177,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                         disabled={isLoading}
                         />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full" disabled={isLoading || otp.join("").length !== 4}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Reset Password
                     </Button>
