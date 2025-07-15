@@ -77,9 +77,34 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     console.error('Error recording swipe:', swipeError);
     return { error: 'Could not record your swipe.' };
   }
-
-  // If it was a 'like', check for a mutual like
+  
+  // If it was a 'like', create a notification
   if (action === 'liked') {
+    const { data: swiperProfile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', swiperId)
+      .single();
+
+    if (swiperProfile) {
+        const { error: notificationError } = await supabase.from('notifications').insert({
+          recipient_id: swipedId,
+          sender_id: swiperId,
+          type: 'new_like',
+          message: `${swiperProfile.name} liked your profile!`,
+        });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+          // Don't block the swipe action if notification fails
+        } else {
+            revalidatePath('/notifications');
+            revalidatePath('/components/shared/app-header');
+        }
+    }
+
+
+    // Check for a mutual like (match)
     const { data: mutualLike, error: checkError } = await supabase
       .from('swipes')
       .select('id')
@@ -250,4 +275,44 @@ export async function handleUndoSwipeAction(swiperId: string, swipedId: string) 
   }
 
   return { success: true };
+}
+
+export async function getNotifications(userId: string) {
+    if (!userId) return { data: [], error: 'User ID is required.' };
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('notifications')
+        .select(`
+            id,
+            message,
+            created_at,
+            is_read,
+            sender:sender_id ( name, photos )
+        `)
+        .eq('recipient_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching notifications:", error);
+        return { data: [], error: 'Could not fetch notifications.' };
+    }
+    return { data, error: null };
+}
+
+export async function markNotificationsAsRead(userId: string) {
+    if (!userId) return { error: 'User ID is required.' };
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
+    
+    if (error) {
+        console.error("Error marking notifications as read:", error);
+        return { error: 'Could not update notifications.' };
+    }
+    revalidatePath('/notifications');
+    revalidatePath('/components/shared/app-header');
+    return { success: true };
 }
