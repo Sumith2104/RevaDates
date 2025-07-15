@@ -92,7 +92,7 @@ function AnimatedCard({
           style={{ opacity: likeOpacity }}
           className="absolute top-6 left-6 bg-white/90 text-green-600 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[-10deg] z-10 flex items-center gap-2"
         >
-          LIKE <Heart className="h-5 w-5 fill-current" />
+          DATE <Heart className="h-5 w-5 fill-current" />
         </motion.div>
 
         {/* PASS Overlay */}
