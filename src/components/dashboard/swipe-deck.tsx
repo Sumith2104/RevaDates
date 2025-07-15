@@ -184,7 +184,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
-                            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                            exit={{ opacity: 0, y: 10, transition: { duration: 0.3 } }}
                             className="overflow-hidden"
                         >
                             <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
