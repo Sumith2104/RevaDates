@@ -52,6 +52,45 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       });
     }
   };
+  
+  const saveUserLocation = (userId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            console.log("Geolocation is not supported by this browser.");
+            // Resolve even if location is not supported, so signup can continue
+            resolve();
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const locationString = `POINT(${longitude} ${latitude})`;
+
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ location: locationString })
+                    .eq('id', userId);
+
+                if (error) {
+                    console.error("Error updating location:", error);
+                    // Don't block signup, but log the error.
+                }
+                resolve();
+            },
+            (error) => {
+                console.error("Error getting location:", error.message);
+                toast({
+                    variant: 'default',
+                    title: 'Location Skipped',
+                    description: "You can enable location later in your settings for better matches.",
+                });
+                // Resolve so signup can continue
+                resolve();
+            }
+        );
+    });
+  };
 
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -96,9 +135,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         photos: [],
     }).select().single();
 
-    setIsLoading(false);
-
     if (insertError) {
+        setIsLoading(false);
         toast({
           variant: 'destructive',
           title: 'Signup Failed',
@@ -106,12 +144,18 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
         });
     } else if (newUser) {
         localStorage.setItem('currentUserId', newUser.id);
+        
+        // Now attempt to get location
+        await saveUserLocation(newUser.id);
+        
+        setIsLoading(false);
         toast({
           title: 'Account Created!',
           description: 'Welcome to RevaDates!',
         });
         router.push('/dashboard');
     } else {
+        setIsLoading(false);
         toast({
           variant: 'destructive',
           title: 'Signup Failed',

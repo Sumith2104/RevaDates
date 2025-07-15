@@ -248,7 +248,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                       </motion.div>
                   )}
                 </AnimatePresence>
-                <p className="text-white/70 text-sm mt-2">{activeUser.distance} miles away</p>
+                <p className="text-white/70 text-sm mt-2">{activeUser.distance} km away</p>
               </motion.div>
             </div>
           </AnimatedCard>

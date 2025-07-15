@@ -1,3 +1,4 @@
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -5,4 +6,6 @@ export interface UserProfile {
   photos: string[];
   bio: string;
   distance: number;
+  location?: any; // Can be string or object
+  distance_meters?: number;
 }

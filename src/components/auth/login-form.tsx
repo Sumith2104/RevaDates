@@ -20,6 +20,28 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const updateUserLocation = async (userId: string) => {
+    if (!navigator.geolocation) {
+      console.log("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const locationString = `POINT(${longitude} ${latitude})`;
+      
+      await supabase
+        .from('profiles')
+        .update({ location: locationString })
+        .eq('id', userId);
+        
+    }, (error) => {
+      console.error("Error getting location:", error.message);
+      // Optionally inform the user that location could not be updated
+    });
+  };
+
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -41,6 +63,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       });
     } else {
       localStorage.setItem('currentUserId', data.id);
+      await updateUserLocation(data.id);
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
