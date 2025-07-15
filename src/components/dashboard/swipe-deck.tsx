@@ -168,7 +168,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
                     initial={{ height: '33.33%' }}
                     animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={{ type: "tween", duration: 0.5, ease: "easeInOut" }}
                 >
                   <div className="flex justify-between items-center">
                     <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
@@ -183,7 +183,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     {isBioVisible && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.2 } }}
+                            animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
                             exit={{ opacity: 0, transition: { duration: 0.15 } }}
                             className="overflow-hidden"
                         >
