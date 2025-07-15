@@ -82,8 +82,8 @@ function AnimatedCard({
       whileTap={{ cursor: 'grabbing' }}
       onDragEnd={handleDragEnd}
       onTap={onTap}
-      initial={{ scale: 0.95, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1, transition: { duration: 0.3 } }}
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } }}
     >
       <div className="relative w-full h-full">
         {/* LIKE Overlay */}

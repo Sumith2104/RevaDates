@@ -10,6 +10,7 @@ import { Heart, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const { toast } = useToast();
@@ -65,10 +66,16 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
         setIsSuccess(true);
     }
   }
+  
+  const cardVariants = {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeInOut' } },
+  };
 
   if (isSuccess) {
     return (
-        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
+      <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
+        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Password Reset</CardTitle>
@@ -80,12 +87,14 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
             </Button>
           </CardContent>
         </Card>
+      </motion.div>
     );
   }
 
   if (step === 'enter-otp') {
     return (
-        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
+      <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
+        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
             <CardHeader className="text-center">
                 <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
                 <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -139,40 +148,43 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                 </form>
             </CardContent>
         </Card>
+      </motion.div>
     )
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" ref={ref} {...props}>
-      <CardHeader className="text-center">
-        <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
-        <CardTitle className="text-2xl">Forgot Password</CardTitle>
-        <CardDescription>Enter your email and we'll send you a code to reset your password.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4" onSubmit={handleEmailSubmit}>
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Your Email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send Code
-          </Button>
-           <Button variant="link" asChild>
-                <Link href="/login">Back to Login</Link>
+    <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
+      <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
+        <CardHeader className="text-center">
+          <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
+          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardDescription>Enter your email and we'll send you a code to reset your password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-4" onSubmit={handleEmailSubmit}>
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Your Email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Code
             </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button variant="link" asChild>
+                  <Link href="/login">Back to Login</Link>
+              </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 });
 ForgotPasswordForm.displayName = 'ForgotPasswordForm';
