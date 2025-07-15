@@ -87,7 +87,7 @@ export default function NotificationsPage() {
                  {!loading && !error && notifications.length > 0 && (
                      <div className="space-y-2">
                         {notifications.map((notif) => (
-                           <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg ${notif.is_read ? 'bg-transparent' : 'bg-primary/5'}`}>
+                           <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg ${notif.is_read ? 'bg-transparent' : 'bg-muted'}`}>
                                 <div className="relative">
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage src={notif.sender?.photos?.[0] || ''} alt={notif.sender?.name} />
