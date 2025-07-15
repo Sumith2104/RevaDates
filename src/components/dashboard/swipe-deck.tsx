@@ -5,6 +5,7 @@ import * as React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, X, Undo2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction } from '@/lib/actions';
@@ -207,10 +208,19 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
             <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-card">
                <Avatar className="w-full h-full rounded-2xl">
                   <AvatarImage 
+                      asChild
                       src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
                       alt={activeUser.name}
-                      className="object-cover w-full h-full"
-                  />
+                  >
+                     <Image
+                        src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : 'https://placehold.co/600x800.png'}
+                        alt={activeUser.name}
+                        className="object-cover w-full h-full"
+                        width={600}
+                        height={800}
+                        priority={true} // Preload the visible image
+                     />
+                  </AvatarImage>
                   <AvatarFallback className="w-full h-full rounded-2xl bg-muted text-6xl font-bold">
                       {getInitials(activeUser.name)}
                   </AvatarFallback>
@@ -240,7 +250,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                       <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
-                          exit={{ opacity: 0, y: 10, transition: { duration: 0.4 } }}
+                          exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
                           className="overflow-hidden"
                       >
                           <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
@@ -268,6 +278,22 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
         <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
           <Heart className="h-8 w-8 fill-current text-green-500" />
         </Button>
+      </div>
+
+       {/* Preload the next 3 images */}
+      <div style={{ display: 'none' }}>
+        {users.slice(Math.max(0, activeIndex - 3), activeIndex).reverse().map(user => (
+          user.photos && user.photos.length > 0 && (
+            <Image
+              key={`preload-${user.id}`}
+              src={user.photos[0]}
+              alt={`Preload ${user.name}`}
+              width={600}
+              height={800}
+              priority
+            />
+          )
+        ))}
       </div>
     </div>
   );
