@@ -30,6 +30,19 @@ export default function DashboardPage() {
 
       const supabase = createClient();
 
+      // First, get the current user's discovery settings
+      const { data: userSettings, error: settingsError } = await supabase
+        .from('profiles')
+        .select('discovery_age_min, discovery_age_max, discovery_distance_km')
+        .eq('id', currentUserId)
+        .single();
+
+      if (settingsError) {
+          console.error('Error fetching user settings:', settingsError);
+          setLoading(false);
+          return;
+      }
+
       // Get IDs of users the current user has already swiped on
       const { data: swipedUsersData, error: swipedError } = await supabase
         .from('swipes')
@@ -44,11 +57,14 @@ export default function DashboardPage() {
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
       
-      // Use the RPC function to get all profiles, sorted by location availability and distance
+      // Use the RPC function with settings to get filtered profiles
       const { data: nearbyProfiles, error: rpcError } = await supabase.rpc(
         'find_nearby_profiles',
         {
           current_user_id: currentUserId,
+          min_age: userSettings.discovery_age_min,
+          max_age: userSettings.discovery_age_max,
+          max_distance_km: userSettings.discovery_distance_km,
         }
       );
 
