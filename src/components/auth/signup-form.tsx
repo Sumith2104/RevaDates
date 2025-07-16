@@ -267,20 +267,20 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         <CardContent>
           <form onSubmit={handleDetailsSubmit} className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
+              <div className="grid gap-2 text-left">
                 <Label htmlFor="first-name">First name</Label>
                 <Input id="first-name" name="firstName" placeholder="John" required disabled={isLoading} className="rounded-lg" />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 text-left">
                 <Label htmlFor="last-name">Last name</Label>
                 <Input id="last-name" name="lastName" placeholder="Doe" required disabled={isLoading} className="rounded-lg" />
               </div>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 text-left">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} className="rounded-lg" />
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 text-left">
               <Label>Date of Birth</Label>
               <div className="grid grid-cols-3 gap-2">
                 <Select name="dobMonth" required disabled={isLoading}>
@@ -321,7 +321,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                 </Select>
               </div>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 text-left">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" name="password" required disabled={isLoading} className="rounded-lg" />
             </div>
