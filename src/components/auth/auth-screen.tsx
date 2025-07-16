@@ -77,7 +77,7 @@ export function AuthScreen() {
 
   return (
     <div
-      className="w-full bg-black overflow-x-hidden"
+      className="w-full bg-black overflow-x-hidden scrollbar-hide"
     >
       <div 
         className="min-h-screen flex flex-col items-center justify-center"
