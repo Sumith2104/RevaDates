@@ -351,9 +351,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     Are you sure you want to block this user?
                 </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBlock} className="bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
+                <AlertDialogFooter className="flex-row justify-end gap-2">
+                    <AlertDialogCancel size="sm">Cancel</AlertDialogCancel>
+                    <AlertDialogAction size="sm" onClick={handleBlock} className="bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
