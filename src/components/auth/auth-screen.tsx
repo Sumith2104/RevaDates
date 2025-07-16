@@ -113,7 +113,7 @@ export function AuthScreen() {
                                 <Button size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20" onClick={() => setView('signup')}>Sign up</Button>
                                 <Button size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20" onClick={() => setView('login')}>Login</Button>
                             </div>
-                            <Button variant="outline" className="font-semibold rounded-lg bg-transparent border-white/20 backdrop-blur-md hover:bg-white/10">
+                            <Button variant="outline" className="font-semibold rounded-lg bg-transparent border-white/20 backdrop-blur-md hover:bg-white/10 mt-8">
                                 About
                             </Button>
                         </div>
