@@ -348,7 +348,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                 <AlertDialogHeader>
                 <AlertDialogTitle>Block {activeUser.name}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Are you sure you want to block this user? You will not see their profile again, and they will not see yours. This action cannot be undone.
+                    Are you sure you want to block this user?
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
