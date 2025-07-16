@@ -7,16 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Shield, LogOut, Loader2 } from 'lucide-react';
+import { Shield, LogOut, Loader2, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 export function SettingsView() {
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
 
   const [loading, setLoading] = React.useState(true);
@@ -24,6 +24,7 @@ export function SettingsView() {
   
   const [ageRange, setAgeRange] = React.useState([18, 80]);
   const [distance, setDistance] = React.useState([50]);
+  const [matchNotification, setMatchNotification] = React.useState(true);
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -39,9 +40,10 @@ export function SettingsView() {
 
     const fetchSettings = async () => {
       setLoading(true);
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km')
+        .select('discovery_age_min, discovery_age_max, discovery_distance_km, match_notification')
         .eq('id', currentUserId)
         .single();
       
@@ -51,16 +53,18 @@ export function SettingsView() {
       } else if (data) {
         setAgeRange([data.discovery_age_min || 18, data.discovery_age_max || 80]);
         setDistance([data.discovery_distance_km || 50]);
+        setMatchNotification(data.match_notification ?? true);
       }
       setLoading(false);
     }
 
     fetchSettings();
-  }, [currentUserId]);
+  }, [currentUserId, toast]);
 
   const handleSaveSettings = async () => {
     if (!currentUserId) return;
     setSaving(true);
+    const supabase = createClient();
 
     const { error } = await supabase
         .from('profiles')
@@ -68,6 +72,7 @@ export function SettingsView() {
             discovery_age_min: ageRange[0],
             discovery_age_max: ageRange[1],
             discovery_distance_km: distance[0],
+            match_notification: matchNotification,
         })
         .eq('id', currentUserId);
 
@@ -75,7 +80,7 @@ export function SettingsView() {
     if (error) {
         toast({ variant: 'destructive', title: 'Error saving settings', description: error.message });
     } else {
-        toast({ title: 'Settings Saved!', description: 'Your discovery preferences have been updated.' });
+        toast({ title: 'Settings Saved!', description: 'Your preferences have been updated.' });
     }
   };
 
@@ -86,37 +91,45 @@ export function SettingsView() {
   
   if (loading) {
     return (
-        <div className="container mx-auto max-w-2xl p-4">
-            <h1 className="text-3xl font-bold mb-6">Settings</h1>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    <div className="space-y-4">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-2 w-1/4 ml-auto" />
-                    </div>
-                     <div className="space-y-4">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-2 w-1/4 ml-auto" />
-                    </div>
-                </CardContent>
-            </Card>
-            <Card className="mt-6">
-                <CardHeader>
-                    <Skeleton className="h-6 w-1/4" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-px w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </CardContent>
-            </Card>
-        </div>
+      <div className="container mx-auto max-w-2xl p-4">
+        <h1 className="text-3xl font-bold mb-6">Settings</h1>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-2 w-1/4 ml-auto" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-2 w-1/4 ml-auto" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="mt-6">
+          <CardHeader>
+             <Skeleton className="h-6 w-1/4" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+        <Card className="mt-6">
+          <CardHeader>
+            <Skeleton className="h-6 w-1/4" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Separator />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -169,6 +182,25 @@ export function SettingsView() {
         </CardContent>
       </Card>
       
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="match-notifications" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Match Notifications
+            </Label>
+            <Switch
+              id="match-notifications"
+              checked={matchNotification}
+              onCheckedChange={setMatchNotification}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="mt-6">
         <CardHeader>
             <CardTitle>Account</CardTitle>
