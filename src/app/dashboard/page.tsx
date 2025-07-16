@@ -89,12 +89,13 @@ export default function DashboardPage() {
         return;
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+      const allExcludedIds = [currentUserId, ...swipedUserIds];
 
       // Fetch all potential profiles (excluding the current user and already swiped ones)
       const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .not('id', 'in', `(${[currentUserId, ...swipedUserIds].map(id => `'${id}'`).join(',')})`);
+        .not('id', 'in', `(${allExcludedIds.join(',')})`);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
