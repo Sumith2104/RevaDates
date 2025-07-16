@@ -442,3 +442,29 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
     revalidatePath('/settings');
     return { success: true };
 }
+
+export async function getMatches(userId: string) {
+    if (!userId) return { data: [], error: 'User ID is required.' };
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+        .from('matches')
+        .select(`
+            id,
+            user1:user1_id ( id, name, photos ),
+            user2:user2_id ( id, name, photos )
+        `)
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+
+    if (error) {
+        console.error('Error fetching matches:', error);
+        return { data: [], error: 'Could not fetch your matches.' };
+    }
+    
+    const formattedMatches = data.map(match => ({
+        id: match.id,
+        matchedUser: match.user1.id === userId ? match.user2 : match.user1,
+    }));
+    
+    return { data: formattedMatches, error: null };
+}

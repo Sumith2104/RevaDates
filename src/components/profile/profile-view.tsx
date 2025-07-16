@@ -8,12 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload, Loader2 } from 'lucide-react';
+import { Edit, Save, Upload, Loader2, Shield, Heart } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import { SettingsView } from '../settings/settings-view';
+import Link from 'next/link';
+import { BlockedUsersDialog } from '../settings/settings-view';
 
 type User = {
     id: string;
@@ -126,7 +129,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const userPhotos = user.photos || [];
 
   return (
-    <div className="container mx-auto max-w-4xl p-4">
+    <div className="container mx-auto max-w-4xl p-4 space-y-6">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">
@@ -198,6 +201,21 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             )}
           </div>
         </CardContent>
+      </Card>
+      
+      <Card>
+          <CardHeader>
+              <CardTitle>Connections</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <Button asChild variant="outline" className="w-full justify-start gap-2">
+                  <Link href="/matches">
+                    <Heart className="h-4 w-4" />
+                    My Matches
+                  </Link>
+              </Button>
+              <BlockedUsersDialog userId={user.id} />
+          </CardContent>
       </Card>
     </div>
   );

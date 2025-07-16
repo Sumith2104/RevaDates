@@ -10,3 +10,12 @@ export interface UserProfile {
   distance_meters?: number;
   blocked_users?: string[];
 }
+
+export interface Match {
+    id: string;
+    matchedUser: {
+        id: string;
+        name: string;
+        photos: string[] | null;
+    };
+}
