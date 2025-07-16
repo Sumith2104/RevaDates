@@ -80,11 +80,15 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   
   // If it was a 'like', create a notification
   if (action === 'liked') {
-    const { data: swiperProfile } = await supabase
+    const { data: swiperProfile, error: swiperProfileError } = await supabase
       .from('profiles')
-      .select('name')
+      .select('name, match_notification')
       .eq('id', swiperId)
       .single();
+
+    if (swiperProfileError) {
+      console.error('Error fetching swiper profile:', swiperProfileError);
+    }
 
     if (swiperProfile) {
         const { error: notificationError } = await supabase.from('notifications').insert({
@@ -97,9 +101,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         if (notificationError) {
           console.error('Error creating notification:', notificationError);
           // Don't block the swipe action if notification fails
-        } else {
-            revalidatePath('/notifications');
-            revalidatePath('/components/shared/app-header');
         }
     }
 
@@ -119,35 +120,67 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
     
     if (mutualLike) {
-      // It's a match! Check if match already exists
-      const { data: existingMatch, error: matchCheckError } = await supabase
-        .from('matches')
-        .select('id')
-        .or(`(user1_id.eq.${swiperId},user2_id.eq.${swipedId}),(user1_id.eq.${swipedId},user2_id.eq.${swiperId})`)
-        .limit(1);
+        const { data: swipedProfile, error: swipedProfileError } = await supabase
+            .from('profiles')
+            .select('name, match_notification')
+            .eq('id', swipedId)
+            .single();
 
-      if (matchCheckError && matchCheckError.code !== 'PGRST116') {
-        console.error('Error checking for existing match:', matchCheckError);
-        return { error: 'Could not check for existing match.' };
-      }
-
-      // If no existing match, create one.
-      if (!existingMatch || existingMatch.length === 0) {
-        const { error: matchError } = await supabase.from('matches').insert({
-          user1_id: swiperId,
-          user2_id: swipedId,
-        });
-
-        if (matchError) {
-          console.error('Error creating match:', matchError);
-          return { error: 'Could not create the match.' };
+        if (swipedProfileError) {
+            console.error('Error fetching swiped profile for match notification:', swipedProfileError);
         }
-        revalidatePath('/chats');
-        return { match: true };
-      }
+      
+        // It's a match! Check if match already exists
+        const { data: existingMatch, error: matchCheckError } = await supabase
+            .from('matches')
+            .select('id')
+            .or(`(user1_id.eq.${swiperId},user2_id.eq.${swipedId}),(user1_id.eq.${swipedId},user2_id.eq.${swiperId})`)
+            .limit(1);
+
+        if (matchCheckError && matchCheckError.code !== 'PGRST116') {
+            console.error('Error checking for existing match:', matchCheckError);
+            return { error: 'Could not check for existing match.' };
+        }
+      
+        if (!existingMatch || existingMatch.length === 0) {
+            const { error: matchError } = await supabase.from('matches').insert({
+            user1_id: swiperId,
+            user2_id: swipedId,
+            });
+
+            if (matchError) {
+            console.error('Error creating match:', matchError);
+            return { error: 'Could not create the match.' };
+            }
+
+            // Create notifications for both users if their settings allow it
+            if (swiperProfile?.match_notification) {
+                await supabase.from('notifications').insert({
+                    recipient_id: swiperId,
+                    sender_id: swipedId,
+                    type: 'new_match',
+                    message: `You matched with ${swipedProfile?.name}!`,
+                });
+            }
+            if (swipedProfile?.match_notification) {
+                await supabase.from('notifications').insert({
+                    recipient_id: swipedId,
+                    sender_id: swiperId,
+                    type: 'new_match',
+                    message: `You matched with ${swiperProfile?.name}!`,
+                });
+            }
+            
+            revalidatePath('/chats');
+            revalidatePath('/notifications');
+            revalidatePath('/components/shared/app-header');
+            return { match: true };
+        }
     }
   }
 
+  revalidatePath('/notifications');
+  revalidatePath('/components/shared/app-header');
   return { success: true };
 }
 
@@ -314,5 +347,98 @@ export async function markNotificationsAsRead(userId: string) {
     }
     revalidatePath('/notifications');
     revalidatePath('/components/shared/app-header');
+    return { success: true };
+}
+
+export async function blockUser(blockerId: string, blockedId: string) {
+  if (!blockerId || !blockedId) {
+    return { error: 'Invalid user IDs provided.' };
+  }
+  const supabase = createClient();
+
+  // Atomically append the new blocked user's ID to the array
+  const { error } = await supabase.rpc('append_to_blocked_users', {
+      user_id: blockerId,
+      blocked_id: blockedId
+  });
+
+  if (error) {
+    console.error('Error blocking user:', error);
+    return { error: 'Could not block the user.' };
+  }
+
+  // Also remove any existing swipe history between them
+  await supabase.from('swipes').delete().or(`(swiper_id.eq.${blockerId},swiped_id.eq.${blockedId}),(swiper_id.eq.${blockedId},swiped_id.eq.${blockerId})`);
+  
+  // And any existing match
+  await supabase.from('matches').delete().or(`(user1_id.eq.${blockerId},user2_id.eq.${blockedId}),(user1_id.eq.${blockedId},user2_id.eq.${blockerId})`);
+
+  revalidatePath('/dashboard');
+  return { success: true };
+}
+
+export async function getBlockedUsers(userId: string) {
+  if (!userId) return { data: [], error: 'User ID is required.' };
+  
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('blocked_users')
+    .eq('id', userId)
+    .single();
+
+  if (error || !data || !data.blocked_users) {
+    return { data: [], error: 'Could not fetch blocked users.' };
+  }
+
+  const blockedUserIds = data.blocked_users;
+
+  if (blockedUserIds.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const { data: blockedProfiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, name, photos')
+    .in('id', blockedUserIds);
+  
+  if (profilesError) {
+    return { data: [], error: 'Could not fetch blocked user profiles.' };
+  }
+
+  return { data: blockedProfiles, error: null };
+}
+
+export async function unblockUser(blockerId: string, unblockedId: string) {
+    if (!blockerId || !unblockedId) {
+        return { error: 'Invalid user IDs provided.' };
+    }
+    const supabase = createClient();
+
+    // Fetch current blocked users
+    const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('blocked_users')
+        .eq('id', blockerId)
+        .single();
+    
+    if (fetchError || !data) {
+        return { error: 'Could not find user profile.' };
+    }
+
+    const currentBlocked = data.blocked_users || [];
+    const newBlocked = currentBlocked.filter(id => id !== unblockedId);
+
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ blocked_users: newBlocked })
+        .eq('id', blockerId);
+
+    if (updateError) {
+        console.error('Error unblocking user:', updateError);
+        return { error: 'Could not unblock the user.' };
+    }
+
+    revalidatePath('/settings');
     return { success: true };
 }

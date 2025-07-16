@@ -54,10 +54,10 @@ export default function DashboardPage() {
 
       const supabase = createClient();
 
-      // First, get the current user's profile including settings and location
+      // First, get the current user's profile including settings, location, and blocked users
       const { data: currentUserProfile, error: currentUserError } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location')
+        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users')
         .eq('id', currentUserId)
         .single();
 
@@ -71,7 +71,8 @@ export default function DashboardPage() {
           discovery_age_min: minAge, 
           discovery_age_max: maxAge, 
           discovery_distance_km: maxDistance,
-          location: currentUserLocationStr
+          location: currentUserLocationStr,
+          blocked_users: blockedUsers,
       } = currentUserProfile;
       
       const currentUserLocation = parseLocation(currentUserLocationStr);
@@ -89,13 +90,20 @@ export default function DashboardPage() {
         return;
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
-      const allExcludedIds = [currentUserId, ...swipedUserIds];
-
-      // Fetch all potential profiles (excluding the current user and already swiped ones)
-      const { data: allProfiles, error: profilesError } = await supabase
+      
+      // Combine all users to exclude: current user, swiped users, and blocked users
+      const allExcludedIds = [currentUserId, ...swipedUserIds, ...(blockedUsers || [])];
+      
+      // Fetch all potential profiles (excluding the current user and already swiped/blocked ones)
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .not('id', 'in', `(${allExcludedIds.join(',')})`);
+        .select('*');
+
+      if (allExcludedIds.length > 0) {
+        query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+      }
+      
+      const { data: allProfiles, error: profilesError } = await query;
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);

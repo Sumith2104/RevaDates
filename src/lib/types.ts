@@ -8,4 +8,5 @@ export interface UserProfile {
   distance: number | null;
   location?: any; // Can be string or object
   distance_meters?: number;
+  blocked_users?: string[];
 }

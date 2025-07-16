@@ -7,13 +7,116 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Shield, LogOut, Loader2, Bell } from 'lucide-react';
+import { Shield, LogOut, Loader2, Bell, XIcon, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useDebounce } from '@/hooks/use-debounce';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog"
+import { getBlockedUsers, unblockUser } from '@/lib/actions';
+import type { UserProfile } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { getInitials } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
+
+function BlockedUsersDialog({ userId }: { userId: string }) {
+    const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isUnblocking, setIsUnblocking] = React.useState<string | null>(null);
+    const { toast } = useToast();
+
+    const fetchBlockedUsers = React.useCallback(async () => {
+        setIsLoading(true);
+        const result = await getBlockedUsers(userId);
+        if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            setBlockedUsers([]);
+        } else {
+            setBlockedUsers(result.data as UserProfile[]);
+        }
+        setIsLoading(false);
+    }, [userId, toast]);
+
+    const handleUnblock = async (unblockedId: string) => {
+        setIsUnblocking(unblockedId);
+        const result = await unblockUser(userId, unblockedId);
+        if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+        } else {
+            toast({ title: 'User Unblocked' });
+            setBlockedUsers(prev => prev.filter(u => u.id !== unblockedId));
+        }
+        setIsUnblocking(null);
+    }
+
+    return (
+        <Dialog onOpenChange={(open) => open && fetchBlockedUsers()}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                    <Shield className="h-4 w-4" />
+                    Blocked Users
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Blocked Users</DialogTitle>
+                    <DialogDescription>
+                        Users you have blocked will appear here. You can unblock them at any time.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[400px] pr-4">
+                  <div className="space-y-4 py-4">
+                      {isLoading && (
+                          <div className="flex items-center space-x-4">
+                              <Skeleton className="h-12 w-12 rounded-full" />
+                              <div className="space-y-2">
+                                  <Skeleton className="h-4 w-[150px]" />
+                              </div>
+                          </div>
+                      )}
+                      {!isLoading && blockedUsers.length === 0 && (
+                          <div className="text-center text-muted-foreground py-10">
+                              <UserX className="mx-auto h-12 w-12 mb-4" />
+                              <h2 className="text-xl font-semibold">No Blocked Users</h2>
+                              <p>You haven't blocked anyone yet.</p>
+                          </div>
+                      )}
+                      {!isLoading && blockedUsers.map(user => (
+                          <div key={user.id} className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                  <Avatar>
+                                      <AvatarImage src={user.photos?.[0]} />
+                                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium">{user.name}</span>
+                              </div>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleUnblock(user.id)}
+                                  disabled={isUnblocking === user.id}
+                              >
+                                  {isUnblocking === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XIcon className="h-4 w-4" />}
+                                  <span className="sr-only">Unblock {user.name}</span>
+                              </Button>
+                          </div>
+                      ))}
+                  </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export function SettingsView() {
   const router = useRouter();
@@ -158,7 +261,7 @@ export function SettingsView() {
             {saving && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
         </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <Label htmlFor="distance">Maximum Distance</Label>
@@ -214,10 +317,7 @@ export function SettingsView() {
             <CardTitle>Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full justify-start gap-2">
-                <Shield className="h-4 w-4" />
-                Blocked Users
-            </Button>
+             {currentUserId && <BlockedUsersDialog userId={currentUserId} />}
             <Separator />
             <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
@@ -228,4 +328,3 @@ export function SettingsView() {
     </div>
   );
 }
-
