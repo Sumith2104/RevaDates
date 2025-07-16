@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Shield, LogOut, Loader2, Bell, XIcon, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -21,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose
 } from "@/components/ui/dialog"
 import { getBlockedUsers, unblockUser } from '@/lib/actions';
 import type { UserProfile } from '@/lib/types';
@@ -67,32 +65,32 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
                     Blocked Users
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
                 <DialogHeader>
-                    <DialogTitle>Blocked Users</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-white">Blocked Users</DialogTitle>
+                    <DialogDescription className="text-white/70">
                         Users you have blocked will appear here. You can unblock them at any time.
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[400px] pr-4">
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-4 py-4 text-white">
                       {isLoading && (
                           <div className="flex items-center space-x-4">
-                              <Skeleton className="h-12 w-12 rounded-full" />
+                              <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
                               <div className="space-y-2">
-                                  <Skeleton className="h-4 w-[150px]" />
+                                  <Skeleton className="h-4 w-[150px] bg-white/20" />
                               </div>
                           </div>
                       )}
                       {!isLoading && blockedUsers.length === 0 && (
-                          <div className="text-center text-muted-foreground py-10">
+                          <div className="text-center text-white/70 py-10">
                               <UserX className="mx-auto h-12 w-12 mb-4" />
-                              <h2 className="text-xl font-semibold">No Blocked Users</h2>
+                              <h2 className="text-xl font-semibold text-white">No Blocked Users</h2>
                               <p>You haven't blocked anyone yet.</p>
                           </div>
                       )}
                       {!isLoading && blockedUsers.map(user => (
-                          <div key={user.id} className="flex items-center justify-between">
+                          <div key={user.id} className="flex items-center justify-between text-white">
                               <div className="flex items-center gap-4">
                                   <Avatar>
                                       <AvatarImage src={user.photos?.[0]} />
@@ -105,6 +103,7 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
                                   size="icon"
                                   onClick={() => handleUnblock(user.id)}
                                   disabled={isUnblocking === user.id}
+                                  className="text-white/70 hover:text-white hover:bg-white/10"
                               >
                                   {isUnblocking === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XIcon className="h-4 w-4" />}
                                   <span className="sr-only">Unblock {user.name}</span>
@@ -238,8 +237,6 @@ export function SettingsView() {
             <Skeleton className="h-6 w-1/4" />
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
-            <Skeleton className="h-10 w-full" />
-            <Separator />
             <Skeleton className="h-10 w-full" />
           </CardContent>
         </Card>
