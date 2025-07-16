@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { formatDistanceToNow } from 'date-fns';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -448,23 +449,47 @@ export async function getMatches(userId: string) {
     const supabase = createClient();
 
     const { data, error } = await supabase
-        .from('matches')
-        .select(`
-            id,
-            user1:user1_id ( id, name, photos ),
-            user2:user2_id ( id, name, photos )
-        `)
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+        .rpc('get_matches_without_messages', { current_user_id: userId });
 
     if (error) {
         console.error('Error fetching matches:', error);
         return { data: [], error: 'Could not fetch your matches.' };
     }
     
-    const formattedMatches = data.map(match => ({
+    const formattedMatches = data.map((match: any) => ({
         id: match.id,
-        matchedUser: match.user1.id === userId ? match.user2 : match.user1,
+        matchedUser: {
+          id: match.matched_user_id,
+          name: match.matched_user_name,
+          photos: match.matched_user_photos,
+        }
     }));
     
     return { data: formattedMatches, error: null };
+}
+
+export async function getChats(userId: string) {
+    if (!userId) return { data: [], error: 'User ID is required.' };
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+        .rpc('get_matches_with_messages', { current_user_id: userId });
+
+    if (error) {
+        console.error('Error fetching chats:', error);
+        return { data: [], error: 'Could not fetch your chats.' };
+    }
+    
+    const formattedChats = data.map((chat: any) => ({
+        id: chat.id,
+        matchedUser: {
+            id: chat.matched_user_id,
+            name: chat.matched_user_name,
+            photos: chat.matched_user_photos,
+        },
+        lastMessage: chat.last_message_content,
+        lastMessageTime: formatDistanceToNow(new Date(chat.last_message_created_at), { addSuffix: true }),
+    }));
+    
+    return { data: formattedChats, error: null };
 }

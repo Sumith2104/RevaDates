@@ -19,3 +19,14 @@ export interface Match {
         photos: string[] | null;
     };
 }
+
+export interface Chat {
+    id: string;
+    matchedUser: {
+        id: string;
+        name: string;
+        photos: string[] | null;
+    };
+    lastMessage: string | null;
+    lastMessageTime: string | null;
+}
