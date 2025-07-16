@@ -352,8 +352,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-row items-center justify-center gap-2">
-                    <AlertDialogAction size="sm" onClick={handleBlock} className="bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
-                    <AlertDialogCancel size="sm" className="mt-0 bg-white text-black hover:bg-gray-200">Cancel</AlertDialogCancel>
+                    <AlertDialogAction size="sm" onClick={handleBlock} className="rounded-full bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
+                    <AlertDialogCancel size="sm" className="mt-0 rounded-full bg-white text-black hover:bg-gray-200">Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
