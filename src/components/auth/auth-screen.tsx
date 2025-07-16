@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
 import { Heart } from 'lucide-react';
+import ScrollReveal from '../shared/ScrollReveal';
+
 
 const phrases = [
   "Take It All Off",
@@ -31,6 +33,9 @@ export function AuthScreen() {
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const activePhrase = phrases[phraseIndex];
+  
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
 
   const aboutRef = React.useRef<HTMLDivElement | null>(null);
   const scrollToAbout = () => {
@@ -77,7 +82,8 @@ export function AuthScreen() {
 
   return (
     <div
-      className="w-full bg-black overflow-x-hidden scrollbar-hide"
+      ref={scrollContainerRef}
+      className="w-full h-screen bg-black overflow-y-auto overflow-x-hidden scrollbar-hide"
     >
       <div 
         className="min-h-screen flex flex-col items-center justify-center"
@@ -173,15 +179,18 @@ export function AuthScreen() {
         className="w-full bg-black text-white py-20 px-6 border-t border-white/10"
       >
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">About RevaDates</h2>
-          <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
-            RevaDates is your safe space to connect authentically. Whether you're here for
-            sparks, deep conversations, or just fun vibes — you're free to express yourself
-            without judgment.
-            <br /><br />
-            We focus on raw, real connections powered by intuitive design and a privacy-first
-            approach. Join a community that's not afraid to be fully themselves.
-          </p>
+            <ScrollReveal
+                scrollContainerRef={scrollContainerRef}
+                textClassName='text-[clamp(2.2rem,5vw,3.5rem)] font-bold text-center'
+              >
+              About RevaDates
+            </ScrollReveal>
+             <ScrollReveal
+                scrollContainerRef={scrollContainerRef}
+                textClassName='text-zinc-400 text-base md:text-lg leading-relaxed text-center'
+              >
+              RevaDates is your safe space to connect authentically. Whether you're here for sparks, deep conversations, or just fun vibes — you're free to express yourself without judgment. We focus on raw, real connections powered by intuitive design and a privacy-first approach. Join a community that's not afraid to be fully themselves.
+            </ScrollReveal>
         </div>
       </div>
     </div>
