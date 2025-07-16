@@ -29,7 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 
-function BlockedUsersDialog({ userId }: { userId: string }) {
+export function BlockedUsersDialog({ userId }: { userId: string }) {
     const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isUnblocking, setIsUnblocking] = React.useState<string | null>(null);
