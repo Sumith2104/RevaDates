@@ -104,7 +104,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
           </CardHeader>
           <CardContent>
             <form className="grid gap-4" onSubmit={handleLogin}>
-              <div className="grid gap-2">
+              <div className="grid gap-2 text-left">
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
@@ -117,7 +117,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
                   disabled={isLoading}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 text-left">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                    <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword}>
