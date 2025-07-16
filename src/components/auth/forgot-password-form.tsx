@@ -106,7 +106,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (isSuccess) {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Password Reset</CardTitle>
@@ -125,7 +125,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (step === 'enter-otp') {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
             <CardHeader className="text-center">
                 <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
                 <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -195,7 +195,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-      <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
+      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
         <CardHeader className="text-center">
           <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Forgot Password</CardTitle>

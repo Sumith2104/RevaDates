@@ -96,7 +96,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full border-0 shadow-2xl" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Login</CardTitle>
