@@ -14,10 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { LoginForm } from './login-form';
 
-export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
+interface SignupFormProps {
+    onSwitchToLogin: () => void;
+}
+
+export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin }, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
   const [generatedOtp, setGeneratedOtp] = React.useState('');
   const [enteredOtp, setEnteredOtp] = React.useState(new Array(4).fill(""));
@@ -207,15 +209,10 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   ];
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
-  const cardVariants = {
-    initial: { opacity: 0, scale: 0.9 },
-    animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeInOut' } },
-  };
-
   if (step === 'otp') {
     return (
-      <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+      <div ref={ref}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
           <form onSubmit={handleOtpSubmit}>
             <CardHeader className="text-center">
               <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -257,13 +254,13 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             </CardFooter>
           </form>
         </Card>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+    <div ref={ref}>
+      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
         <CardHeader className="text-center">
           <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -341,21 +338,11 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="link" className="underline p-0 h-auto">Login</Button>
-                </DialogTrigger>
-                <DialogContent className="bg-transparent p-0 max-w-sm">
-                  <DialogHeader>
-                      <DialogTitle className="sr-only">Login</DialogTitle>
-                    </DialogHeader>
-                    <LoginForm />
-                </DialogContent>
-            </Dialog>
+            <Button variant="link" className="underline p-0 h-auto" onClick={onSwitchToLogin}>Login</Button>
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 SignupForm.displayName = 'SignupForm';

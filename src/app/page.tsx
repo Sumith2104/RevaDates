@@ -1,5 +1,5 @@
-import { Hero } from '@/components/landing/hero';
+import { AuthScreen } from '@/components/auth/auth-screen';
 
 export default function Home() {
-  return <Hero />;
+  return <AuthScreen />;
 }

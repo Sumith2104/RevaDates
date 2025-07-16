@@ -11,10 +11,12 @@ import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { LoginForm } from './login-form';
 
-export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
+interface ForgotPasswordFormProps {
+    onSwitchToLogin: () => void;
+}
+
+export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswordFormProps>(({ onSwitchToLogin }, ref) => {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -108,24 +110,14 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (isSuccess) {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Password Reset</CardTitle>
             <CardDescription>Your password has been changed successfully.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button className="w-full rounded-full">Login</Button>
-                </DialogTrigger>
-                <DialogContent className="bg-transparent p-0 max-w-sm">
-                   <DialogHeader>
-                      <DialogTitle className="sr-only">Login</DialogTitle>
-                    </DialogHeader>
-                    <LoginForm />
-                </DialogContent>
-            </Dialog>
+            <Button className="w-full rounded-full" onClick={onSwitchToLogin}>Login</Button>
           </CardContent>
         </Card>
       </motion.div>
@@ -135,7 +127,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (step === 'enter-otp') {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
             <CardHeader className="text-center">
                 <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
                 <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -207,7 +199,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
         <CardHeader className="text-center">
           <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
@@ -232,17 +224,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Code
             </Button>
-             <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="link">Back to Login</Button>
-                </DialogTrigger>
-                <DialogContent className="bg-transparent p-0 max-w-sm">
-                  <DialogHeader>
-                      <DialogTitle className="sr-only">Login</DialogTitle>
-                    </DialogHeader>
-                    <LoginForm />
-                </DialogContent>
-            </Dialog>
+            <Button variant="link" onClick={onSwitchToLogin}>Back to Login</Button>
           </form>
         </CardContent>
       </Card>

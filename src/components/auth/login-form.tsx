@@ -11,11 +11,13 @@ import { Heart, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ForgotPasswordForm } from './forgot-password-form';
-import { SignupForm } from './signup-form';
 
-export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
+interface LoginFormProps {
+    onSwitchToSignup: () => void;
+    onSwitchToForgotPassword: () => void;
+}
+
+export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToSignup, onSwitchToForgotPassword }, ref) => {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
@@ -92,14 +94,9 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
     }
   };
 
-  const cardVariants = {
-    initial: { opacity: 0, scale: 0.9 },
-    animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeInOut' } },
-  };
-
   return (
-    <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
+    <div ref={ref}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Login</CardTitle>
@@ -123,17 +120,9 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                   <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto">Forgot your password?</Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-transparent p-0 max-w-sm">
-                           <DialogHeader>
-                              <DialogTitle className="sr-only">Forgot Password</DialogTitle>
-                            </DialogHeader>
-                            <ForgotPasswordForm />
-                        </DialogContent>
-                    </Dialog>
+                   <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword}>
+                        Forgot your password?
+                   </Button>
                 </div>
                 <Input 
                   id="password" 
@@ -153,21 +142,13 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             </form>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
-               <Dialog>
-                  <DialogTrigger asChild>
-                      <Button variant="link" className="underline p-0 h-auto">Sign up</Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-transparent p-0 max-w-sm">
-                      <DialogHeader>
-                        <DialogTitle className="sr-only">Sign Up</DialogTitle>
-                      </DialogHeader>
-                      <SignupForm />
-                  </DialogContent>
-              </Dialog>
+              <Button variant="link" className="underline p-0 h-auto" onClick={onSwitchToSignup}>
+                  Sign up
+              </Button>
             </div>
           </CardContent>
         </Card>
-    </motion.div>
+    </div>
   );
 });
 LoginForm.displayName = 'LoginForm';
