@@ -315,14 +315,14 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
           )}
         </div>
         <div className="flex items-center justify-center gap-4">
-          <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
-            <X className="h-8 w-8" />
+          <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-12 w-12 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
+            <X className="h-6 w-6" />
           </Button>
-          <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing || !!triggerSwipeDirection} className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
-            <Undo2 className="h-6 w-6" />
+          <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing || !!triggerSwipeDirection} className="h-10 w-10 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
+            <Undo2 className="h-5 w-5" />
           </Button>
-          <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
-            <Heart className="h-8 w-8 fill-current text-green-500" />
+          <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-12 w-12 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
+            <Heart className="h-6 w-6 fill-current text-green-500" />
           </Button>
         </div>
 
@@ -352,8 +352,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-row justify-end gap-2">
-                    <AlertDialogCancel size="sm">Cancel</AlertDialogCancel>
                     <AlertDialogAction size="sm" onClick={handleBlock} className="bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
+                    <AlertDialogCancel size="sm" className="bg-transparent border-0 text-white hover:bg-white/10 hover:text-white">Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
