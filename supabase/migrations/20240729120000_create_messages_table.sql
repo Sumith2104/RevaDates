@@ -1,49 +1,31 @@
 
--- Create the messages table
-CREATE TABLE public.messages (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    match_id uuid NOT NULL,
-    sender_id uuid NOT NULL,
-    recipient_id uuid NOT NULL,
-    content text NOT NULL,
-    CONSTRAINT messages_pkey PRIMARY KEY (id),
-    CONSTRAINT messages_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id) ON DELETE CASCADE,
-    CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
-    CONSTRAINT messages_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.profiles(id) ON DELETE CASCADE
-);
+create table public.messages (
+    id uuid not null default gen_random_uuid() primary key,
+    match_id bigint not null,
+    sender_id uuid not null,
+    recipient_id uuid not null,
+    content text not null,
+    created_at timestamp with time zone not null default now(),
 
--- Add comments to the table and columns
-COMMENT ON TABLE public.messages IS 'Stores chat messages between users.';
-COMMENT ON COLUMN public.messages.match_id IS 'The match this message belongs to.';
-COMMENT ON COLUMN public.messages.sender_id IS 'The user who sent the message.';
-COMMENT ON COLUMN public.messages.recipient_id IS 'The user who received the message.';
-COMMENT ON COLUMN public.messages.content IS 'The text content of the message.';
+    constraint messages_match_id_fkey foreign key (match_id) references public.matches (id) on delete cascade,
+    constraint messages_sender_id_fkey foreign key (sender_id) references public.profiles (id) on delete cascade,
+    constraint messages_recipient_id_fkey foreign key (recipient_id) references public.profiles (id) on delete cascade
+);
 
 -- Enable Row Level Security
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+alter table public.messages enable row level security;
 
--- Create RLS policies for the messages table
+-- Policies for messages
+create policy "Allow read access to own messages"
+on public.messages for select
+using (auth.uid() = sender_id or auth.uid() = recipient_id);
 
--- Policy: Allow users to view their own messages (either as sender or recipient)
-CREATE POLICY "Allow users to view their own messages"
-ON public.messages
-FOR SELECT
-USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
-
--- Policy: Allow users to insert messages into their own matches
-CREATE POLICY "Allow users to insert messages in their matches"
-ON public.messages
-FOR INSERT
-WITH CHECK (
-    auth.uid() = sender_id AND
-    EXISTS (
-        SELECT 1
-        FROM public.matches
-        WHERE id = messages.match_id
-        AND (user1_id = auth.uid() OR user2_id = auth.uid())
+create policy "Allow insert access to own messages"
+on public.messages for insert
+with check (
+    auth.uid() = sender_id and
+    exists (
+        select 1 from public.matches
+        where id = match_id and (user1_id = auth.uid() or user2_id = auth.uid())
     )
 );
-
--- Grant usage for the sequence if any (gen_random_uuid doesn't need it, but good practice)
-GRANT ALL ON TABLE public.messages TO authenticated, service_role;
