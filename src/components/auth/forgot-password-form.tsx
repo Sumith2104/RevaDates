@@ -108,7 +108,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (isSuccess) {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Password Reset</CardTitle>
@@ -117,9 +117,9 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
           <CardContent>
             <Dialog>
                 <DialogTrigger asChild>
-                    <Button className="w-full">Login</Button>
+                    <Button className="w-full rounded-full">Login</Button>
                 </DialogTrigger>
-                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <DialogContent className="bg-transparent p-0 max-w-sm">
                    <DialogHeader>
                       <DialogTitle className="sr-only">Login</DialogTitle>
                     </DialogHeader>
@@ -135,7 +135,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
   if (step === 'enter-otp') {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
             <CardHeader className="text-center">
                 <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
                 <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -173,6 +173,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                         id="password"
                         type="password"
                         required
+                        className="rounded-lg"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isLoading}
@@ -184,12 +185,13 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                         id="confirm-password"
                         type="password"
                         required
+                        className="rounded-lg"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={isLoading}
                         />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading || otp.join("").length !== 4}>
+                    <Button type="submit" className="w-full rounded-full" disabled={isLoading || otp.join("").length !== 4}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Reset Password
                     </Button>
@@ -205,7 +207,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
         <CardHeader className="text-center">
           <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
@@ -220,12 +222,13 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                 type="email"
                 placeholder="Your Email"
                 required
+                className="rounded-lg"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Code
             </Button>
@@ -233,7 +236,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                 <DialogTrigger asChild>
                     <Button variant="link">Back to Login</Button>
                 </DialogTrigger>
-                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <DialogContent className="bg-transparent p-0 max-w-sm">
                   <DialogHeader>
                       <DialogTitle className="sr-only">Login</DialogTitle>
                     </DialogHeader>

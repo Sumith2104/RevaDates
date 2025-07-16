@@ -215,7 +215,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   if (step === 'otp') {
     return (
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
           <form onSubmit={handleOtpSubmit}>
             <CardHeader className="text-center">
               <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -247,7 +247,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                     })}
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || enteredOtp.join("").length !== 4}>
+              <Button type="submit" className="w-full rounded-full" disabled={isLoading || enteredOtp.join("").length !== 4}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Verify & Sign Up
               </Button>
@@ -263,7 +263,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+      <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
         <CardHeader className="text-center">
           <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Sign Up</CardTitle>
@@ -274,26 +274,26 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="first-name">First name</Label>
-                <Input id="first-name" name="firstName" placeholder="John" required disabled={isLoading} />
+                <Input id="first-name" name="firstName" placeholder="John" required disabled={isLoading} className="rounded-lg" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="last-name">Last name</Label>
-                <Input id="last-name" name="lastName" placeholder="Doe" required disabled={isLoading} />
+                <Input id="last-name" name="lastName" placeholder="Doe" required disabled={isLoading} className="rounded-lg" />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} />
+              <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} className="rounded-lg" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required disabled={isLoading} />
+              <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required disabled={isLoading} className="rounded-lg" />
             </div>
             <div className="grid gap-2">
               <Label>Date of Birth</Label>
               <div className="grid grid-cols-3 gap-2">
                 <Select name="dobMonth" required disabled={isLoading}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Month" />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,7 +305,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   </SelectContent>
                 </Select>
                 <Select name="dobDay" required disabled={isLoading}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Day" />
                   </SelectTrigger>
                   <SelectContent>
@@ -317,7 +317,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   </SelectContent>
                 </Select>
                 <Select name="dobYear" required disabled={isLoading}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Year" />
                   </SelectTrigger>
                   <SelectContent>
@@ -332,9 +332,9 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" name="password" required disabled={isLoading} />
+              <Input id="password" type="password" name="password" required disabled={isLoading} className="rounded-lg" />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create an account
             </Button>
@@ -345,7 +345,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                 <DialogTrigger asChild>
                     <Button variant="link" className="underline p-0 h-auto">Login</Button>
                 </DialogTrigger>
-                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <DialogContent className="bg-transparent p-0 max-w-sm">
                   <DialogHeader>
                       <DialogTitle className="sr-only">Login</DialogTitle>
                     </DialogHeader>

@@ -99,7 +99,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
   return (
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg" {...props}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg" {...props}>
           <CardHeader className="text-center">
             <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Login</CardTitle>
@@ -114,6 +114,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   type="email" 
                   placeholder="Your Email" 
                   required 
+                  className="rounded-lg"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -126,7 +127,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                         <DialogTrigger asChild>
                             <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto">Forgot your password?</Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                        <DialogContent className="bg-transparent p-0 max-w-sm">
                            <DialogHeader>
                               <DialogTitle className="sr-only">Forgot Password</DialogTitle>
                             </DialogHeader>
@@ -139,12 +140,13 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   type="password" 
                   placeholder="Your Password" 
                   required 
+                  className="rounded-lg"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Login
               </Button>
@@ -155,7 +157,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                   <DialogTrigger asChild>
                       <Button variant="link" className="underline p-0 h-auto">Sign up</Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                  <DialogContent className="bg-transparent p-0 max-w-sm">
                       <DialogHeader>
                         <DialogTitle className="sr-only">Sign Up</DialogTitle>
                       </DialogHeader>
