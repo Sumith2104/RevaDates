@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { LoginForm } from './login-form';
 
 export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
@@ -339,9 +341,14 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
           </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
-            <Link href="/login" className="underline">
-              Login
-            </Link>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="link" className="underline p-0 h-auto">Login</Button>
+                </DialogTrigger>
+                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                    <LoginForm />
+                </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>

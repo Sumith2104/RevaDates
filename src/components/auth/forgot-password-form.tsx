@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { LoginForm } from './login-form';
 
 export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const { toast } = useToast();
@@ -113,9 +115,14 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
             <CardDescription>Your password has been changed successfully.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => router.push('/login')}>
-              Login
-            </Button>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button className="w-full">Login</Button>
+                </DialogTrigger>
+                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                    <LoginForm />
+                </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </motion.div>
@@ -219,9 +226,14 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Code
             </Button>
-            <Button variant="link" asChild>
-                  <Link href="/login">Back to Login</Link>
-              </Button>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="link">Back to Login</Button>
+                </DialogTrigger>
+                <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                    <LoginForm />
+                </DialogContent>
+            </Dialog>
           </form>
         </CardContent>
       </Card>

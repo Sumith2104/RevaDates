@@ -5,6 +5,9 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { SignupForm } from '../auth/signup-form';
+import { LoginForm } from '../auth/login-form';
 
 export function LandingHeader() {
   const glassButtonClasses = "bg-white/10 backdrop-blur-md hover:bg-white/20";
@@ -19,12 +22,27 @@ export function LandingHeader() {
           </span>
         </Link>
         <div className="flex flex-row gap-4">
-          <Button asChild size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
-            <Link href="/signup">Sign up</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className={`font-semibold rounded-full ${glassButtonClasses}`}>
-            <Link href="/login">Login</Link>
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="lg" className={`font-semibold rounded-full text-white ${glassButtonClasses}`}>
+                Sign up
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+              <SignupForm />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="lg" variant="outline" className={`font-semibold rounded-full ${glassButtonClasses}`}>
+                Login
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+              <LoginForm />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </header>

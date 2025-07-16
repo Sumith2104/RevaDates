@@ -5,8 +5,9 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from './landing-header';
-
-// const phrases = [""];
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { LoginForm } from '../auth/login-form';
+import { SignupForm } from '../auth/signup-form';
 
 const phrases = [
   "Take It All Off",
@@ -77,12 +78,23 @@ export function Hero() {
           </p>
         </div>
         <div className="flex flex-row gap-4 mt-4">
-          <Button asChild size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">
-            <Link href="/signup">Sign up</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">
-            <Link href="/login">Login</Link>
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+                <Button size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">Sign up</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <SignupForm />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+                <Button size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">Login</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <LoginForm />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

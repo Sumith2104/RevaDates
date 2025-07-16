@@ -11,6 +11,9 @@ import { Heart, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { ForgotPasswordForm } from './forgot-password-form';
+import { SignupForm } from './signup-form';
 
 export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
   const router = useRouter();
@@ -119,9 +122,14 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
-                    Forgot your password?
-                  </Link>
+                   <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto">Forgot your password?</Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                            <ForgotPasswordForm />
+                        </DialogContent>
+                    </Dialog>
                 </div>
                 <Input 
                   id="password" 
@@ -140,9 +148,14 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
             </form>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
-                Sign up
-              </Link>
+               <Dialog>
+                  <DialogTrigger asChild>
+                      <Button variant="link" className="underline p-0 h-auto">Sign up</Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                      <SignupForm />
+                  </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
