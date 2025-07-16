@@ -9,6 +9,29 @@ import type { UserProfile } from '@/lib/types';
 import { differenceInYears } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
+// Haversine formula to calculate distance between two lat/lon points
+function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Function to parse POINT(lon lat) string
+function parseLocation(locationString: string): { latitude: number; longitude: number } | null {
+    if (!locationString) return null;
+    const match = locationString.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
+    if (match && match.length === 3) {
+        return { longitude: parseFloat(match[1]), latitude: parseFloat(match[2]) };
+    }
+    return null;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
@@ -27,21 +50,31 @@ export default function DashboardPage() {
   React.useEffect(() => {
     async function fetchProfiles() {
       if (!currentUserId) return;
+      setLoading(true);
 
       const supabase = createClient();
 
-      // First, get the current user's discovery settings
-      const { data: userSettings, error: settingsError } = await supabase
+      // First, get the current user's profile including settings and location
+      const { data: currentUserProfile, error: currentUserError } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km')
+        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location')
         .eq('id', currentUserId)
         .single();
 
-      if (settingsError) {
-          console.error('Error fetching user settings:', settingsError);
+      if (currentUserError) {
+          console.error('Error fetching current user settings:', currentUserError);
           setLoading(false);
           return;
       }
+      
+      const { 
+          discovery_age_min: minAge, 
+          discovery_age_max: maxAge, 
+          discovery_distance_km: maxDistance,
+          location: currentUserLocationStr
+      } = currentUserProfile;
+      
+      const currentUserLocation = parseLocation(currentUserLocationStr);
 
       // Get IDs of users the current user has already swiped on
       const { data: swipedUsersData, error: swipedError } = await supabase
@@ -56,42 +89,64 @@ export default function DashboardPage() {
         return;
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
-      
-      // Use the RPC function with settings to get filtered profiles
-      const { data: nearbyProfiles, error: rpcError } = await supabase.rpc(
-        'find_nearby_profiles',
-        {
-          current_user_id: currentUserId,
-          min_age: userSettings.discovery_age_min,
-          max_age: userSettings.discovery_age_max,
-          max_distance_km: userSettings.discovery_distance_km,
-        }
-      );
 
-      if (rpcError) {
-        console.error('Error fetching profiles via RPC:', rpcError);
+      // Fetch all potential profiles (excluding the current user and already swiped ones)
+      const { data: allProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .not('id', 'in', `(${[currentUserId, ...swipedUserIds].map(id => `'${id}'`).join(',')})`);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
         setUsers([]);
         setLoading(false);
         return;
       }
 
-      // Filter out users that have been swiped on
-      const filteredProfiles = nearbyProfiles ? nearbyProfiles.filter(p => !swipedUserIds.includes(p.id)) : [];
+      // Filter profiles in the application code
+      const filteredProfiles = allProfiles
+        .map(profile => {
+            const age = differenceInYears(new Date(), new Date(profile.dob));
+            let distance = null;
+            const profileLocation = parseLocation(profile.location);
+
+            if (currentUserLocation && profileLocation) {
+                distance = getDistanceInKm(
+                    currentUserLocation.latitude,
+                    currentUserLocation.longitude,
+                    profileLocation.latitude,
+                    profileLocation.longitude
+                );
+            }
+            
+            return {
+                ...profile,
+                age,
+                distance, // distance in km
+                distance_meters: distance !== null ? distance * 1000 : null,
+            };
+        })
+        .filter(profile => {
+            // Age filter
+            const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
+            if (!isAgeMatch) return false;
+
+            // Distance filter
+            if (currentUserLocation) { // Only filter by distance if current user has a location
+                if (profile.distance === null) return false; // If we require location, exclude those without
+                return profile.distance <= maxDistance;
+            }
+            
+            return true; // If no location, don't filter by distance
+        });
 
       if (filteredProfiles) {
-        const mappedUsers: UserProfile[] = filteredProfiles.map(profile => ({
-          ...profile,
-          age: differenceInYears(new Date(), new Date(profile.dob)),
-          distance: profile.distance_meters ? Math.round(profile.distance_meters) : null,
-        }));
-        
-        // Shuffle the mapped users array
-        for (let i = mappedUsers.length - 1; i > 0; i--) {
+        // Shuffle the filtered profiles array
+        for (let i = filteredProfiles.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [mappedUsers[i], mappedUsers[j]] = [mappedUsers[j], mappedUsers[i]];
+            [filteredProfiles[i], filteredProfiles[j]] = [filteredProfiles[j], filteredProfiles[i]];
         }
-        
-        setUsers(mappedUsers);
+        setUsers(filteredProfiles);
       }
        setLoading(false);
     }
