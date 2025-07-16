@@ -65,7 +65,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
 
     const { data, error: queryError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, name')
       .eq('email', email)
       .eq('password', password) // In a real app, passwords should be hashed!
       .single();
@@ -86,7 +86,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
       setIsLoading(false);
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: `Welcome back, ${data.name.split(' ')[0]}!`,
       });
       router.push('/dashboard');
     }
