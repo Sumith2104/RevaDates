@@ -5,7 +5,7 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { SignupForm } from '../auth/signup-form';
 import { LoginForm } from '../auth/login-form';
 
@@ -29,6 +29,9 @@ export function LandingHeader() {
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+               <DialogHeader>
+                  <DialogTitle className="sr-only">Sign Up</DialogTitle>
+                </DialogHeader>
               <SignupForm />
             </DialogContent>
           </Dialog>
@@ -40,6 +43,9 @@ export function LandingHeader() {
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+               <DialogHeader>
+                  <DialogTitle className="sr-only">Login</DialogTitle>
+                </DialogHeader>
               <LoginForm />
             </DialogContent>
           </Dialog>

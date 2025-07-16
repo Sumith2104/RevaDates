@@ -5,7 +5,7 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from './landing-header';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { LoginForm } from '../auth/login-form';
 import { SignupForm } from '../auth/signup-form';
 
@@ -83,6 +83,9 @@ export function Hero() {
                 <Button size="lg" className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20">Sign up</Button>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="sr-only">Sign Up</DialogTitle>
+                </DialogHeader>
                 <SignupForm />
             </DialogContent>
           </Dialog>
@@ -92,6 +95,9 @@ export function Hero() {
                 <Button size="lg" variant="outline" className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20">Login</Button>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="sr-only">Login</DialogTitle>
+                </DialogHeader>
                 <LoginForm />
             </DialogContent>
           </Dialog>

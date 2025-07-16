@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { LoginForm } from './login-form';
 
 export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
@@ -346,6 +346,9 @@ export const SignupForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                     <Button variant="link" className="underline p-0 h-auto">Login</Button>
                 </DialogTrigger>
                 <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                  <DialogHeader>
+                      <DialogTitle className="sr-only">Login</DialogTitle>
+                    </DialogHeader>
                     <LoginForm />
                 </DialogContent>
             </Dialog>

@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { LoginForm } from './login-form';
 
 export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
@@ -120,6 +120,9 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                     <Button className="w-full">Login</Button>
                 </DialogTrigger>
                 <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                   <DialogHeader>
+                      <DialogTitle className="sr-only">Login</DialogTitle>
+                    </DialogHeader>
                     <LoginForm />
                 </DialogContent>
             </Dialog>
@@ -231,6 +234,9 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, {}>((props, r
                     <Button variant="link">Back to Login</Button>
                 </DialogTrigger>
                 <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                  <DialogHeader>
+                      <DialogTitle className="sr-only">Login</DialogTitle>
+                    </DialogHeader>
                     <LoginForm />
                 </DialogContent>
             </Dialog>

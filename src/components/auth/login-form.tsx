@@ -11,7 +11,7 @@ import { Heart, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { SignupForm } from './signup-form';
 
@@ -127,6 +127,9 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                             <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto">Forgot your password?</Button>
                         </DialogTrigger>
                         <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                           <DialogHeader>
+                              <DialogTitle className="sr-only">Forgot Password</DialogTitle>
+                            </DialogHeader>
                             <ForgotPasswordForm />
                         </DialogContent>
                     </Dialog>
@@ -153,6 +156,9 @@ export const LoginForm = React.forwardRef<HTMLDivElement, {}>((props, ref) => {
                       <Button variant="link" className="underline p-0 h-auto">Sign up</Button>
                   </DialogTrigger>
                   <DialogContent className="bg-transparent border-0 p-0 max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle className="sr-only">Sign Up</DialogTitle>
+                      </DialogHeader>
                       <SignupForm />
                   </DialogContent>
               </Dialog>
