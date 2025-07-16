@@ -94,10 +94,11 @@ export default function DashboardPage() {
       // Combine all users to exclude: current user, swiped users, and blocked users
       const allExcludedIds = [currentUserId, ...swipedUserIds, ...(blockedUsers || [])];
       
-      // Fetch all potential profiles (excluding the current user and already swiped/blocked ones)
+      // Fetch all potential profiles (excluding the current user and already swiped/blocked ones), ordered by most recent
       let query = supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (allExcludedIds.length > 0) {
         query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
@@ -150,11 +151,6 @@ export default function DashboardPage() {
         });
 
       if (filteredProfiles) {
-        // Shuffle the filtered profiles array
-        for (let i = filteredProfiles.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [filteredProfiles[i], filteredProfiles[j]] = [filteredProfiles[j], filteredProfiles[i]];
-        }
         setUsers(filteredProfiles);
       }
        setLoading(false);
