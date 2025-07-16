@@ -96,14 +96,22 @@ export function SettingsView() {
                 <CardContent className="space-y-8">
                     <div className="space-y-4">
                         <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-5 w-full bg-muted/50" />
-                        <Skeleton className="h-5 w-full bg-muted/50" />
+                        <Skeleton className="h-5 w-full" />
                     </div>
                      <div className="space-y-4">
                         <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-5 w-full bg-muted/50" />
-                        <Skeleton className="h-5 w-full bg-muted/50" />
+                        <Skeleton className="h-5 w-full" />
                     </div>
+                </CardContent>
+            </Card>
+            <Card className="mt-6">
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-px w-full" />
+                    <Skeleton className="h-10 w-full" />
                 </CardContent>
             </Card>
         </div>
