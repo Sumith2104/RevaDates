@@ -56,7 +56,7 @@ export function SettingsView() {
     }
 
     fetchSettings();
-  }, [currentUserId, supabase, toast]);
+  }, [currentUserId]);
 
   const handleSaveSettings = async () => {
     if (!currentUserId) return;
@@ -97,10 +97,12 @@ export function SettingsView() {
                     <div className="space-y-4">
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-5 w-full" />
+                        <Skeleton className="h-2 w-1/4 ml-auto" />
                     </div>
                      <div className="space-y-4">
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-5 w-full" />
+                        <Skeleton className="h-2 w-1/4 ml-auto" />
                     </div>
                 </CardContent>
             </Card>
