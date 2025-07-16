@@ -8,15 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload, Loader2, Shield, Heart } from 'lucide-react';
+import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { SettingsView } from '../settings/settings-view';
-import Link from 'next/link';
 import { BlockedUsersDialog } from '../settings/settings-view';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { getMatches } from '@/lib/actions';
+import type { Match } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { getInitials } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 type User = {
     id: string;
@@ -27,6 +39,85 @@ type User = {
     photos: string[] | null;
     bio: string;
 };
+
+function MatchesDialog({ userId }: { userId: string }) {
+    const [matches, setMatches] = React.useState<Match[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const fetchMatches = React.useCallback(async () => {
+        setIsLoading(true);
+        const result = await getMatches(userId);
+        if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            setMatches([]);
+        } else {
+            setMatches(result.data as Match[]);
+        }
+        setIsLoading(false);
+    }, [userId, toast]);
+    
+    const navigateToChat = (matchId: string) => {
+        router.push('/chats'); 
+    };
+
+    return (
+        <Dialog onOpenChange={(open) => open && fetchMatches()}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                    <Heart className="h-4 w-4" />
+                    My Matches
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
+                <DialogHeader>
+                    <DialogTitle className="text-white">My Matches</DialogTitle>
+                    <DialogDescription className="text-white/70">
+                        These are the people you have mutually liked.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[400px] pr-4">
+                  <div className="space-y-4 py-4 text-white">
+                      {isLoading && (
+                           [...Array(3)].map((_, i) => (
+                              <div key={i} className="flex items-center space-x-4">
+                                  <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
+                                  <div className="space-y-2">
+                                      <Skeleton className="h-4 w-[150px] bg-white/20" />
+                                  </div>
+                              </div>
+                           ))
+                      )}
+                      {!isLoading && matches.length === 0 && (
+                          <div className="text-center text-white/70 py-10">
+                              <Heart className="mx-auto h-12 w-12 mb-4" />
+                              <h2 className="text-xl font-semibold text-white">No Matches Yet</h2>
+                              <p>Keep swiping to find your perfect match!</p>
+                          </div>
+                      )}
+                      {!isLoading && matches.map(match => (
+                          <div 
+                            key={match.id} 
+                            className="flex items-center justify-between text-white p-2 rounded-md hover:bg-white/10 cursor-pointer"
+                            onClick={() => navigateToChat(match.id)}
+                          >
+                              <div className="flex items-center gap-4">
+                                  <Avatar>
+                                      <AvatarImage src={match.matchedUser.photos?.[0]} />
+                                      <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium">{match.matchedUser.name}</span>
+                              </div>
+                              <MessageSquare className="h-5 w-5 text-white/70" />
+                          </div>
+                      ))}
+                  </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export function ProfileView({ user: initialUser }: { user: User }) {
   const [isEditing, setIsEditing] = React.useState(false);
@@ -208,15 +299,12 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               <CardTitle>Connections</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-              <Button asChild variant="outline" className="w-full justify-start gap-2">
-                  <Link href="/matches">
-                    <Heart className="h-4 w-4" />
-                    My Matches
-                  </Link>
-              </Button>
+              <MatchesDialog userId={user.id} />
               <BlockedUsersDialog userId={user.id} />
           </CardContent>
       </Card>
     </div>
   );
 }
+
+    
