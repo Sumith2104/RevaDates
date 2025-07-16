@@ -32,6 +32,11 @@ export function AuthScreen() {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const activePhrase = phrases[phraseIndex];
 
+  const aboutRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollToAbout = () => {
+    aboutRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   React.useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -72,99 +77,112 @@ export function AuthScreen() {
 
   return (
     <div
-      className="min-h-screen w-full bg-black overflow-x-hidden"
-      onClick={handleBackdropClick}
+      className="w-full bg-black overflow-x-hidden"
     >
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-20">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <Heart className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-              RevaDates
-            </span>
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center"
+        onClick={handleBackdropClick}
+      >
+        {/* Header */}
+        <header className="fixed top-0 left-0 right-0 z-20">
+          <div className="container mx-auto flex h-20 items-center justify-between px-4">
+            <div className="flex items-center gap-2 font-bold text-lg">
+              <Heart className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+                RevaDates
+              </span>
+            </div>
           </div>
+        </header>
+
+        {/* Background Grid & Glow */}
+        <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]" />
         </div>
-      </header>
 
-      {/* Background Grid & Glow */}
-      <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
-        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]" />
-      </div>
-
-      {/* Auth Content */}
-      <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
-        <AnimatePresence mode="wait">
-          {view === 'start' && (
-            <motion.div
-              key="start"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center"
-            >
-              <h2 className="text-4xl font-bold tracking-tight text-neutral-200 mb-4">
-                Get started
-              </h2>
-              <div className="mb-8 max-w-2xl h-8 flex items-center justify-center mt-2">
-                <p className="text-lg text-neutral-300">
-                  {typedPhrase}
-                  <span className="animate-pulse">|</span>
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-4">
-                <div className="flex flex-row gap-4">
-                  <Button
-                    size="lg"
-                    className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20"
-                    onClick={() => setView('signup')}
-                  >
-                    Sign up
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
-                    onClick={() => setView('login')}
-                  >
-                    Login
-                  </Button>
+        {/* Auth Content */}
+        <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
+          <AnimatePresence mode="wait">
+            {view === 'start' && (
+              <motion.div
+                key="start"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center"
+              >
+                <h2 className="text-4xl font-bold tracking-tight text-neutral-200 mb-4">
+                  Get started
+                </h2>
+                <div className="mb-8 max-w-2xl h-8 flex items-center justify-center mt-2">
+                  <p className="text-lg text-neutral-300">
+                    {typedPhrase}
+                    <span className="animate-pulse">|</span>
+                  </p>
                 </div>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                >
-                  <Button
-                    variant="outline"
-                    className="font-semibold rounded-full mt-8 bg-transparent border-white/20 backdrop-blur-md hover:bg-white/20"
-                    onClick={() => {
-                      // About functionality to be added
-                    }}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-row gap-4">
+                    <Button
+                      size="lg"
+                      className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20"
+                      onClick={() => setView('signup')}
+                    >
+                      Sign up
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
+                      onClick={() => setView('login')}
+                    >
+                      Login
+                    </Button>
+                  </div>
+
+                  <button
+                    onClick={scrollToAbout}
+                    className="text-sm text-neutral-400 hover:text-white transition-colors mt-3 underline"
                   >
-                    About
-                  </Button>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
+                    Learn more about RevaDates
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
-          {view === 'login' && (
-            <motion.div key="login" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <LoginForm
-                onSwitchToSignup={() => setView('signup')}
-                onSwitchToForgotPassword={() => {}}
-              />
-            </motion.div>
-          )}
+            {view === 'login' && (
+              <motion.div key="login" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+                <LoginForm
+                  onSwitchToSignup={() => setView('signup')}
+                  onSwitchToForgotPassword={() => {}}
+                />
+              </motion.div>
+            )}
 
-          {view === 'signup' && (
-            <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <SignupForm onSwitchToLogin={() => setView('login')} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {view === 'signup' && (
+              <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+                <SignupForm onSwitchToLogin={() => setView('login')} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+      {/* Static About Section */}
+      <div
+        ref={aboutRef}
+        className="w-full bg-black text-white py-20 px-6 border-t border-white/10"
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">About RevaDates</h2>
+          <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
+            RevaDates is your safe space to connect authentically. Whether you're here for
+            sparks, deep conversations, or just fun vibes — you're free to express yourself
+            without judgment.
+            <br /><br />
+            We focus on raw, real connections powered by intuitive design and a privacy-first
+            approach. Join a community that's not afraid to be fully themselves.
+          </p>
+        </div>
       </div>
     </div>
   );
