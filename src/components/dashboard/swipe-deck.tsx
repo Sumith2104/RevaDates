@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, X, Undo2, MessageSquare, ShieldAlert } from 'lucide-react';
+import { Heart, X, Undo2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -267,17 +267,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                   <div className="flex justify-between items-center">
                     <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
                     <div className="flex items-center gap-2">
-                        <Button 
-                            asChild 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20"
-                        >
-                            <Link href="/chats" onClick={(e) => e.stopPropagation()}>
-                                <MessageSquare className="h-6 w-6" />
-                                <span className="sr-only">Chat</span>
-                            </Link>
-                        </Button>
                         <Button 
                             variant="ghost"
                             size="icon"
