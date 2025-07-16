@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export function SettingsView() {
   const router = useRouter();
@@ -26,6 +27,11 @@ export function SettingsView() {
   const [distance, setDistance] = React.useState([50]);
   const [matchNotification, setMatchNotification] = React.useState(true);
 
+  // Debounce the settings to avoid excessive database writes
+  const debouncedAgeRange = useDebounce(ageRange, 500);
+  const debouncedDistance = useDebounce(distance, 500);
+  const debouncedMatchNotification = useDebounce(matchNotification, 500);
+
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
     if (!userId) {
@@ -35,6 +41,7 @@ export function SettingsView() {
     }
   }, [router]);
 
+  // Effect to fetch initial settings
   React.useEffect(() => {
     if (!currentUserId) return;
 
@@ -61,28 +68,32 @@ export function SettingsView() {
     fetchSettings();
   }, [currentUserId, toast]);
 
-  const handleSaveSettings = async () => {
-    if (!currentUserId) return;
-    setSaving(true);
-    const supabase = createClient();
+  // Effect to auto-save settings on change
+  React.useEffect(() => {
+    if (loading || !currentUserId) return;
 
-    const { error } = await supabase
-        .from('profiles')
-        .update({
-            discovery_age_min: ageRange[0],
-            discovery_age_max: ageRange[1],
-            discovery_distance_km: distance[0],
-            match_notification: matchNotification,
-        })
-        .eq('id', currentUserId);
+    const saveSettings = async () => {
+        setSaving(true);
+        const supabase = createClient();
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                discovery_age_min: debouncedAgeRange[0],
+                discovery_age_max: debouncedAgeRange[1],
+                discovery_distance_km: debouncedDistance[0],
+                match_notification: debouncedMatchNotification,
+            })
+            .eq('id', currentUserId);
+        
+        setSaving(false);
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error saving settings', description: error.message });
+        }
+    };
+    
+    saveSettings();
+  }, [debouncedAgeRange, debouncedDistance, debouncedMatchNotification, currentUserId, loading, toast]);
 
-    setSaving(false);
-    if (error) {
-        toast({ variant: 'destructive', title: 'Error saving settings', description: error.message });
-    } else {
-        toast({ title: 'Settings Saved!', description: 'Your preferences have been updated.' });
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('currentUserId');
@@ -98,7 +109,7 @@ export function SettingsView() {
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-4 w-3/4" />
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-8 pt-6">
             <div className="space-y-4">
               <Skeleton className="h-4 w-1/4" />
               <Skeleton className="h-5 w-full" />
@@ -115,7 +126,7 @@ export function SettingsView() {
           <CardHeader>
              <Skeleton className="h-6 w-1/4" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <Skeleton className="h-10 w-full" />
           </CardContent>
         </Card>
@@ -123,7 +134,7 @@ export function SettingsView() {
           <CardHeader>
             <Skeleton className="h-6 w-1/4" />
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <Skeleton className="h-10 w-full" />
             <Separator />
             <Skeleton className="h-10 w-full" />
@@ -144,10 +155,7 @@ export function SettingsView() {
               <CardTitle>Discovery Settings</CardTitle>
               <CardDescription>Control who you see on RevaDates.</CardDescription>
             </div>
-            <Button onClick={handleSaveSettings} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
-            </Button>
+            {saving && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -220,3 +228,4 @@ export function SettingsView() {
     </div>
   );
 }
+
