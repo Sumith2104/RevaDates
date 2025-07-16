@@ -316,9 +316,7 @@ export function SettingsView() {
         <CardHeader>
             <CardTitle>Account</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-             {currentUserId && <BlockedUsersDialog userId={currentUserId} />}
-            <Separator />
+        <CardContent>
             <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 Logout
