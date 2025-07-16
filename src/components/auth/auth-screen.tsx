@@ -77,7 +77,7 @@ export function AuthScreen() {
     initial: { y: '100vh', opacity: 0 },
     animate: { y: 0, opacity: 1 },
     exit: { y: '100vh', opacity: 0 },
-    transition: { type: 'spring', stiffness: 400, damping: 30 }
+    transition: { type: 'spring', stiffness: 250, damping: 35 }
   };
 
   return (
