@@ -344,7 +344,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
       </div>
       {activeUser && (
         <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-            <AlertDialogContent className="bg-black border-neutral-800">
+            <AlertDialogContent className="bg-black/70 backdrop-blur-md border-neutral-800">
                 <AlertDialogHeader>
                 <AlertDialogTitle>Block {activeUser.name}?</AlertDialogTitle>
                 <AlertDialogDescription>
