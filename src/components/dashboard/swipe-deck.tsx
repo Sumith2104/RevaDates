@@ -344,16 +344,16 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
       </div>
       {activeUser && (
         <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-            <AlertDialogContent className="w-full max-w-[340px] bg-black/90 backdrop-blur-md rounded-[2.5rem]">
-                <AlertDialogHeader>
-                <AlertDialogTitle>Block {activeUser.name}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Are you sure you want to block this user?
-                </AlertDialogDescription>
+            <AlertDialogContent className="w-full max-w-[340px] rounded-xl p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20">
+                <AlertDialogHeader className="text-center sm:text-center">
+                    <AlertDialogTitle className="text-white text-lg font-semibold">Block {activeUser.name}?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                        Are you sure you want to block this user?
+                    </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="flex-row items-center justify-center gap-2">
-                    <AlertDialogAction size="sm" onClick={handleBlock} className="w-24 rounded-full bg-destructive hover:bg-destructive/90">Block</AlertDialogAction>
-                    <AlertDialogCancel size="sm" onClick={() => setIsBlockConfirmOpen(false)} className="w-24 mt-0 rounded-full bg-white text-black hover:bg-gray-200">Cancel</AlertDialogCancel>
+                <AlertDialogFooter className="mt-6 flex sm:justify-center justify-center gap-4">
+                    <AlertDialogAction onClick={handleBlock} className="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="bg-white hover:bg-gray-100 text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -361,5 +361,3 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     </>
   );
 }
-
-    
