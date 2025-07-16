@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -98,7 +98,6 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
     <div ref={ref}>
         <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
           <CardHeader className="text-center">
-            <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Login</CardTitle>
             <CardDescription>Enter your email below to login to your account</CardDescription>
           </CardHeader>

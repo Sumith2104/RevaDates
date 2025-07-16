@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
@@ -213,7 +213,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
           <form onSubmit={handleOtpSubmit}>
             <CardHeader className="text-center">
-              <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
               <CardTitle className="text-2xl">Verify your email</CardTitle>
               <CardDescription>Enter the 4-digit code we sent to your email.</CardDescription>
             </CardHeader>
@@ -260,7 +259,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     <div ref={ref}>
       <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
         <CardHeader className="text-center">
-          <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>Create your account to find your match</CardDescription>
         </CardHeader>
