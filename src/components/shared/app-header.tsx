@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -11,11 +12,12 @@ export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
   
   React.useEffect(() => {
-    const fetchUnreadCount = async () => {
-      const userId = localStorage.getItem('currentUserId');
-      if (!userId) return;
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) return;
+    
+    const supabase = createClient();
 
-      const supabase = createClient();
+    const fetchUnreadCount = async () => {
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -31,11 +33,19 @@ export function AppHeader() {
     
     fetchUnreadCount();
 
-    const supabase = createClient();
-    const channel = supabase.channel('notifications')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+    const channel = supabase.channel('realtime-notifications-count')
+      .on(
+        'postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}` 
+        }, 
+        (payload) => {
           fetchUnreadCount();
-      })
+        }
+      )
       .subscribe();
       
     return () => {

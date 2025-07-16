@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, useInView } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 
 type Notification = {
     id: string;
@@ -71,6 +72,27 @@ export default function NotificationsPage() {
         };
 
         fetchAndMarkNotifications();
+        
+        const supabase = createClient();
+        const channel = supabase.channel('realtime-notifications-list')
+          .on(
+            'postgres_changes', 
+            { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'notifications',
+              filter: `recipient_id=eq.${userId}` 
+            }, 
+            (payload) => {
+              fetchAndMarkNotifications();
+            }
+          )
+          .subscribe();
+          
+        return () => {
+          supabase.removeChannel(channel);
+        };
+
     }, []);
 
     return (

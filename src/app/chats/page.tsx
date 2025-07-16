@@ -11,6 +11,7 @@ import { getInitials } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 function MatchList({ matches, onNavigate }: { matches: Match[]; onNavigate: (id: string, name: string) => void; }) {
     if (matches.length === 0) {
@@ -112,6 +113,18 @@ export default function ChatsPage() {
         };
 
         fetchData();
+        
+        const supabase = createClient();
+        const channel = supabase.channel('realtime-chats')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'swipes' }, fetchData)
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+
     }, []);
 
     const handleNavigation = (matchId: string, name: string) => {
