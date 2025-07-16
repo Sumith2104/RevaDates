@@ -352,8 +352,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
-                    <AlertDialogAction onClick={handleBlock} className="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
-                    <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="bg-white hover:bg-gray-100 text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBlock} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="w-28 bg-white hover:bg-gray-100 text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -361,5 +361,3 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     </>
   );
 }
-
-    
