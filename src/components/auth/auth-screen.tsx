@@ -60,6 +60,12 @@ export function AuthScreen() {
     const handleSetView = (newView: 'start' | 'login' | 'signup') => {
         setView(newView);
     };
+    
+    const handleBackdropClick = () => {
+        if (view !== 'start') {
+            setView('start');
+        }
+    };
 
     const cardVariants = {
         initial: { y: '100vh', opacity: 0 },
@@ -69,7 +75,7 @@ export function AuthScreen() {
     };
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-black overflow-hidden">
+        <div className="flex h-screen w-full items-center justify-center bg-black overflow-hidden" onClick={handleBackdropClick}>
             <header className="fixed top-0 left-0 right-0 z-20">
                 <div className="container mx-auto flex h-20 items-center justify-between px-4">
                     <div className="flex items-center gap-2 font-bold text-lg">
@@ -110,13 +116,13 @@ export function AuthScreen() {
                 )}
 
                 {view === 'login' && (
-                    <motion.div key="login" {...cardVariants}>
+                    <motion.div key="login" {...cardVariants} onClick={(e) => e.stopPropagation()}>
                         <LoginForm onSwitchToSignup={() => setView('signup')} onSwitchToForgotPassword={() => {}} />
                     </motion.div>
                 )}
 
                 {view === 'signup' && (
-                     <motion.div key="signup" {...cardVariants}>
+                     <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
                         <SignupForm onSwitchToLogin={() => setView('login')} />
                     </motion.div>
                 )}
