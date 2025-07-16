@@ -124,7 +124,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
     const email = formData.get('email') as string;
-    const phone = formData.get('phone') as string;
     const password = formData.get('password') as string;
     const dobYear = formData.get('dobYear') as string;
     const dobMonth = formData.get('dobMonth') as string;
@@ -133,7 +132,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
         email,
-        phone,
         password, // Storing password directly. Should be hashed in a real app.
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: 'Welcome to RevaDates! Please update your bio.',
@@ -281,10 +279,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} className="rounded-lg" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" name="phone" placeholder="555-123-4567" required disabled={isLoading} className="rounded-lg" />
             </div>
             <div className="grid gap-2">
               <Label>Date of Birth</Label>
