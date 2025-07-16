@@ -68,6 +68,11 @@ body {
   }
   body {
     @apply bg-background text-foreground select-none;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  body::-webkit-scrollbar {
+    display: none; /* WebKit */
   }
 }
 
