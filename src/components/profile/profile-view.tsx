@@ -279,7 +279,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-8">
             <div>
-              <Label>Photos</Label>
+              <Label>My Gallery</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 {userPhotos.map((photo, index) => (
                   <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
