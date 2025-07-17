@@ -11,7 +11,7 @@ import { getInitials, cn } from '@/lib/utils';
 import { getMatchDetails, getChatMessages, sendMessage } from '@/lib/actions';
 import type { UserProfile } from '@/lib/types';
 import { ArrowLeft, Send } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 type Message = {
@@ -21,8 +21,10 @@ type Message = {
     created_at: string;
 };
 
-export default function ChatPage({ params: { chatId } }: { params: { chatId: string } }) {
+export default function ChatPage() {
     const router = useRouter();
+    const params = useParams();
+    const chatId = params.chatId as string;
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
@@ -205,4 +207,3 @@ export default function ChatPage({ params: { chatId } }: { params: { chatId: str
         </div>
     );
 }
-
