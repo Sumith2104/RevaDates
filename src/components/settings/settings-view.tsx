@@ -93,7 +93,7 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
                           <div key={user.id} className="flex items-center justify-between text-white">
                               <div className="flex items-center gap-4">
                                   <Avatar>
-                                      <AvatarImage src={user.photos?.[0]} />
+                                      <AvatarImage src={user.photos?.[0]} className="object-cover" />
                                       <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                   </Avatar>
                                   <span className="font-medium">{user.name}</span>

@@ -26,11 +26,11 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & { asChild?: boolean }
 >(({ className, asChild, ...props }, ref) => {
-  const Comp = asChild ? Slot : AvatarPrimitive.Image;
+  const Comp = asChild ? Slot : "img";
   return (
     <Comp
       ref={ref}
-      className={cn("aspect-square h-full w-full", className)}
+      className={cn("aspect-square h-full w-full object-cover", className)}
       {...props}
     />
   );

@@ -252,7 +252,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
                     <AvatarImage 
                         src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
                         alt={activeUser.name}
-                        className="object-cover w-full h-full"
+                        className="object-cover"
                     />
                     <AvatarFallback className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
                         {getInitials(activeUser.name)}
