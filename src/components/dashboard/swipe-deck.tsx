@@ -235,6 +235,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
     return `${distanceInKm} km away`;
   };
   
+  const hasPhoto = activeUser?.photos && activeUser.photos.length > 0;
+  
   return (
     <>
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
@@ -248,16 +250,21 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               setTriggerSwipeDirection={setTriggerSwipeDirection}
             >
               <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card">
-                 <Avatar className="w-full h-full rounded-lg">
-                    <AvatarImage 
-                        src={(activeUser.photos && activeUser.photos.length > 0) ? activeUser.photos[0] : null}
-                        alt={activeUser.name}
-                        className="object-cover"
-                    />
-                    <AvatarFallback className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
-                        {getInitials(activeUser.name)}
-                    </AvatarFallback>
-                </Avatar>
+                 <div className="relative w-full h-full">
+                    {hasPhoto ? (
+                        <Image
+                            src={activeUser.photos[0]}
+                            alt={activeUser.name}
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                    ) : (
+                        <div className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
+                            {getInitials(activeUser.name)}
+                        </div>
+                    )}
+                </div>
                 <motion.div 
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
                     initial={{ height: '33.33%' }}
