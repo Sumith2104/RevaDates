@@ -133,6 +133,7 @@ export default function DashboardPage() {
       let query = supabase
         .from('profiles')
         .select('*')
+        .order('updated_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (allExcludedIds.length > 0) {
