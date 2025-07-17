@@ -211,13 +211,13 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       .getPublicUrl(filePath);
       
     if (publicUrl) {
-      const updatedPhotos = [...(user.photos || []), publicUrl];
+      const updatedPhotos = [publicUrl, ...(user.photos || [])];
       setUser(prev => ({...prev, photos: updatedPhotos}));
       const success = await updateUserProfilePhotos(user.id, updatedPhotos);
        if (success) {
         toast({
             title: 'Photo Uploaded',
-            description: 'Your new photo has been added to your gallery.',
+            description: 'Your new photo is now your primary one.',
         });
         router.refresh();
       }
