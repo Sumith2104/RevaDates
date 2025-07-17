@@ -177,19 +177,19 @@ export default function ChatPage() {
             </header>
             
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-1">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.map((message, index) => {
                     const isCurrentUser = message.sender_id === currentUserId;
                     const prevMessage = messages[index - 1];
                     const showAvatar = !isCurrentUser && (!prevMessage || prevMessage.sender_id !== message.sender_id);
                     
                     return (
-                        <div 
-                            key={message.id} 
-                            className={cn(
-                                "flex items-end gap-2 max-w-[80%] group",
-                                isCurrentUser ? 'ml-auto' : 'mr-auto'
-                            )}
+                        <div
+                          key={message.id}
+                          className={cn(
+                            "flex items-end gap-2 group",
+                            isCurrentUser && "justify-end"
+                          )}
                         >
                             {!isCurrentUser && (
                                 <div className="w-8 flex-shrink-0 self-end">
@@ -202,17 +202,23 @@ export default function ChatPage() {
                                 </div>
                             )}
 
-                            <div className={cn(
-                                "rounded-2xl px-4 py-2",
-                                isCurrentUser 
-                                    ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                    : 'bg-muted rounded-bl-none'
+                             <div className={cn(
+                                "flex items-end gap-2 max-w-[80%]",
+                                isCurrentUser && "flex-row-reverse"
                             )}>
-                                <p className="text-base">{message.content}</p>
+                                <div className={cn(
+                                    "rounded-2xl px-4 py-2",
+                                    isCurrentUser 
+                                        ? 'bg-primary text-primary-foreground rounded-br-none' 
+                                        : 'bg-muted rounded-bl-none'
+                                )}>
+                                    <p className="text-base break-words">{message.content}</p>
+                                </div>
+                                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end whitespace-nowrap">
+                                    {format(new Date(message.created_at), 'h:mm a')}
+                                </span>
                             </div>
-                            <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end">
-                                {format(new Date(message.created_at), 'h:mm a')}
-                            </span>
+                             {isCurrentUser && <div className="w-8 flex-shrink-0" /> /* Spacer */}
                         </div>
                     );
                 })}
