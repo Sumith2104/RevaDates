@@ -98,6 +98,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             sender_id: swiperId,
             type: 'new_like',
             message: `${swiperProfile.name} liked your profile!`,
+            created_at: new Date().toISOString(), // Store as text
         }, {
             onConflict: 'recipient_id,sender_id,type',
             // Update the created_at timestamp on conflict to make it "new" again
@@ -165,6 +166,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                     sender_id: swipedId,
                     type: 'new_match',
                     message: `You matched with ${swipedProfile?.name}!`,
+                    created_at: new Date().toISOString(), // Store as text
                 });
             }
             if (swipedProfile?.match_notification) {
@@ -173,6 +175,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                     sender_id: swiperId,
                     type: 'new_match',
                     message: `You matched with ${swiperProfile?.name}!`,
+                    created_at: new Date().toISOString(), // Store as text
                 });
             }
             
@@ -216,7 +219,7 @@ export async function sendPasswordResetOtp(email: string) {
         .from('profiles')
         .update({
             password_reset_token: otp, // Storing OTP in the token column
-            password_reset_token_expires_at: expires.toISOString(),
+            password_reset_token_expires_at: expires.toISOString(), // Store as text
         })
         .eq('id', user.id);
 
@@ -268,7 +271,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
         .eq('password_reset_token', validatedFields.data.otp)
         .single();
 
-    if (tokenError || !user) {
+    if (tokenError || !user || !user.password_reset_token_expires_at) {
         return { error: 'Invalid or expired reset code.' };
     }
 
@@ -453,23 +456,69 @@ export async function getMatches(userId: string) {
     if (!userId) return { data: [], error: 'User ID is required.' };
     const supabase = createClient();
 
-    const { data, error } = await supabase
-        .rpc('get_matches_without_messages', { current_user_id: userId });
+    const { data: allMatches, error: matchesError } = await supabase
+        .from('matches')
+        .select('id, user1_id, user2_id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
-    if (error) {
-        console.error('Error fetching matches:', error);
+    if (matchesError) {
+        console.error('Error fetching matches:', matchesError);
         return { data: [], error: 'Could not fetch your matches.' };
     }
+
+    if (!allMatches || allMatches.length === 0) {
+        return { data: [], error: null };
+    }
+
+    const matchIds = allMatches.map(m => m.id);
+
+    // Get all match IDs that have messages
+    const { data: matchesWithMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('match_id')
+        .in('match_id', matchIds);
+
+    if (messagesError) {
+        console.error('Error checking for messages:', messagesError);
+        return { data: [], error: 'Could not verify matches.' };
+    }
+
+    const matchIdsWithMessages = new Set(matchesWithMessages.map(m => m.match_id));
     
-    const formattedMatches = data.map((match: any) => ({
-        id: match.id,
-        matchedUser: {
-          id: match.matched_user_id,
-          name: match.matched_user_name,
-          photos: match.matched_user_photos,
-        }
-    }));
+    // Filter out matches that already have messages
+    const newMatches = allMatches.filter(match => !matchIdsWithMessages.has(match.id));
     
+    if (newMatches.length === 0) {
+        return { data: [], error: null };
+    }
+
+    const matchedUserIds = newMatches.map(m => m.user1_id === userId ? m.user2_id : m.user1_id);
+
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, photos')
+        .in('id', matchedUserIds);
+
+    if (profilesError) {
+        console.error('Error fetching profiles for new matches:', profilesError);
+        return { data: [], error: 'Could not fetch profiles for matches.' };
+    }
+
+    const profilesById = new Map(profiles.map(p => [p.id, p]));
+
+    const formattedMatches = newMatches.map(match => {
+        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+        const matchedUser = profilesById.get(matchedUserId);
+        return {
+            id: match.id,
+            matchedUser: {
+                id: matchedUser?.id,
+                name: matchedUser?.name,
+                photos: matchedUser?.photos,
+            }
+        };
+    });
+
     return { data: formattedMatches, error: null };
 }
 
@@ -493,7 +542,7 @@ export async function getChats(userId: string) {
             photos: chat.matched_user_photos,
         },
         lastMessage: chat.last_message_content,
-        lastMessageTime: formatDistanceToNow(new Date(chat.last_message_created_at), { addSuffix: true }),
+        lastMessageTime: chat.last_message_created_at, // Return raw string
     }));
     
     return { data: formattedChats, error: null };

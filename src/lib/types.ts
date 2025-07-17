@@ -28,5 +28,5 @@ export interface Chat {
         photos: string[] | null;
     };
     lastMessage: string | null;
-    lastMessageTime: string | null;
+    lastMessageTime: string | null; // Will be an ISO date string
 }
