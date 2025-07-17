@@ -190,36 +190,36 @@ export default function ChatPage() {
                         <div 
                             key={message.id} 
                             className={cn(
-                                "flex items-end gap-2 max-w-[80%] group",
+                                "flex items-end gap-2 max-w-[80%]",
                                 isCurrentUser ? 'ml-auto' : 'mr-auto'
                             )}
                         >
-                             {!isCurrentUser && (
-                                <div className="w-8 flex-shrink-0">
-                                    {showAvatar && (
-                                    <Avatar className="h-8 w-8">
-                                            <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
-                                            <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
-                                        </Avatar>
-                                    )}
-                                </div>
-                             )}
+                            <div className={cn("flex w-full", isCurrentUser ? 'justify-end' : 'justify-start')}>
+                                <div className="flex items-end gap-2 group">
+                                     {!isCurrentUser && (
+                                        <div className="w-8 flex-shrink-0 self-end">
+                                            {showAvatar && (
+                                            <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                                                    <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                        </div>
+                                     )}
 
-                            <div className={cn("flex items-end gap-2", isCurrentUser && 'flex-row-reverse')}>
-                                <div className={cn(
-                                    "rounded-2xl px-4 py-2",
-                                    isCurrentUser 
-                                        ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                        : 'bg-muted rounded-bl-none'
-                                )}>
-                                    <p className="text-base">{message.content}</p>
+                                    <div className={cn(
+                                        "rounded-2xl px-4 py-2",
+                                        isCurrentUser 
+                                            ? 'bg-primary text-primary-foreground rounded-br-none' 
+                                            : 'bg-muted rounded-bl-none'
+                                    )}>
+                                        <p className="text-base">{message.content}</p>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end">
+                                        {format(new Date(message.created_at), 'h:mm a')}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    {format(new Date(message.created_at), 'h:mm a')}
-                                </span>
                             </div>
-
-                             {isCurrentUser && <div className="w-8 flex-shrink-0" /> /* Spacer for alignment */}
                         </div>
                     );
                 })}
