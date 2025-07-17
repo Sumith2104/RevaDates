@@ -92,19 +92,18 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
 
     if (swiperProfile) {
-        // Upsert logic for 'new_like' notifications to avoid duplicates
-        const { error: notificationError } = await supabase.from('notifications').upsert({
+        // Insert a 'new_like' notification, but only if one doesn't already exist.
+        // This relies on the unique constraint on (recipient_id, sender_id, type).
+        const { error: notificationError } = await supabase.from('notifications').insert({
             recipient_id: swipedId,
             sender_id: swiperId,
             type: 'new_like',
             message: `${swiperProfile.name} liked your profile!`,
             created_at: new Date().toISOString(),
-        }, {
-            onConflict: 'recipient_id,sender_id,type',
-            ignoreDuplicates: true,
         });
 
-        if (notificationError) {
+        // Ignore duplicate key errors (code 23505), as this is expected behavior.
+        if (notificationError && notificationError.code !== '23505') {
             console.error('Error creating notification:', notificationError);
         }
     }
