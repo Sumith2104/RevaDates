@@ -14,7 +14,6 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
-import { revalidatePath } from 'next/cache';
 
 type Message = {
     id: string;
