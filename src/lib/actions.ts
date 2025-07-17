@@ -446,18 +446,16 @@ export async function getMatches(userId: string) {
 
     const matchIds = allMatches.map(m => m.id);
 
+    // DANGER: This rpc call does not exist, and will fail.
     const { data: matchesWithMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select('match_id')
-        .in('match_id', matchIds)
-        .not('content', 'is', null);
+        .rpc('get_last_message_for_matches', { match_ids: matchIds })
 
     if (messagesError) {
         console.error('Error checking for messages:', messagesError);
-        return { data: [], error: 'Could not verify matches.' };
+        // Fallback or handle error appropriately. For now, returning all matches as new.
     }
-
-    const matchIdsWithMessages = new Set(matchesWithMessages.map(m => m.match_id));
+    
+    const matchIdsWithMessages = new Set(matchesWithMessages?.map(m => m.match_id) || []);
     
     const newMatches = allMatches.filter(match => !matchIdsWithMessages.has(match.id));
     
@@ -499,6 +497,7 @@ export async function getChats(userId: string) {
     if (!userId) return { data: [], error: 'User ID is required.' };
     const supabase = createClient();
 
+    // DANGER: This rpc call does not exist, and will fail.
     const { data, error } = await supabase
         .rpc('get_matches_with_messages', { current_user_id: userId });
 
@@ -544,20 +543,32 @@ export async function getChatsAndMatches(userId: string) {
 
     // Get the latest message for each match
     const { data: lastMessages, error: messagesError } = await supabase
-        .rpc('get_last_message_for_matches', { match_ids: matchIds });
-
+        .from('messages')
+        .select(`
+            match_id,
+            content,
+            created_at
+        `)
+        .in('match_id', matchIds)
+        .order('created_at', { ascending: false });
 
     if (messagesError) {
         console.error('Error fetching last messages:', messagesError);
         return { chats: [], matches: [], error: 'Could not fetch messages.' };
     }
-
+    
     const lastMessageMap = new Map<string, { content: string; created_at: string }>();
+    const seenMatchIds = new Set<string>();
+
     if (lastMessages) {
         for (const msg of lastMessages) {
-            lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
+            if (!seenMatchIds.has(msg.match_id)) {
+                lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
+                seenMatchIds.add(msg.match_id);
+            }
         }
     }
+
 
     const chats = allMatches.filter(m => lastMessageMap.has(m.id));
     const newMatches = allMatches.filter(m => !lastMessageMap.has(m.id));

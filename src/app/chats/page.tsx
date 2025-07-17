@@ -20,7 +20,7 @@ function MatchItem({ match }: { match: Match }) {
     };
 
     return (
-        <div className="flex flex-col items-center gap-2 flex-shrink-0" onClick={() => navigateToChat(match.id)}>
+        <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer" onClick={() => navigateToChat(match.id)}>
             <Avatar className="h-16 w-16 border-2 border-primary">
                 <AvatarImage src={match.matchedUser.photos?.[0]} className="object-cover" />
                 <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
@@ -65,12 +65,12 @@ export default function ChatsPage() {
     const [chats, setChats] = React.useState<Chat[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+    const router = useRouter();
 
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
         if (!userId) {
-            setError('You must be logged in.');
-            setLoading(false);
+            router.push('/login');
             return;
         }
 
@@ -92,7 +92,7 @@ export default function ChatsPage() {
 
         fetchData();
 
-    }, []);
+    }, [router]);
 
     return (
         <AppShell>
