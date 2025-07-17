@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare } from 'lucide-react';
+import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,12 +23,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { getMatches } from '@/lib/actions';
+import { getMatches, updateUserProfilePhotos } from '@/lib/actions';
 import type { Match } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { cn } from "@/lib/utils"
+
 
 type User = {
     id: string;
@@ -125,6 +137,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [deletingPhoto, setDeletingPhoto] = React.useState<string | null>(null);
 
   const supabase = createClient();
   const { toast } = useToast();
@@ -134,18 +147,17 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
   
-  const updateUserProfile = async (updatedUser: User) => {
+  const updateProfileDetails = async () => {
     setSaving(true);
     const { data, error } = await supabase
         .from('profiles')
         .update({
-            name: updatedUser.name,
-            bio: updatedUser.bio,
-            email: updatedUser.email,
-            phone: updatedUser.phone,
-            photos: updatedUser.photos,
+            name: user.name,
+            bio: user.bio,
+            email: user.email,
+            phone: user.phone,
         })
-        .eq('id', updatedUser.id);
+        .eq('id', user.id);
 
     setSaving(false);
     if (error) {
@@ -160,7 +172,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   }
   
   const handleSave = async () => {
-    const success = await updateUserProfile(user);
+    const success = await updateProfileDetails();
     if (success) {
       toast({
           title: 'Profile Saved',
@@ -200,14 +212,12 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       
     if (publicUrl) {
       const updatedPhotos = [...(user.photos || []), publicUrl];
-      const updatedUser = { ...user, photos: updatedPhotos };
-      setUser(updatedUser);
-      // Immediately save the profile after successful upload
-      const success = await updateUserProfile(updatedUser);
+      setUser(prev => ({...prev, photos: updatedPhotos}));
+      const success = await updateUserProfilePhotos(user.id, updatedPhotos);
        if (success) {
         toast({
             title: 'Photo Uploaded',
-            description: 'Your new photo has been added.',
+            description: 'Your new photo has been added to your gallery.',
         });
         router.refresh();
       }
@@ -216,10 +226,46 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setUploading(false);
   };
 
+  const handleSetAsPrimary = async (photoToMakePrimary: string) => {
+    if (!user.photos) return;
+    const currentPhotos = [...user.photos];
+    const newPrimaryIndex = currentPhotos.findIndex(p => p === photoToMakePrimary);
+    if (newPrimaryIndex <= 0) return; // It's already primary or not found
+
+    const newPrimaryPhoto = currentPhotos.splice(newPrimaryIndex, 1)[0];
+    const newPhotoOrder = [newPrimaryPhoto, ...currentPhotos];
+    
+    setUser(prev => ({...prev, photos: newPhotoOrder}));
+    const success = await updateUserProfilePhotos(user.id, newPhotoOrder);
+    if (success) {
+        toast({ title: 'Main Photo Updated' });
+        router.refresh();
+    } else {
+        setUser(prev => ({...prev, photos: user.photos})); // Revert on failure
+    }
+  }
+
+  const handleDeletePhoto = async () => {
+    if (!deletingPhoto || !user.photos) return;
+
+    const newPhotoList = user.photos.filter(p => p !== deletingPhoto);
+    
+    // Note: We are not deleting the file from Supabase storage itself,
+    // just removing the reference from the user's profile.
+    const success = await updateUserProfilePhotos(user.id, newPhotoList);
+    if (success) {
+        toast({ title: 'Photo Removed' });
+        setUser(prev => ({...prev, photos: newPhotoList}));
+        router.refresh();
+    }
+    setDeletingPhoto(null);
+  }
+
   const age = differenceInYears(new Date(), user.dob);
   const userPhotos = user.photos || [];
 
   return (
+    <>
     <div className="container mx-auto max-w-4xl p-4 space-y-6">
       <Card>
         <CardHeader>
@@ -236,14 +282,36 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               <Label>Photos</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 {userPhotos.map((photo, index) => (
-                  <div key={photo || index} className="aspect-square relative rounded-lg overflow-hidden">
+                  <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
                     <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
+                    {isEditing && (
+                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         {index > 0 && (
+                          <Button size="sm" variant="outline" className="bg-black/50 text-white hover:bg-black/70 border-white/50" onClick={() => handleSetAsPrimary(photo)}>
+                             <Star className="h-4 w-4 mr-2" />
+                            Primary
+                          </Button>
+                         )}
+                         <Button size="sm" variant="destructive" className="bg-red-800/80" onClick={() => setDeletingPhoto(photo)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                         </Button>
+                      </div>
+                    )}
+                    {index === 0 && (
+                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded">
+                           MAIN
+                        </div>
+                    )}
                   </div>
                 ))}
-                {isEditing && userPhotos.length < 4 && (
+                {isEditing && userPhotos.length < 8 && (
                   <div 
-                    className="aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50"
-                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                        "aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50",
+                        uploading && "cursor-not-allowed opacity-50"
+                    )}
+                    onClick={() => !uploading && fileInputRef.current?.click()}
                   >
                     <div className="text-center">
                         {uploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
@@ -273,7 +341,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             <div>
               <Label htmlFor="bio">About Me</Label>
               {isEditing ? (
-                <Textarea id="bio" name="bio" value={user.bio || ''} onChange={handleInputChange} rows={6} placeholder="Your About Me" />
+                <Textarea id="bio" name="bio" value={user.bio || ''} onChange={handleInputChange} rows={6} placeholder="Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!" />
               ) : (
                 <p className="text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
               )}
@@ -304,7 +372,20 @@ export function ProfileView({ user: initialUser }: { user: User }) {
           </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!deletingPhoto} onOpenChange={(open) => !open && setDeletingPhoto(null)}>
+        <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+            <AlertDialogHeader className="text-center sm:text-center">
+                <AlertDialogTitle className="text-white text-lg font-semibold">Delete Photo?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                    Are you sure you want to delete this photo? This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
+                <AlertDialogAction onClick={handleDeletePhoto} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Delete</AlertDialogAction>
+                <AlertDialogCancel onClick={() => setDeletingPhoto(null)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
-
-    

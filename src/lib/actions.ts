@@ -92,16 +92,20 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
 
     if (swiperProfile) {
-        const { error: notificationError } = await supabase.from('notifications').insert({
-          recipient_id: swipedId,
-          sender_id: swiperId,
-          type: 'new_like',
-          message: `${swiperProfile.name} liked your profile!`,
+        // Upsert logic for 'new_like' notifications to avoid duplicates
+        const { error: notificationError } = await supabase.from('notifications').upsert({
+            recipient_id: swipedId,
+            sender_id: swiperId,
+            type: 'new_like',
+            message: `${swiperProfile.name} liked your profile!`,
+        }, {
+            onConflict: 'recipient_id,sender_id,type',
+            // Update the created_at timestamp on conflict to make it "new" again
+            ignoreDuplicates: false,
         });
 
         if (notificationError) {
-          console.error('Error creating notification:', notificationError);
-          // Don't block the swipe action if notification fails
+            console.error('Error creating notification:', notificationError);
         }
     }
 
@@ -492,4 +496,23 @@ export async function getChats(userId: string) {
     }));
     
     return { data: formattedChats, error: null };
+}
+
+export async function updateUserProfilePhotos(userId: string, photos: string[]) {
+    if (!userId) {
+        return { error: 'User ID is required.' };
+    }
+    const supabase = createClient();
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ photos })
+        .eq('id', userId);
+
+    if (error) {
+        console.error('Error updating user photos:', error);
+        return false;
+    }
+    revalidatePath('/profile');
+    return true;
 }
