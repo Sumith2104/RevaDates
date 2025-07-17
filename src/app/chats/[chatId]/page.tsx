@@ -21,9 +21,8 @@ type Message = {
     created_at: string;
 };
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
+export default function ChatPage({ params: { chatId } }: { params: { chatId: string } }) {
     const router = useRouter();
-    const { chatId } = params;
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
