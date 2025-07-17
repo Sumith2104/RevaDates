@@ -277,30 +277,21 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-8">
-            <div className="md:col-span-1">
-                <div className="aspect-square relative rounded-lg overflow-hidden group">
-                    {userPhotos.length > 0 ? (
-                        <Image src={userPhotos[0]} alt="Main user photo" fill className="object-cover" />
+        <CardContent className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                    <AvatarImage src={userPhotos[0]} alt={user.name} />
+                    <AvatarFallback className="text-3xl">
+                        {getInitials(user.name)}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="flex-grow">
+                    {isEditing ? (
+                        <Input name="name" value={user.name} onChange={handleInputChange} className="text-xl" placeholder="Your Name" />
                     ) : (
-                        <div className="bg-muted h-full w-full flex items-center justify-center rounded-lg">
-                             <Avatar className="w-full h-full rounded-lg">
-                                <AvatarFallback className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
-                                    {getInitials(user.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                        </div>
+                        <p className="text-2xl font-semibold">{user.name}, {age}</p>
                     )}
                 </div>
-            </div>
-            <div className="md:col-span-2 space-y-6">
-            <div>
-              <Label>Name</Label>
-              {isEditing ? (
-                <Input name="name" value={user.name} onChange={handleInputChange} className="text-lg" placeholder="Your Name" />
-              ) : (
-                <p className="text-2xl font-semibold">{user.name}, {age}</p>
-              )}
             </div>
             <div>
               <Label htmlFor="bio">About Me</Label>
@@ -322,7 +313,6 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                 </div>
               </>
             )}
-          </div>
         </CardContent>
       </Card>
       
@@ -410,3 +400,4 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   );
 
     
+
