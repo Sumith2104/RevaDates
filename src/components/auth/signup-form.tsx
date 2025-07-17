@@ -134,7 +134,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         email,
         password, // Storing password directly. Should be hashed in a real app.
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
-        bio: 'Welcome to RevaDates! Please update your bio.',
+        bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
         photos: [],
     }).select().single();
 
