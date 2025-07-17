@@ -205,7 +205,7 @@ export default function ChatPage() {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 border"
+                        className="flex-1 border-2"
                         autoComplete="off"
                         disabled={sending}
                     />
