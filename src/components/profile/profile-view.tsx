@@ -278,57 +278,6 @@ export function ProfileView({ user: initialUser }: { user: User }) {
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-8">
-            <div>
-              <Label>My Gallery</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                {userPhotos.map((photo, index) => (
-                  <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
-                    <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
-                    {isEditing && (
-                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                         {index > 0 && (
-                          <Button size="sm" variant="outline" className="bg-black/50 text-white hover:bg-black/70 border-white/50" onClick={() => handleSetAsPrimary(photo)}>
-                             <Star className="h-4 w-4 mr-2" />
-                            Primary
-                          </Button>
-                         )}
-                         <Button size="sm" variant="destructive" className="bg-red-800/80" onClick={() => setDeletingPhoto(photo)}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                         </Button>
-                      </div>
-                    )}
-                    {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded">
-                           MAIN
-                        </div>
-                    )}
-                  </div>
-                ))}
-                {isEditing && userPhotos.length < 8 && (
-                  <div 
-                    className={cn(
-                        "aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50",
-                        uploading && "cursor-not-allowed opacity-50"
-                    )}
-                    onClick={() => !uploading && fileInputRef.current?.click()}
-                  >
-                    <div className="text-center">
-                        {uploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
-                        <p className="text-sm text-muted-foreground mt-2">{uploading ? 'Uploading...' : 'Add Photo'}</p>
-                    </div>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      disabled={uploading}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
           <div className="space-y-6">
             <div>
               <Label>Name</Label>
@@ -363,6 +312,62 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       </Card>
       
       <Card>
+        <CardHeader>
+          <CardTitle>My Gallery</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {userPhotos.map((photo, index) => (
+                <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
+                <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
+                {isEditing && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {index > 0 && (
+                        <Button size="sm" variant="outline" className="bg-black/50 text-white hover:bg-black/70 border-white/50" onClick={() => handleSetAsPrimary(photo)}>
+                            <Star className="h-4 w-4 mr-2" />
+                        Primary
+                        </Button>
+                        )}
+                        <Button size="sm" variant="destructive" className="bg-red-800/80" onClick={() => setDeletingPhoto(photo)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                        </Button>
+                    </div>
+                )}
+                {index === 0 && (
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded">
+                        MAIN
+                    </div>
+                )}
+                </div>
+            ))}
+            {isEditing && userPhotos.length < 8 && (
+                <div 
+                className={cn(
+                    "aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50",
+                    uploading && "cursor-not-allowed opacity-50"
+                )}
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                >
+                <div className="text-center">
+                    {uploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
+                    <p className="text-sm text-muted-foreground mt-2">{uploading ? 'Uploading...' : 'Add Photo'}</p>
+                </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    disabled={uploading}
+                />
+                </div>
+            )}
+            </div>
+        </CardContent>
+      </Card>
+
+      <Card>
           <CardHeader>
               <CardTitle>Connections</CardTitle>
           </CardHeader>
@@ -388,4 +393,5 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </AlertDialog>
     </>
   );
-}
+
+    
