@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -133,9 +132,31 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
   const [triggerSwipeDirection, setTriggerSwipeDirection] = React.useState<'left' | 'right' | null>(null);
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
   const { toast } = useToast();
+  const [viewedProfileIds, setViewedProfileIds] = React.useState(new Set<string>());
 
   const activeIndex = users.length - 1;
   const activeUser = users[activeIndex];
+
+  const viewedProfile = React.useCallback((profileId: string) => {
+    if (viewedProfileIds.has(profileId)) {
+        return; // Already viewed, do nothing
+    }
+    // Log the view action. In a real app, this might be an analytics event.
+    console.log(`Profile viewed: ${profileId}`);
+    // Add to set to prevent re-triggering
+    setViewedProfileIds(prev => new Set(prev).add(profileId));
+  }, [viewedProfileIds]);
+
+  React.useEffect(() => {
+    if (!activeUser) return;
+
+    // Use a debounce to trigger view only if user pauses on a card
+    const viewTimeout = setTimeout(() => {
+      viewedProfile(activeUser.id);
+    }, 500); // 500ms delay before logging a view
+
+    return () => clearTimeout(viewTimeout);
+  }, [activeUser, viewedProfile]);
   
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
