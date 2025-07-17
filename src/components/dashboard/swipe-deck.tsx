@@ -250,7 +250,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
               <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card">
                  <Avatar className="w-full h-full rounded-lg">
                     <AvatarImage 
-                        src={activeUser.photos && activeUser.photos.length > 0 ? activeUser.photos[0] : ''} 
+                        src={(activeUser.photos && activeUser.photos.length > 0) ? activeUser.photos[0] : null}
                         alt={activeUser.name}
                         className="object-cover"
                     />
