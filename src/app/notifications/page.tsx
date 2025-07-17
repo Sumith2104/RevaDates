@@ -8,14 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
 import { motion, useInView } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
 type Notification = {
     id: string;
     message: string;
-    created_at: string;
+    created_at: string; // This will now be a formatted string
     is_read: boolean;
     sender: {
         name: string;
@@ -149,7 +148,7 @@ export default function NotificationsPage() {
                                         <div className="flex-grow">
                                             <p className="text-sm font-semibold">{notif.message}</p>
                                             <p className="text-xs text-muted-foreground mt-1">
-                                                {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                                                {notif.created_at}
                                             </p>
                                         </div>
                                 </div>
