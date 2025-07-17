@@ -98,11 +98,10 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             sender_id: swiperId,
             type: 'new_like',
             message: `${swiperProfile.name} liked your profile!`,
-            created_at: new Date().toISOString(), // Store as text
+            created_at: new Date().toISOString(),
         }, {
             onConflict: 'recipient_id,sender_id,type',
-            // Update the created_at timestamp on conflict to make it "new" again
-            ignoreDuplicates: false,
+            ignoreDuplicates: true,
         });
 
         if (notificationError) {
@@ -166,7 +165,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                     sender_id: swipedId,
                     type: 'new_match',
                     message: `You matched with ${swipedProfile?.name}!`,
-                    created_at: new Date().toISOString(), // Store as text
+                    created_at: new Date().toISOString(),
                 });
             }
             if (swipedProfile?.match_notification) {
@@ -175,7 +174,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                     sender_id: swiperId,
                     type: 'new_match',
                     message: `You matched with ${swiperProfile?.name}!`,
-                    created_at: new Date().toISOString(), // Store as text
+                    created_at: new Date().toISOString(),
                 });
             }
             
@@ -219,7 +218,7 @@ export async function sendPasswordResetOtp(email: string) {
         .from('profiles')
         .update({
             password_reset_token: otp, // Storing OTP in the token column
-            password_reset_token_expires_at: expires.toISOString(), // Store as text
+            password_reset_token_expires_at: expires.toISOString(),
         })
         .eq('id', user.id);
 
