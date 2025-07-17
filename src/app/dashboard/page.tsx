@@ -87,9 +87,8 @@ export default function DashboardPage() {
           photos: currentUserPhotos,
       } = currentUserProfile;
 
-      // Check if user has photos and if prompt has been dismissed this session
-      const promptDismissed = sessionStorage.getItem('photoPromptDismissed');
-      if (!currentUserPhotos || currentUserPhotos.length === 0 && !promptDismissed) {
+      // Check if user has photos
+      if (!currentUserPhotos || currentUserPhotos.length === 0) {
           setShowPhotoPrompt(true);
       }
       
@@ -220,7 +219,6 @@ export default function DashboardPage() {
   }
 
   const handlePromptLater = () => {
-    sessionStorage.setItem('photoPromptDismissed', 'true');
     setShowPhotoPrompt(false);
   }
 
