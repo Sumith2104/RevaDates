@@ -8,6 +8,16 @@ import { createClient } from '@/lib/supabase/client';
 import type { UserProfile } from '@/lib/types';
 import { differenceInYears } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Haversine formula to calculate distance between two lat/lon points
 function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -37,6 +47,7 @@ export default function DashboardPage() {
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -57,7 +68,7 @@ export default function DashboardPage() {
       // First, get the current user's profile including settings, location, and blocked users
       const { data: currentUserProfile, error: currentUserError } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users')
+        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users, photos')
         .eq('id', currentUserId)
         .single();
 
@@ -73,7 +84,14 @@ export default function DashboardPage() {
           discovery_distance_km: maxDistance,
           location: currentUserLocationStr,
           blocked_users: blockedUsers,
+          photos: currentUserPhotos,
       } = currentUserProfile;
+
+      // Check if user has photos and if prompt has been dismissed this session
+      const promptDismissed = sessionStorage.getItem('photoPromptDismissed');
+      if (!currentUserPhotos || currentUserPhotos.length === 0 && !promptDismissed) {
+          setShowPhotoPrompt(true);
+      }
       
       const currentUserLocation = parseLocation(currentUserLocationStr);
 
@@ -177,7 +195,7 @@ export default function DashboardPage() {
     if (currentUserId) {
         fetchProfiles();
     }
-  }, [currentUserId]);
+  }, [currentUserId, router]);
 
 
   if (loading) {
@@ -201,9 +219,30 @@ export default function DashboardPage() {
     );
   }
 
+  const handlePromptLater = () => {
+    sessionStorage.setItem('photoPromptDismissed', 'true');
+    setShowPhotoPrompt(false);
+  }
+
   return (
-    <AppShell>
-      <SwipeDeck users={users} currentUserId={currentUserId!} />
-    </AppShell>
+    <>
+      <AppShell>
+        <SwipeDeck users={users} currentUserId={currentUserId!} />
+      </AppShell>
+      <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
+          <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+              <AlertDialogHeader className="text-center sm:text-center">
+                  <AlertDialogTitle className="text-white text-lg font-semibold">Upload a Profile Photo</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                      Profiles with photos get more matches. Add a photo to show your best self!
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
+                  <AlertDialogAction onClick={() => router.push('/profile')} className="w-36 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
+                  <AlertDialogCancel onClick={handlePromptLater} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
