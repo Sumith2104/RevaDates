@@ -17,6 +17,7 @@ type Notification = {
     message: string;
     created_at: string; 
     is_read: boolean;
+    sender_id: string;
     sender: {
         name: string;
         photos: string[] | null;
@@ -49,6 +50,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
@@ -57,43 +59,65 @@ export default function NotificationsPage() {
             setLoading(false);
             return;
         }
+        setCurrentUserId(userId);
 
-        const fetchAndMarkNotifications = async () => {
+        const fetchInitialNotifications = async () => {
             setLoading(true);
             const result = await getNotifications(userId);
             if (result.error) {
                 setError(result.error);
             } else {
                 setNotifications(result.data as Notification[]);
-                // Mark as read after fetching
                 await markNotificationsAsRead(userId);
             }
             setLoading(false);
         };
 
-        fetchAndMarkNotifications();
-        
-        const supabase = createClient();
-        const channel = supabase.channel('realtime-notifications-list')
-          .on(
-            'postgres_changes', 
-            { 
-              event: 'INSERT', 
-              schema: 'public', 
-              table: 'notifications',
-              filter: `recipient_id=eq.${userId}` 
-            }, 
-            (payload) => {
-              fetchAndMarkNotifications();
-            }
-          )
-          .subscribe();
-          
-        return () => {
-          supabase.removeChannel(channel);
-        };
-
+        fetchInitialNotifications();
     }, []);
+
+    React.useEffect(() => {
+        if (!currentUserId) return;
+
+        const supabase = createClient();
+        const channel = supabase
+            .channel('realtime-notifications-list')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `recipient_id=eq.${currentUserId}`,
+                },
+                async (payload) => {
+                    const newNotification = payload.new as Notification;
+                    
+                    // Fetch the sender's profile details for the new notification
+                    const { data: senderProfile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('name, photos')
+                        .eq('id', newNotification.sender_id)
+                        .single();
+
+                    if (profileError) {
+                        console.error("Error fetching sender profile for realtime notification:", profileError);
+                        return;
+                    }
+                    
+                    // Add sender details to the notification
+                    newNotification.sender = senderProfile;
+
+                    setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
+                    await markNotificationsAsRead(currentUserId);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [currentUserId]);
 
     return (
         <AppShell>

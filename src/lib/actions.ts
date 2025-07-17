@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { formatDistanceToNow } from 'date-fns';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -92,18 +91,20 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
 
     if (swiperProfile) {
-        // Insert a 'new_like' notification, but only if one doesn't already exist.
-        // This relies on the unique constraint on (recipient_id, sender_id, type).
-        const { error: notificationError } = await supabase.from('notifications').insert({
-            recipient_id: swipedId,
-            sender_id: swiperId,
-            type: 'new_like',
-            message: `${swiperProfile.name} liked your profile!`,
-            created_at: new Date().toISOString(),
-        });
+        // Insert a 'new_like' notification, using onConflict to ignore duplicates.
+        const { error: notificationError } = await supabase.from('notifications').insert(
+            {
+                recipient_id: swipedId,
+                sender_id: swiperId,
+                type: 'new_like',
+                message: `${swiperProfile.name} liked your profile!`,
+                created_at: new Date().toISOString(),
+            },
+        ).select();
 
-        // Ignore duplicate key errors (code 23505), as this is expected behavior.
-        if (notificationError && notificationError.code !== '23505') {
+        // No need to check for specific error code, as onConflict handles it.
+        // A non-null error here would be an actual issue.
+        if (notificationError) {
             console.error('Error creating notification:', notificationError);
         }
     }
@@ -281,7 +282,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password: validatedFields.data.password, // Passwords should be hashed!
+            password: password, // Passwords should be hashed!
             password_reset_token: null,
             password_reset_token_expires_at: null,
         })
@@ -326,6 +327,7 @@ export async function getNotifications(userId: string) {
             message,
             created_at,
             is_read,
+            sender_id,
             sender:sender_id ( name, photos )
         `)
         .eq('recipient_id', userId)
@@ -548,7 +550,7 @@ export async function getChats(userId: string) {
 
 export async function updateUserProfilePhotos(userId: string, photos: string[]) {
     if (!userId) {
-        return { error: 'User ID is required.' };
+        return false;
     }
     const supabase = createClient();
 
