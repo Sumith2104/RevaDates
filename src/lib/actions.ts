@@ -63,7 +63,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
 
   const supabase = createClient();
 
-  // Upsert the swipe action to prevent unique constraint errors on re-swiping
   const { error: swipeError } = await supabase.from('swipes').upsert(
     {
       swiper_id: swiperId,
@@ -78,7 +77,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     return { error: 'Could not record your swipe.' };
   }
   
-  // If it was a 'like', create a notification
   if (action === 'liked') {
     const { data: swiperProfile, error: swiperProfileError } = await supabase
       .from('profiles')
@@ -91,7 +89,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
 
     if (swiperProfile) {
-        // Insert a 'new_like' notification, using onConflict to ignore duplicates.
         const { error: notificationError } = await supabase.from('notifications').insert(
             {
                 recipient_id: swipedId,
@@ -99,23 +96,20 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 type: 'new_like',
                 message: `${swiperProfile.name} liked your profile!`,
                 created_at: new Date().toISOString(),
-            },
+            }
         ).select();
 
-        // No need to check for specific error code, as onConflict handles it.
-        // A non-null error here would be an actual issue.
-        if (notificationError) {
+        if (notificationError && notificationError.code !== '23505') { // 23505 is unique_violation
             console.error('Error creating notification:', notificationError);
         }
     }
 
 
-    // Check for a mutual like (match)
     const { data: mutualLike, error: checkError } = await supabase
       .from('swipes')
-      .select('swiper_id') // just need to check for existence
-      .eq('swiper_id', swipedId) // The other person
-      .eq('swiped_id', swiperId) // You
+      .select('swiper_id') 
+      .eq('swiper_id', swipedId)
+      .eq('swiped_id', swiperId)
       .eq('action', 'liked')
       .single();
 
@@ -135,59 +129,43 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             console.error('Error fetching swiped profile for match notification:', swipedProfileError);
         }
       
-        // It's a match! Check if match already exists
-        const { data: existingMatch, error: matchCheckError } = await supabase
-            .from('matches')
-            .select('id')
-            .or(`(user1_id.eq.${swiperId},user2_id.eq.${swipedId}),(user1_id.eq.${swipedId},user2_id.eq.${swiperId})`)
-            .limit(1);
+        const { error: matchError } = await supabase.from('matches').insert({
+          user1_id: swiperId,
+          user2_id: swipedId,
+        });
 
-        if (matchCheckError && matchCheckError.code !== 'PGRST116') {
-            console.error('Error checking for existing match:', matchCheckError);
-            return { error: 'Could not check for existing match.' };
+        if (matchError) {
+          console.error('Error creating match:', matchError);
+          // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
-      
-        if (!existingMatch || existingMatch.length === 0) {
-            const { error: matchError } = await supabase.from('matches').insert({
-            user1_id: swiperId,
-            user2_id: swipedId,
+
+        // Create notifications for both users if their settings allow it
+        if (swiperProfile?.match_notification) {
+            await supabase.from('notifications').insert({
+                recipient_id: swiperId,
+                sender_id: swipedId,
+                type: 'new_match',
+                message: `You matched with ${swipedProfile?.name}!`,
+                created_at: new Date().toISOString(),
             });
-
-            if (matchError) {
-            console.error('Error creating match:', matchError);
-            return { error: 'Could not create the match.' };
-            }
-
-            // Create notifications for both users if their settings allow it
-            if (swiperProfile?.match_notification) {
-                await supabase.from('notifications').insert({
-                    recipient_id: swiperId,
-                    sender_id: swipedId,
-                    type: 'new_match',
-                    message: `You matched with ${swipedProfile?.name}!`,
-                    created_at: new Date().toISOString(),
-                });
-            }
-            if (swipedProfile?.match_notification) {
-                await supabase.from('notifications').insert({
-                    recipient_id: swipedId,
-                    sender_id: swiperId,
-                    type: 'new_match',
-                    message: `You matched with ${swiperProfile?.name}!`,
-                    created_at: new Date().toISOString(),
-                });
-            }
-            
-            revalidatePath('/chats');
-            revalidatePath('/notifications');
-            revalidatePath('/components/shared/app-header');
-            return { match: true };
         }
+        if (swipedProfile?.match_notification) {
+            await supabase.from('notifications').insert({
+                recipient_id: swipedId,
+                sender_id: swiperId,
+                type: 'new_match',
+                message: `You matched with ${swiperProfile?.name}!`,
+                created_at: new Date().toISOString(),
+            });
+        }
+        
+        revalidatePath('/chats');
+        revalidatePath('/notifications');
+        return { match: true };
     }
   }
 
   revalidatePath('/notifications');
-  revalidatePath('/components/shared/app-header');
   return { success: true };
 }
 
@@ -213,11 +191,10 @@ export async function sendPasswordResetOtp(email: string) {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const expires = new Date(new Date().getTime() + 600 * 1000); // 10 minutes from now
 
-    // Use service role client to bypass RLS for this trusted server operation
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password_reset_token: otp, // Storing OTP in the token column
+            password_reset_token: otp, 
             password_reset_token_expires_at: expires.toISOString(),
         })
         .eq('id', user.id);
@@ -327,6 +304,7 @@ export async function getNotifications(userId: string) {
             message,
             created_at,
             is_read,
+            type,
             sender_id,
             sender:sender_id ( name, photos )
         `)
@@ -365,7 +343,6 @@ export async function blockUser(blockerId: string, blockedId: string) {
   }
   const supabase = createClient();
 
-  // Atomically append the new blocked user's ID to the array
   const { error } = await supabase.rpc('append_to_blocked_users', {
       user_id: blockerId,
       blocked_id: blockedId
@@ -376,10 +353,7 @@ export async function blockUser(blockerId: string, blockedId: string) {
     return { error: 'Could not block the user.' };
   }
 
-  // Also remove any existing swipe history between them
   await supabase.from('swipes').delete().or(`(swiper_id.eq.${blockerId},swiped_id.eq.${blockedId}),(swiper_id.eq.${blockedId},swiped_id.eq.${blockerId})`);
-  
-  // And any existing match
   await supabase.from('matches').delete().or(`(user1_id.eq.${blockerId},user2_id.eq.${blockedId}),(user1_id.eq.${blockedId},user2_id.eq.${blockerId})`);
 
   revalidatePath('/dashboard');
@@ -424,7 +398,6 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
     }
     const supabase = createClient();
 
-    // Fetch current blocked users
     const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('blocked_users')
@@ -472,7 +445,6 @@ export async function getMatches(userId: string) {
 
     const matchIds = allMatches.map(m => m.id);
 
-    // Get all match IDs that have messages
     const { data: matchesWithMessages, error: messagesError } = await supabase
         .from('messages')
         .select('match_id')
@@ -485,7 +457,6 @@ export async function getMatches(userId: string) {
 
     const matchIdsWithMessages = new Set(matchesWithMessages.map(m => m.match_id));
     
-    // Filter out matches that already have messages
     const newMatches = allMatches.filter(match => !matchIdsWithMessages.has(match.id));
     
     if (newMatches.length === 0) {
@@ -542,7 +513,7 @@ export async function getChats(userId: string) {
             photos: chat.matched_user_photos,
         },
         lastMessage: chat.last_message_content,
-        lastMessageTime: chat.last_message_created_at, // Return raw string
+        lastMessageTime: chat.last_message_created_at,
     }));
     
     return { data: formattedChats, error: null };
@@ -565,4 +536,75 @@ export async function updateUserProfilePhotos(userId: string, photos: string[]) 
     }
     revalidatePath('/profile');
     return true;
+}
+
+export async function respondToLike(notificationId: string, recipientId: string, senderId: string, action: 'liked' | 'rejected') {
+    if (!notificationId || !recipientId || !senderId) {
+        return { error: 'Invalid IDs provided.' };
+    }
+
+    const supabase = createClient();
+    
+    // 1. Record the swipe from the recipient back to the original sender
+    const { error: swipeError } = await supabase.from('swipes').upsert(
+        {
+            swiper_id: recipientId,
+            swiped_id: senderId,
+            action: action,
+        },
+        { onConflict: 'swiper_id,swiped_id' }
+    );
+
+    if (swipeError) {
+        console.error('Error responding to like (swipe):', swipeError);
+        return { error: 'Could not record your response.' };
+    }
+
+    // 2. Delete the notification that has been actioned
+    const { error: deleteError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+    if (deleteError) {
+        console.error('Error deleting notification:', deleteError);
+        // Don't fail the whole action, just log it.
+    }
+    
+    // 3. If they liked back, check for a match and create one
+    if (action === 'liked') {
+         const { data: mutualLike, error: checkError } = await supabase
+            .from('swipes')
+            .select('swiper_id')
+            .eq('swiper_id', senderId) // The original sender
+            .eq('swiped_id', recipientId) // The current user
+            .eq('action', 'liked')
+            .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+            console.error('Error checking for mutual like:', checkError);
+            return { error: 'Could not check for a match.' };
+        }
+        
+        // If there is a mutual like, create the match record
+        if (mutualLike) {
+            const { error: matchError } = await supabase.from('matches').insert({
+                user1_id: recipientId,
+                user2_id: senderId,
+            });
+
+            if (matchError && matchError.code !== '23505') { // 23505 is unique violation
+                console.error('Error creating match:', matchError);
+                return { error: 'Could not create the match record.' };
+            }
+            
+            // Revalidate paths to update UI
+            revalidatePath('/chats');
+            revalidatePath('/notifications');
+            return { match: true };
+        }
+    }
+
+    revalidatePath('/notifications');
+    return { success: true };
 }

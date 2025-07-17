@@ -1,4 +1,5 @@
 
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -28,5 +29,18 @@ export interface Chat {
         photos: string[] | null;
     };
     lastMessage: string | null;
-    lastMessageTime: string | null; // Will be an ISO date string
+    lastMessageTime: string | null;
+}
+
+export type Notification = {
+    id: string;
+    message: string;
+    created_at: string; 
+    is_read: boolean;
+    type: 'new_like' | 'new_match';
+    sender_id: string;
+    sender: {
+        name: string;
+        photos: string[] | null;
+    } | null;
 }
