@@ -90,11 +90,29 @@ export default function DashboardPage() {
         return;
       }
       const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+
+      // Get IDs of users the current user has already matched with
+      const { data: matchedUsersData, error: matchedError } = await supabase
+        .from('matches')
+        .select('user1_id, user2_id')
+        .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+
+      if (matchedError) {
+        console.error('Error fetching matched users:', matchedError);
+        // Continue without match data if there's an error
+      }
+      const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
       
-      // Combine all users to exclude: current user, swiped users, and blocked users
-      const allExcludedIds = [currentUserId, ...swipedUserIds, ...(blockedUsers || [])];
+      // Combine all users to exclude: current user, swiped users, matched users, and blocked users
+      const excludedIds = new Set([
+        currentUserId, 
+        ...swipedUserIds,
+        ...matchedUserIds, 
+        ...(blockedUsers || [])
+      ]);
+      const allExcludedIds = Array.from(excludedIds);
       
-      // Fetch all potential profiles (excluding the current user and already swiped/blocked ones), ordered by most recent
+      // Fetch all potential profiles (excluding the ones determined above), ordered by most recent
       let query = supabase
         .from('profiles')
         .select('*')
