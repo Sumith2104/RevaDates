@@ -138,8 +138,6 @@ export default function ChatPage() {
         }
 
         setSending(false);
-        // This is a client component, revalidatePath won't work here.
-        // The server action already handles revalidation.
     };
 
     if (loading) {
@@ -182,36 +180,43 @@ export default function ChatPage() {
             </header>
             
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.map((message) => (
-                    <div 
-                        key={message.id} 
-                        className={cn(
-                            "flex items-end gap-2 max-w-[80%] group",
-                            message.sender_id === currentUserId ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                        )}
-                    >
-                        {message.sender_id !== currentUserId && (
-                           <Avatar className="h-8 w-8">
-                                <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
-                                <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
-                            </Avatar>
-                        )}
-                        <div className="flex items-end gap-2 flex-row-reverse">
-                            <div className={cn(
-                                "rounded-2xl px-4 py-2",
-                                message.sender_id === currentUserId 
-                                    ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                    : 'bg-muted rounded-bl-none'
-                            )}>
-                                <p className="text-base">{message.content}</p>
+            <div className="flex-1 overflow-y-auto p-4 space-y-1">
+                {messages.map((message, index) => {
+                    const prevMessage = messages[index - 1];
+                    const showAvatar = message.sender_id !== currentUserId && (!prevMessage || prevMessage.sender_id !== message.sender_id);
+                    
+                    return (
+                        <div 
+                            key={message.id} 
+                            className={cn(
+                                "flex items-end gap-2 max-w-[80%] group",
+                                message.sender_id === currentUserId ? 'ml-auto flex-row-reverse' : 'mr-auto'
+                            )}
+                        >
+                            <div className="w-8 flex-shrink-0">
+                                {showAvatar && (
+                                   <Avatar className="h-8 w-8">
+                                        <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                                        <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                                    </Avatar>
+                                )}
                             </div>
-                            <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                {format(new Date(message.created_at), 'h:mm a')}
-                            </span>
+                            <div className="flex items-end gap-2 flex-row-reverse">
+                                <div className={cn(
+                                    "rounded-2xl px-4 py-2",
+                                    message.sender_id === currentUserId 
+                                        ? 'bg-primary text-primary-foreground rounded-br-none' 
+                                        : 'bg-muted rounded-bl-none'
+                                )}>
+                                    <p className="text-base">{message.content}</p>
+                                </div>
+                                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    {format(new Date(message.created_at), 'h:mm a')}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                  <div ref={messagesEndRef} />
             </div>
 
