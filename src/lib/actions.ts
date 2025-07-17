@@ -544,10 +544,8 @@ export async function getChatsAndMatches(userId: string) {
 
     // Get the latest message for each match
     const { data: lastMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select('match_id, content, created_at')
-        .in('match_id', matchIds)
-        .order('created_at', { ascending: false });
+        .rpc('get_last_message_for_matches', { match_ids: matchIds });
+
 
     if (messagesError) {
         console.error('Error fetching last messages:', messagesError);
@@ -557,9 +555,7 @@ export async function getChatsAndMatches(userId: string) {
     const lastMessageMap = new Map<string, { content: string; created_at: string }>();
     if (lastMessages) {
         for (const msg of lastMessages) {
-            if (!lastMessageMap.has(msg.match_id)) {
-                lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
-            }
+            lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
         }
     }
 
@@ -723,7 +719,7 @@ export async function getChatMessages(matchId: string) {
 
 export async function sendMessage(matchId: string, senderId: string, recipientId: string, content: string) {
     if (!matchId || !senderId || !content) {
-        return { error: 'Missing required fields to send message.' };
+        return { data: null, error: 'Missing required fields to send message.' };
     }
     const supabase = createClient();
     const { data, error } = await supabase
@@ -740,7 +736,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
     
     if (error) {
         console.error('Error sending message:', error);
-        return { error: 'Could not send the message.' };
+        return { data: null, error: 'Could not send the message.' };
     }
 
     revalidatePath(`/chats/${matchId}`);

@@ -44,3 +44,12 @@ export type Notification = {
         photos: string[] | null;
     } | null;
 }
+
+export type Message = {
+    id: string;
+    match_id: string;
+    sender_id: string;
+    recipient_id: string;
+    content: string;
+    created_at: string;
+};
