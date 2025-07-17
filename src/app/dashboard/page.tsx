@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AppHeader } from '@/components/shared/app-header';
 
 // Haversine formula to calculate distance between two lat/lon points
 function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -201,9 +202,12 @@ export default function DashboardPage() {
   if (loading) {
       return (
           <AppShell>
+            <AppHeader />
+            <div className="flex-1 flex flex-col pt-16">
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                   <p className="text-xl font-medium">Finding profiles for you...</p>
               </div>
+            </div>
           </AppShell>
       )
   }
@@ -211,9 +215,12 @@ export default function DashboardPage() {
   if (!users || users.length === 0) {
     return (
       <AppShell>
-        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-          <p className="text-xl font-medium">No new profiles found.</p>
-          <p className="mt-2">Try increasing your distance range in Settings, or check back later!</p>
+        <AppHeader />
+        <div className="flex-1 flex flex-col pt-16">
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+            <p className="text-xl font-medium">No new profiles found.</p>
+            <p className="mt-2">Try increasing your distance range in Settings, or check back later!</p>
+            </div>
         </div>
       </AppShell>
     );
@@ -226,7 +233,10 @@ export default function DashboardPage() {
   return (
     <>
       <AppShell>
-        <SwipeDeck users={users} currentUserId={currentUserId!} />
+        <AppHeader />
+        <div className="flex-1 flex flex-col pt-16">
+          <SwipeDeck users={users} currentUserId={currentUserId!} />
+        </div>
       </AppShell>
       <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
           <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
