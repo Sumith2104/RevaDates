@@ -137,6 +137,7 @@ export default function ChatPage() {
         }
 
         setSending(false);
+        revalidatePath('/chats');
     };
 
     if (loading) {
@@ -185,6 +186,12 @@ export default function ChatPage() {
                         "flex items-end gap-2 max-w-[80%]",
                         message.sender_id === currentUserId ? 'ml-auto flex-row-reverse' : 'mr-auto'
                     )}>
+                        {message.sender_id !== currentUserId && (
+                           <Avatar className="h-8 w-8">
+                                <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                                <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                            </Avatar>
+                        )}
                         <div className={cn(
                              "rounded-2xl px-4 py-2",
                              message.sender_id === currentUserId 
