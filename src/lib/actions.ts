@@ -334,14 +334,8 @@ export async function getNotifications(userId: string) {
         console.error("Error fetching notifications:", error);
         return { data: [], error: 'Could not fetch notifications.' };
     }
-    
-    // Format the timestamps on the server
-    const formattedData = data.map(notif => ({
-        ...notif,
-        created_at: formatDistanceToNow(new Date(notif.created_at), { addSuffix: true }),
-    }));
 
-    return { data: formattedData, error: null };
+    return { data, error: null };
 }
 
 export async function markNotificationsAsRead(userId: string) {

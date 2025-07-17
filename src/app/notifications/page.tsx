@@ -10,11 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
 
 type Notification = {
     id: string;
     message: string;
-    created_at: string; // This will now be a formatted string
+    created_at: string; 
     is_read: boolean;
     sender: {
         name: string;
@@ -148,7 +149,7 @@ export default function NotificationsPage() {
                                         <div className="flex-grow">
                                             <p className="text-sm font-semibold">{notif.message}</p>
                                             <p className="text-xs text-muted-foreground mt-1">
-                                                {notif.created_at}
+                                                {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
                                             </p>
                                         </div>
                                 </div>
