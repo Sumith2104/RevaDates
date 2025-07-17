@@ -237,9 +237,9 @@ export default function DashboardPage() {
                       Profiles with photos get more matches. Add a photo to show your best self!
                   </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
-                  <AlertDialogAction onClick={() => router.push('/profile')} className="w-36 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
-                  <AlertDialogCancel onClick={handlePromptLater} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
+              <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row w-full gap-2">
+                  <AlertDialogAction onClick={() => router.push('/profile')} className="w-full bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
+                  <AlertDialogCancel onClick={handlePromptLater} className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
               </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
