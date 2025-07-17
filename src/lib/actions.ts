@@ -89,17 +89,18 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
     }
 
     if (swiperProfile) {
-        const { error: notificationError } = await supabase.from('notifications').insert(
+        const { error: notificationError } = await supabase.from('notifications').upsert(
             {
                 recipient_id: swipedId,
                 sender_id: swiperId,
                 type: 'new_like',
                 message: `${swiperProfile.name} liked your profile!`,
                 created_at: new Date().toISOString(),
-            }
-        ).select();
+            },
+            { onConflict: 'recipient_id,sender_id,type', ignoreDuplicates: false }
+        );
 
-        if (notificationError && notificationError.code !== '23505') { // 23505 is unique_violation
+        if (notificationError) {
             console.error('Error creating notification:', notificationError);
         }
     }
@@ -134,7 +135,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
           user2_id: swipedId,
         });
 
-        if (matchError) {
+        if (matchError && matchError.code !== '23505') {
           console.error('Error creating match:', matchError);
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
@@ -448,7 +449,8 @@ export async function getMatches(userId: string) {
     const { data: matchesWithMessages, error: messagesError } = await supabase
         .from('messages')
         .select('match_id')
-        .in('match_id', matchIds);
+        .in('match_id', matchIds)
+        .not('content', 'is', null);
 
     if (messagesError) {
         console.error('Error checking for messages:', messagesError);
@@ -517,6 +519,100 @@ export async function getChats(userId: string) {
     }));
     
     return { data: formattedChats, error: null };
+}
+
+export async function getChatsAndMatches(userId: string) {
+    if (!userId) return { chats: [], matches: [], error: 'User ID is required.' };
+    const supabase = createClient();
+
+    // Get all matches for the user
+    const { data: allMatches, error: matchesError } = await supabase
+        .from('matches')
+        .select('id, user1_id, user2_id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+
+    if (matchesError) {
+        console.error('Error fetching matches:', matchesError);
+        return { chats: [], matches: [], error: 'Could not fetch your matches.' };
+    }
+
+    if (!allMatches || allMatches.length === 0) {
+        return { chats: [], matches: [], error: null };
+    }
+
+    const matchIds = allMatches.map(m => m.id);
+
+    // Get the latest message for each match
+    const { data: lastMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('match_id, content, created_at')
+        .in('match_id', matchIds)
+        .order('created_at', { ascending: false });
+
+    if (messagesError) {
+        console.error('Error fetching last messages:', messagesError);
+        return { chats: [], matches: [], error: 'Could not fetch messages.' };
+    }
+
+    const lastMessageMap = new Map<string, { content: string; created_at: string }>();
+    if (lastMessages) {
+        for (const msg of lastMessages) {
+            if (!lastMessageMap.has(msg.match_id)) {
+                lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
+            }
+        }
+    }
+
+    const chats = allMatches.filter(m => lastMessageMap.has(m.id));
+    const newMatches = allMatches.filter(m => !lastMessageMap.has(m.id));
+
+    const allMatchedUserIds = allMatches.map(m => (m.user1_id === userId ? m.user2_id : m.user1_id));
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, photos')
+        .in('id', allMatchedUserIds);
+
+    if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return { chats: [], matches: [], error: 'Could not fetch profiles.' };
+    }
+
+    const profilesById = new Map(profiles.map(p => [p.id, p]));
+
+    const formattedChats = chats.map(match => {
+        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+        const matchedUser = profilesById.get(matchedUserId);
+        const lastMessage = lastMessageMap.get(match.id);
+        return {
+            id: match.id,
+            matchedUser: {
+                id: matchedUser?.id,
+                name: matchedUser?.name,
+                photos: matchedUser?.photos,
+            },
+            lastMessage: lastMessage?.content || null,
+            lastMessageTime: lastMessage?.created_at || null,
+        };
+    }).sort((a, b) => {
+        if (!a.lastMessageTime) return 1;
+        if (!b.lastMessageTime) return -1;
+        return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+    });
+
+    const formattedMatches = newMatches.map(match => {
+        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+        const matchedUser = profilesById.get(matchedUserId);
+        return {
+            id: match.id,
+            matchedUser: {
+                id: matchedUser?.id,
+                name: matchedUser?.name,
+                photos: matchedUser?.photos,
+            }
+        };
+    });
+
+    return { chats: formattedChats, matches: formattedMatches, error: null };
 }
 
 export async function updateUserProfilePhotos(userId: string, photos: string[]) {
@@ -607,4 +703,76 @@ export async function respondToLike(notificationId: string, recipientId: string,
 
     revalidatePath('/notifications');
     return { success: true };
+}
+
+export async function getChatMessages(matchId: string) {
+    if (!matchId) return { data: [], error: 'Match ID is required.' };
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('match_id', matchId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching messages:', error);
+        return { data: null, error: 'Could not fetch messages.' };
+    }
+    return { data, error: null };
+}
+
+export async function sendMessage(matchId: string, senderId: string, recipientId: string, content: string) {
+    if (!matchId || !senderId || !content) {
+        return { error: 'Missing required fields to send message.' };
+    }
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('messages')
+        .insert({
+            match_id: matchId,
+            sender_id: senderId,
+            recipient_id: recipientId,
+            content: content,
+            created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error sending message:', error);
+        return { error: 'Could not send the message.' };
+    }
+
+    revalidatePath(`/chats/${matchId}`);
+    revalidatePath('/chats');
+    return { data, error: null };
+}
+
+export async function getMatchDetails(matchId: string, currentUserId: string) {
+    if (!matchId) return { data: null, error: 'Match ID required' };
+    const supabase = createClient();
+
+    const { data: match, error: matchError } = await supabase
+        .from('matches')
+        .select('user1_id, user2_id')
+        .eq('id', matchId)
+        .single();
+
+    if (matchError || !match) {
+        return { data: null, error: 'Could not find match details.' };
+    }
+
+    const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
+
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, photos')
+        .eq('id', otherUserId)
+        .single();
+
+    if (profileError || !profile) {
+        return { data: null, error: 'Could not find matched user profile.' };
+    }
+
+    return { data: profile, error: null };
 }
