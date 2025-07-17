@@ -178,30 +178,23 @@ export default function ChatPage() {
             
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.map((message, index) => {
+                {messages.map((message) => {
                     const isCurrentUser = message.sender_id === currentUserId;
-                    const prevMessage = messages[index - 1];
-                    const showAvatar = !isCurrentUser && (!prevMessage || prevMessage.sender_id !== message.sender_id);
                     
                     return (
                         <div
                           key={message.id}
                           className={cn(
-                            "flex items-end gap-2 group",
+                            "flex w-full items-end gap-2 group",
                             isCurrentUser && "justify-end"
                           )}
                         >
                             {!isCurrentUser && (
-                                <div className="w-8 flex-shrink-0 self-end">
-                                    {showAvatar && (
-                                    <Avatar className="h-8 w-8">
-                                            <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
-                                            <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
-                                        </Avatar>
-                                    )}
-                                </div>
+                                <Avatar className="h-8 w-8 self-end">
+                                    <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                                    <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                                </Avatar>
                             )}
-
                              <div className={cn(
                                 "flex items-end gap-2 max-w-[80%]",
                                 isCurrentUser && "flex-row-reverse"
@@ -218,7 +211,6 @@ export default function ChatPage() {
                                     {format(new Date(message.created_at), 'h:mm a')}
                                 </span>
                             </div>
-                             {isCurrentUser && <div className="w-8 flex-shrink-0" /> /* Spacer */}
                         </div>
                     );
                 })}
