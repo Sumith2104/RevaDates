@@ -446,13 +446,15 @@ export async function getMatches(userId: string) {
 
     const matchIds = allMatches.map(m => m.id);
 
-    // DANGER: This rpc call does not exist, and will fail.
     const { data: matchesWithMessages, error: messagesError } = await supabase
-        .rpc('get_last_message_for_matches', { match_ids: matchIds })
+      .from('messages')
+      .select('match_id')
+      .in('match_id', matchIds)
+      .limit(matchIds.length);
+
 
     if (messagesError) {
         console.error('Error checking for messages:', messagesError);
-        // Fallback or handle error appropriately. For now, returning all matches as new.
     }
     
     const matchIdsWithMessages = new Set(matchesWithMessages?.map(m => m.match_id) || []);
@@ -783,3 +785,5 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
+
+    
