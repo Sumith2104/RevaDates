@@ -78,7 +78,7 @@ export default function ChatPage() {
     }, [chatId, currentUserId, router]);
 
     React.useEffect(() => {
-        if (!chatId) return;
+        if (!chatId || !currentUserId) return;
         const supabase = createClient();
         const channel = supabase
             .channel(`realtime-chat-${chatId}`)
@@ -92,7 +92,17 @@ export default function ChatPage() {
                 },
                 (payload) => {
                     const newMessage = payload.new as Message;
-                    setMessages(prevMessages => [...prevMessages, newMessage]);
+                    // Only add the message if it's from the other user
+                    // to prevent duplicates from the optimistic update.
+                    if (newMessage.sender_id !== currentUserId) {
+                        setMessages(prevMessages => {
+                            // Avoid adding duplicate messages
+                            if (prevMessages.some(m => m.id === newMessage.id)) {
+                                return prevMessages;
+                            }
+                            return [...prevMessages, newMessage];
+                        });
+                    }
                 }
             )
             .subscribe();
@@ -100,7 +110,7 @@ export default function ChatPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chatId]);
+    }, [chatId, currentUserId]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
