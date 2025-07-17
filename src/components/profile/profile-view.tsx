@@ -21,8 +21,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
+import { DialogTrigger } from "@radix-ui/react-dialog"
 import { getMatches, updateUserProfilePhotos } from '@/lib/actions';
 import type { Match } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
@@ -277,8 +277,23 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-8">
-          <div className="space-y-6">
+        <CardContent className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+                <div className="aspect-square relative rounded-lg overflow-hidden group">
+                    {userPhotos.length > 0 ? (
+                        <Image src={userPhotos[0]} alt="Main user photo" fill className="object-cover" />
+                    ) : (
+                        <div className="bg-muted h-full w-full flex items-center justify-center rounded-lg">
+                             <Avatar className="w-full h-full rounded-lg">
+                                <AvatarFallback className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
+                                    {getInitials(user.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="md:col-span-2 space-y-6">
             <div>
               <Label>Name</Label>
               {isEditing ? (
