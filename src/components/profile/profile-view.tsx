@@ -398,7 +398,4 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </AlertDialog>
     </>
   );
-
-    
-
-
+}
