@@ -53,10 +53,28 @@ export default function ChatPage() {
       scrollToBottom();
     }, [messages, scrollToBottom]);
 
+    const fetchMessages = React.useCallback(async () => {
+        if (!chatId) return;
+        const messagesData = await getChatMessages(chatId);
+
+        if (messagesData.error || !messagesData.data) {
+            console.error(messagesData.error);
+        } else {
+            setMessages(prevMessages => {
+                // Only update if there are new messages to avoid unnecessary re-renders
+                if (JSON.stringify(prevMessages) !== JSON.stringify(messagesData.data)) {
+                    return messagesData.data as Message[];
+                }
+                return prevMessages;
+            });
+        }
+    }, [chatId]);
+
+
     React.useEffect(() => {
         if (!currentUserId || !chatId) return;
 
-        async function fetchData() {
+        async function fetchInitialData() {
             setLoading(true);
             const [matchDetails, messagesData] = await Promise.all([
                 getMatchDetails(chatId, currentUserId!),
@@ -77,8 +95,17 @@ export default function ChatPage() {
             }
             setLoading(false);
         }
-        fetchData();
+        fetchInitialData();
     }, [chatId, currentUserId, router]);
+
+    // Automatic background refresher
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            fetchMessages();
+        }, 1000); // Refresh every 1 second
+
+        return () => clearInterval(interval);
+    }, [fetchMessages]);
 
     React.useEffect(() => {
         if (!chatId) return;
@@ -233,4 +260,3 @@ export default function ChatPage() {
         </div>
     );
 }
-
