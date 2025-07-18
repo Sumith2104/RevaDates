@@ -87,7 +87,7 @@ export default function ChatPage() {
     }, [chatId, currentUserId, router]);
 
     React.useEffect(() => {
-        if (!chatId || !currentUserId) return;
+        if (!chatId) return;
         const supabase = createClient();
         const channel = supabase
             .channel(`realtime-chat-${chatId}`)
@@ -100,15 +100,17 @@ export default function ChatPage() {
                     filter: `match_id=eq.${chatId}`
                 },
                 (payload) => {
-                    const newMessage = payload.new as Message;
-                    if (newMessage.sender_id !== currentUserId) {
-                        setMessages(prevMessages => {
-                            if (prevMessages.some(m => m.id === newMessage.id)) {
-                                return prevMessages;
-                            }
-                            return [...prevMessages, newMessage];
-                        });
-                    }
+                    const receivedMessage = payload.new as Message;
+                    
+                    // Add the new message to local state if it's not already there.
+                    // This handles receiving messages from the other user, and also
+                    // confirming messages sent by the current user from another client.
+                    setMessages(prevMessages => {
+                        if (prevMessages.some(m => m.id === receivedMessage.id)) {
+                            return prevMessages; // Avoid duplicates
+                        }
+                        return [...prevMessages, receivedMessage];
+                    });
                 }
             )
             .subscribe();
@@ -116,7 +118,7 @@ export default function ChatPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chatId, currentUserId]);
+    }, [chatId]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -139,6 +141,9 @@ export default function ChatPage() {
              setMessages(prev => prev.filter(m => m.id !== tempMessageId));
              setNewMessage(tempMessage.content);
         } else {
+             // The realtime subscription will handle updating the message from temp to permanent,
+             // so we only need to handle the optimistic UI update and error case here.
+             // To prevent duplicates, we can replace the temp message with the real one.
              setMessages(prev => prev.map(m => m.id === tempMessageId ? result.data as Message : m));
         }
 
@@ -190,6 +195,7 @@ export default function ChatPage() {
                     const isCurrentUser = message.sender_id === currentUserId;
                     const prevMessage = messages[index - 1];
                     const showDateSeparator = !prevMessage || new Date(message.created_at).toDateString() !== new Date(prevMessage.created_at).toDateString();
+                    const showAvatar = !isCurrentUser && (!prevMessage || prevMessage.sender_id !== message.sender_id);
                     
                     return (
                         <React.Fragment key={message.id}>
@@ -199,13 +205,16 @@ export default function ChatPage() {
                                 </div>
                             )}
                             <div className={cn("flex w-full items-end gap-2 group", isCurrentUser && "justify-end")}>
-                                {!isCurrentUser && (
+                                {showAvatar && (
                                     <Avatar className="h-8 w-8 self-end">
                                         <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
                                         <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                                     </Avatar>
                                 )}
-                                <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse")}>
+                                {!showAvatar && !isCurrentUser && (
+                                    <div className="w-8" /> // Spacer to align messages
+                                )}
+                                <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse ml-auto")}>
                                     <div className={cn(
                                         "rounded-2xl px-4 py-2",
                                         isCurrentUser 
@@ -244,3 +253,4 @@ export default function ChatPage() {
         </div>
     );
 }
+
