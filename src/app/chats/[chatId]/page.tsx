@@ -102,9 +102,6 @@ export default function ChatPage() {
                 (payload) => {
                     const receivedMessage = payload.new as Message;
                     
-                    // Add the new message to local state if it's not already there.
-                    // This handles receiving messages from the other user, and also
-                    // confirming messages sent by the current user from another client.
                     setMessages(prevMessages => {
                         if (prevMessages.some(m => m.id === receivedMessage.id)) {
                             return prevMessages; // Avoid duplicates
@@ -125,29 +122,17 @@ export default function ChatPage() {
         if (!newMessage.trim() || !currentUserId || !matchedUser) return;
         setSending(true);
 
-        const tempMessageId = `temp-${Date.now()}`;
-        const tempMessage: Message = {
-            id: tempMessageId,
-            content: newMessage,
-            sender_id: currentUserId,
-            created_at: new Date().toISOString(),
-        }
-        setMessages(prev => [...prev, tempMessage]);
+        const content = newMessage;
         setNewMessage('');
 
-        const result = await sendMessage(chatId, currentUserId, matchedUser.id, newMessage);
+        const result = await sendMessage(chatId, currentUserId, matchedUser.id, content);
         
         if (result.error || !result.data) {
-             setMessages(prev => prev.filter(m => m.id !== tempMessageId));
-             setNewMessage(tempMessage.content);
-        } else {
-             // The realtime subscription will handle updating the message from temp to permanent,
-             // so we only need to handle the optimistic UI update and error case here.
-             // To prevent duplicates, we can replace the temp message with the real one.
-             setMessages(prev => prev.map(m => m.id === tempMessageId ? result.data as Message : m));
+             setNewMessage(content);
         }
 
         setSending(false);
+        scrollToBottom();
     };
 
     if (loading) {
@@ -195,8 +180,10 @@ export default function ChatPage() {
                     const isCurrentUser = message.sender_id === currentUserId;
                     const prevMessage = messages[index - 1];
                     const showDateSeparator = !prevMessage || new Date(message.created_at).toDateString() !== new Date(prevMessage.created_at).toDateString();
-                    const showAvatar = !isCurrentUser && (!prevMessage || prevMessage.sender_id !== message.sender_id);
                     
+                    const isFirstInBlock = !prevMessage || prevMessage.sender_id !== message.sender_id;
+                    const showAvatar = !isCurrentUser && isFirstInBlock;
+
                     return (
                         <React.Fragment key={message.id}>
                             {showDateSeparator && (
@@ -212,9 +199,9 @@ export default function ChatPage() {
                                     </Avatar>
                                 )}
                                 {!showAvatar && !isCurrentUser && (
-                                    <div className="w-8" /> // Spacer to align messages
+                                    <div className="w-8" /> 
                                 )}
-                                <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse ml-auto")}>
+                                <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse")}>
                                     <div className={cn(
                                         "rounded-2xl px-4 py-2",
                                         isCurrentUser 
