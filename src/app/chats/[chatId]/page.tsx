@@ -9,18 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getInitials, cn } from '@/lib/utils';
 import { getMatchDetails, getChatMessages, sendMessage } from '@/lib/actions';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, Message } from '@/lib/types';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, isToday, isYesterday, formatDistanceToNowStrict } from 'date-fns';
-
-type Message = {
-    id: string;
-    content: string;
-    sender_id: string;
-    created_at: string;
-};
+import { format, isToday, isYesterday } from 'date-fns';
 
 const formatDateSeparator = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -41,6 +34,7 @@ export default function ChatPage() {
     const [loading, setLoading] = React.useState(true);
     const [sending, setSending] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
+    const supabase = React.useMemo(() => createClient(), []);
 
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
@@ -51,13 +45,13 @@ export default function ChatPage() {
         }
     }, [router]);
     
-    const scrollToBottom = () => {
+    const scrollToBottom = React.useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    }, []);
 
     React.useEffect(() => {
       scrollToBottom();
-    }, [messages]);
+    }, [messages, scrollToBottom]);
 
     React.useEffect(() => {
         if (!currentUserId || !chatId) return;
@@ -88,9 +82,9 @@ export default function ChatPage() {
 
     React.useEffect(() => {
         if (!chatId) return;
-        const supabase = createClient();
+        
         const channel = supabase
-            .channel(`realtime-chat-${chatId}`)
+            .channel(`public:messages:match_id=eq.${chatId}`)
             .on(
                 'postgres_changes',
                 {
@@ -103,8 +97,9 @@ export default function ChatPage() {
                     const receivedMessage = payload.new as Message;
                     
                     setMessages(prevMessages => {
+                        // Avoid duplicates from real-time events
                         if (prevMessages.some(m => m.id === receivedMessage.id)) {
-                            return prevMessages; // Avoid duplicates
+                            return prevMessages;
                         }
                         return [...prevMessages, receivedMessage];
                     });
@@ -115,24 +110,22 @@ export default function ChatPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chatId]);
+    }, [chatId, supabase]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !currentUserId || !matchedUser) return;
-        setSending(true);
-
+        
         const content = newMessage;
         setNewMessage('');
+        setSending(true);
 
         const result = await sendMessage(chatId, currentUserId, matchedUser.id, content);
         
         if (result.error || !result.data) {
-             setNewMessage(content);
+             setNewMessage(content); // Re-populate input on error
         }
-
         setSending(false);
-        scrollToBottom();
     };
 
     if (loading) {
