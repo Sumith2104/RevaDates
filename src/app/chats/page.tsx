@@ -74,8 +74,8 @@ export default function ChatsPage() {
             return;
         }
 
-        async function fetchData() {
-            setLoading(true);
+        async function fetchData(initialLoad = false) {
+            if(initialLoad) setLoading(true);
             
             const result = await getChatsAndMatches(userId!);
             
@@ -87,10 +87,16 @@ export default function ChatsPage() {
                 setMatches(result.matches as Match[]);
                 setChats(result.chats as Chat[]);
             }
-            setLoading(false);
+            if(initialLoad) setLoading(false);
         }
 
-        fetchData();
+        fetchData(true); // Initial fetch with loading state
+
+        const interval = setInterval(() => {
+            fetchData(false); // Subsequent fetches without loading state
+        }, 1000); // Refresh every 1 second
+
+        return () => clearInterval(interval); // Cleanup on component unmount
 
     }, [router]);
 
