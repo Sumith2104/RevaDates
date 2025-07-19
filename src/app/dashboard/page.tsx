@@ -79,7 +79,7 @@ export default function DashboardPage() {
     }
   }, [router]);
   
-  const fetchProfiles = React.useCallback(async () => {
+  const fetchProfiles = React.useCallback(async (skipPhotoCheck = false) => {
     if (!currentUserId) return;
     setLoading(true);
 
@@ -97,8 +97,8 @@ export default function DashboardPage() {
         return;
     }
     
-    // Check if user has photos BEFORE fetching anyone else
-    if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
+    // Check if user has photos BEFORE fetching anyone else, unless skipped
+    if (!skipPhotoCheck && (!currentUserProfile.photos || currentUserProfile.photos.length === 0)) {
         setShowPhotoPrompt(true);
         setLoading(false); // Stop loading, show the prompt
         return; // Exit early
@@ -207,7 +207,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (currentUserId) {
-        fetchProfiles();
+        fetchProfiles(false); // Initial fetch, check for photos
     }
   }, [currentUserId, fetchProfiles]);
 
@@ -227,7 +227,7 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
-    fetchProfiles();
+    fetchProfiles(true); // Re-fetch profiles, but this time skip the photo check
   }
   
   if (showPhotoPrompt) {
@@ -271,7 +271,7 @@ export default function DashboardPage() {
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={fetchProfiles} />}
+          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={() => fetchProfiles(true)} />}
         </div>
       </AppShell>
     </>
