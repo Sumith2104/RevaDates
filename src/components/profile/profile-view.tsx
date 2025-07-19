@@ -50,6 +50,7 @@ type User = {
     dob: Date;
     photos: string[] | null;
     bio: string;
+    updated_at: string;
 };
 
 function MatchesDialog({ userId }: { userId: string }) {
@@ -312,11 +313,11 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               <>
                 <div>
                   <Label>Email</Label>
-                  <Input name="email" type="email" value={user.email} onChange={handleInputChange} placeholder="Your Email" />
+                  <Input name="email" type="email" value={user.email || ''} onChange={handleInputChange} placeholder="Your Email" />
                 </div>
                 <div>
                   <Label>Phone</Label>
-                  <Input name="phone" type="tel" value={user.phone} onChange={handleInputChange} placeholder="Your Phone" />
+                  <Input name="phone" type="tel" value={user.phone || ''} onChange={handleInputChange} placeholder="Your Phone" />
                 </div>
               </>
             )}
@@ -406,3 +407,4 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </>
   );
 }
+
