@@ -14,3 +14,4 @@ To run this project, you will need to add the following environment variables to
 `SMTP_FROM` - The "from" address for emails.
 
 `NEXT_PUBLIC_BASE_URL` - The public URL of your application (e.g., http://localhost:9002 for local development).
+
