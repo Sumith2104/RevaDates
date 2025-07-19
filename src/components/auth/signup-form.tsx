@@ -14,9 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { formatInTimeZone } from 'date-fns-tz';
-
-const timeZone = 'Asia/Kolkata';
+import { addMinutes, formatISO } from 'date-fns';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
@@ -128,7 +126,11 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const dobYear = formData.get('dobYear') as string;
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    
+    // Use user-provided method for IST
+    const now = new Date();
+    const istDate = addMinutes(now, 330);
+    const formattedIST = formatISO(istDate);
     
     const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
@@ -137,8 +139,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
         photos: [],
-        created_at: now,
-        updated_at: now,
+        created_at: formattedIST,
+        updated_at: formattedIST,
     }).select().single();
 
     if (insertError) {

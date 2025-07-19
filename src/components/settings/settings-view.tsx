@@ -26,9 +26,7 @@ import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
-import { formatInTimeZone } from 'date-fns-tz';
-
-const timeZone = 'Asia/Kolkata';
+import { addMinutes, formatISO } from 'date-fns';
 
 export function BlockedUsersDialog({ userId }: { userId: string }) {
     const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
@@ -179,7 +177,11 @@ export function SettingsView() {
     const saveSettings = async () => {
         setSaving(true);
         const supabase = createClient();
-        const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        
+        // Use user-provided method for IST
+        const now = new Date();
+        const istDate = addMinutes(now, 330);
+        const formattedIST = formatISO(istDate);
         
         const { error } = await supabase
             .from('profiles')
@@ -188,7 +190,7 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
-                updated_at: now
+                updated_at: formattedIST
             })
             .eq('id', currentUserId);
         

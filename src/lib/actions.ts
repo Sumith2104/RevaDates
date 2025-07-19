@@ -5,13 +5,27 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { formatInTimeZone } from 'date-fns-tz';
-
-const timeZone = 'Asia/Kolkata';
+import { addMinutes, formatISO } from 'date-fns';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
 });
+
+// Helper function to get current IST time as ISO string
+function getISTTimestamp() {
+    const now = new Date();
+    const istDate = addMinutes(now, 330);
+    return formatISO(istDate);
+}
+
+// Helper function to get future IST time as ISO string
+function getFutureISTTimestamp(minutesToAdd: number) {
+    const now = new Date();
+    const futureDate = addMinutes(now, minutesToAdd);
+    const istDate = addMinutes(futureDate, 330);
+    return formatISO(istDate);
+}
+
 
 export async function sendOtpEmail(email: string) {
   const validatedFields = EmailSchema.safeParse({ email });
@@ -64,7 +78,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   }
 
   const supabase = createClient();
-  const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+  const now = getISTTimestamp();
 
   const { error: swipeError } = await supabase.from('swipes').upsert(
     {
@@ -130,7 +144,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
 
-        const notificationTime = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        const notificationTime = getISTTimestamp();
         // Create notifications for both users if their settings allow it
         if (swiperProfile?.match_notification) {
             await supabase.from('notifications').insert({
@@ -181,14 +195,14 @@ export async function sendPasswordResetOtp(email: string) {
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expires = new Date(new Date().getTime() + 600 * 1000); // 10 minutes from now
+    const expires = getFutureISTTimestamp(10); // 10 minutes from now
 
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
             password_reset_token: otp, 
-            password_reset_token_expires_at: formatInTimeZone(expires, timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
-            updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+            password_reset_token_expires_at: expires,
+            updated_at: getISTTimestamp(),
         })
         .eq('id', user.id);
 
@@ -253,7 +267,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
             password: password, // Passwords should be hashed!
             password_reset_token: null,
             password_reset_token_expires_at: null,
-            updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+            updated_at: getISTTimestamp(),
         })
         .eq('id', user.id);
 
@@ -311,7 +325,7 @@ export async function getNotifications(userId: string) {
 export async function markNotificationsAsRead(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
     const supabase = createClient();
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    const now = getISTTimestamp();
     const { error } = await supabase
         .from('notifications')
         .update({ is_read: true, updated_at: now })
@@ -401,7 +415,7 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
 
     const { error: updateError } = await supabase
         .from('profiles')
-        .update({ blocked_users: newBlocked, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
+        .update({ blocked_users: newBlocked, updated_at: getISTTimestamp() })
         .eq('id', blockerId);
 
     if (updateError) {
@@ -517,7 +531,7 @@ export async function updateUserProfile(userId: string, updates: Record<string, 
         return { error: 'User ID is required.' };
     }
     const supabase = createClient();
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    const now = getISTTimestamp();
 
     const { error } = await supabase
         .from('profiles')
@@ -536,7 +550,7 @@ export async function updateUserProfilePhotos(userId: string, photos: string[]) 
         return { error: 'User ID is required.' };
     }
     const supabase = createClient();
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    const now = getISTTimestamp();
 
     const { error } = await supabase
         .from('profiles')
@@ -556,7 +570,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
     }
 
     const supabase = createClient();
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    const now = getISTTimestamp();
     
     // 1. Record the swipe from the recipient back to the original sender
     const { error: swipeError } = await supabase.from('swipes').upsert(
@@ -636,7 +650,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         return { data: null, error: 'Missing required fields to send message.' };
     }
     const supabase = createClient();
-    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    const now = getISTTimestamp();
     const { data, error } = await supabase
         .from('messages')
         .insert({
