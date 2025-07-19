@@ -181,7 +181,7 @@ export function SettingsView() {
         // Use user-provided method for IST
         const now = new Date();
         const istDate = addMinutes(now, 330);
-        const formattedIST = formatISO(istDate);
+        const formattedTimestamp = formatISO(istDate);
         
         const { error } = await supabase
             .from('profiles')
@@ -190,7 +190,7 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
-                updated_at: formattedIST
+                updated_at: formattedTimestamp
             })
             .eq('id', currentUserId);
         
