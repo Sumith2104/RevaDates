@@ -35,7 +35,6 @@ export default function ChatPage() {
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [newMessage, setNewMessage] = React.useState('');
     const [loading, setLoading] = React.useState(true);
-    const [sending, setSending] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
     const supabase = React.useMemo(() => createClient(), []);
 
@@ -55,24 +54,6 @@ export default function ChatPage() {
     React.useEffect(() => {
       scrollToBottom();
     }, [messages, scrollToBottom]);
-
-    const fetchMessages = React.useCallback(async () => {
-        if (!chatId) return;
-        const messagesData = await getChatMessages(chatId);
-
-        if (messagesData.error || !messagesData.data) {
-            // Error handling can be improved here
-        } else {
-            setMessages(prevMessages => {
-                // Only update if there are new messages to avoid unnecessary re-renders
-                if (JSON.stringify(prevMessages) !== JSON.stringify(messagesData.data)) {
-                    return messagesData.data as Message[];
-                }
-                return prevMessages;
-            });
-        }
-    }, [chatId]);
-
 
     React.useEffect(() => {
         if (!currentUserId || !chatId) return;
@@ -100,15 +81,6 @@ export default function ChatPage() {
         fetchInitialData();
     }, [chatId, currentUserId, router]);
 
-    // Automatic background refresher
-    React.useEffect(() => {
-        const interval = setInterval(() => {
-            fetchMessages();
-        }, 1000); // Refresh every 1 second
-
-        return () => clearInterval(interval);
-    }, [fetchMessages]);
-
     React.useEffect(() => {
         if (!chatId) return;
         
@@ -126,10 +98,20 @@ export default function ChatPage() {
                     const receivedMessage = payload.new as Message;
                     
                     setMessages(prevMessages => {
-                        // Avoid duplicates from real-time events
+                        // Check if we are replacing an optimistic message
+                        const existingIndex = prevMessages.findIndex(m => m.id === receivedMessage.tempId);
+                        if (existingIndex !== -1) {
+                            const newMessages = [...prevMessages];
+                            newMessages[existingIndex] = receivedMessage;
+                            return newMessages;
+                        }
+
+                        // Avoid duplicates from real-time events if message already exists
                         if (prevMessages.some(m => m.id === receivedMessage.id)) {
                             return prevMessages;
                         }
+                        
+                        // Add new message from other user
                         return [...prevMessages, receivedMessage];
                     });
                 }
@@ -146,15 +128,29 @@ export default function ChatPage() {
         if (!newMessage.trim() || !currentUserId || !matchedUser) return;
         
         const content = newMessage;
+        const tempId = `temp_${Date.now()}`;
         setNewMessage('');
-        setSending(true);
+        
+        // Optimistically add message to UI
+        const optimisticMessage: Message = {
+            id: tempId,
+            tempId: tempId,
+            match_id: chatId,
+            sender_id: currentUserId,
+            recipient_id: matchedUser.id,
+            content: content,
+            created_at: new Date().toISOString(),
+        };
 
-        const result = await sendMessage(chatId, currentUserId, matchedUser.id, content);
+        setMessages(prev => [...prev, optimisticMessage]);
+
+        const result = await sendMessage(chatId, currentUserId, matchedUser.id, content, tempId);
         
         if (result.error || !result.data) {
              setNewMessage(content); // Re-populate input on error
+             // Remove optimistic message on error
+             setMessages(prev => prev.filter(m => m.id !== tempId));
         }
-        setSending(false);
     };
 
     if (loading) {
@@ -205,6 +201,7 @@ export default function ChatPage() {
                     
                     const isFirstInBlock = !prevMessage || prevMessage.sender_id !== message.sender_id;
                     const showAvatar = !isCurrentUser && isFirstInBlock;
+                    const isOptimistic = typeof message.id === 'string' && message.id.startsWith('temp_');
 
                     return (
                         <React.Fragment key={message.id}>
@@ -228,7 +225,8 @@ export default function ChatPage() {
                                         "rounded-2xl px-4 py-2",
                                         isCurrentUser 
                                             ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                            : 'bg-muted rounded-bl-none'
+                                            : 'bg-muted rounded-bl-none',
+                                        isOptimistic && 'opacity-70'
                                     )}>
                                         <p className="text-base break-words">{message.content}</p>
                                     </div>
@@ -252,9 +250,8 @@ export default function ChatPage() {
                         placeholder="Type a message..."
                         className="flex-1 border-2"
                         autoComplete="off"
-                        disabled={sending}
                     />
-                    <Button type="submit" size="icon" disabled={!newMessage.trim() || sending}>
+                    <Button type="submit" size="icon" disabled={!newMessage.trim()}>
                         <Send className="h-5 w-5" />
                     </Button>
                 </form>

@@ -671,7 +671,7 @@ export async function getChatMessages(matchId: string) {
     return { data, error: null };
 }
 
-export async function sendMessage(matchId: string, senderId: string, recipientId: string, content: string) {
+export async function sendMessage(matchId: string, senderId: string, recipientId: string, content: string, tempId?: string) {
     if (!matchId || !senderId || !content) {
         return { data: null, error: 'Missing required fields to send message.' };
     }
@@ -685,6 +685,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
             recipient_id: recipientId,
             content: content,
             created_at: now,
+            temp_id: tempId, // Store the temporary ID
         })
         .select()
         .single();

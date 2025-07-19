@@ -45,10 +45,11 @@ export type Notification = {
 }
 
 export type Message = {
-    id: string;
+    id: string | number;
     match_id: string;
     sender_id: string;
     recipient_id: string;
     content: string;
     created_at: string;
+    tempId?: string; // Optional temporary ID for optimistic UI
 };
