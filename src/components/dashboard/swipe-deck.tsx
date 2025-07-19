@@ -293,14 +293,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
             <X className="h-8 w-8" />
           </Button>
 
-          <div className="flex flex-col items-center gap-2">
-            <Button onClick={onUndo} variant="outline" size="icon" className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50" disabled={!canUndo || !activeUser || !!triggerSwipeDirection}>
-              <Undo2 className="h-6 w-6" />
-            </Button>
-             <Button onClick={onRefresh} variant="outline" size="icon" className="h-10 w-10 rounded-full border-blue-500 text-blue-500 hover:bg-blue-500/10 disabled:opacity-50">
-              <RefreshCcw className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button onClick={onUndo} variant="outline" size="icon" className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50" disabled={!canUndo || !!triggerSwipeDirection}>
+            <Undo2 className="h-6 w-6" />
+          </Button>
           
           <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
             <Heart className="h-8 w-8 fill-current text-green-500" />
@@ -342,3 +337,5 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     </>
   );
 }
+
+    

@@ -21,6 +21,8 @@ import {
 import { AppHeader } from '@/components/shared/app-header';
 import { handleUndoSwipeAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
 
 // Haversine formula to calculate distance between two lat/lon points
 function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -288,6 +290,10 @@ export default function DashboardPage() {
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
             <p className="text-xl font-medium">No new profiles found.</p>
             <p className="mt-2">Try increasing your distance range in Settings, or check back later!</p>
+            <Button onClick={() => fetchProfiles(true)} variant="outline" className="mt-4">
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
             </div>
         </div>
       </AppShell>
@@ -305,3 +311,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    

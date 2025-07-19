@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import * as React from 'react';
-import { Heart, User, Bell } from 'lucide-react';
+import { Heart, User, Bell, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { usePathname } from 'next/navigation';
@@ -82,3 +82,5 @@ export function AppHeader() {
     </header>
   );
 }
+
+    
