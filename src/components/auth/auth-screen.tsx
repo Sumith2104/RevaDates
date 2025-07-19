@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -6,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
 import { Heart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { updateUserProfile } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const phrases = [
   "Take It All Off",
@@ -25,12 +29,15 @@ const phrases = [
 const TYPING_SPEED = 50;
 
 export function AuthScreen() {
-  const [view, setView] = React.useState<'start' | 'login' | 'signup'>('start');
+  const [view, setView] = React.useState<'start' | 'login' | 'signup' | 'interest'>('start');
+  const [currentUser, setCurrentUser] = React.useState<{ id: string; name: string; } | null>(null);
   const [typedPhrase, setTypedPhrase] = React.useState('');
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const activePhrase = phrases[phraseIndex];
 
+  const router = useRouter();
+  const { toast } = useToast();
   const aboutRef = React.useRef<HTMLDivElement | null>(null);
   const scrollToAbout = () => {
     aboutRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,6 +73,39 @@ export function AuthScreen() {
       setView('start');
     }
   };
+
+  const handleLoginSuccess = (user: { id: string; name: string; gender: string | null; interested_in: string | null; }) => {
+      if (!user.gender || !user.interested_in) {
+          setCurrentUser(user);
+          setView('interest');
+      } else {
+          router.push('/dashboard');
+      }
+  };
+
+  const handleSignupSuccess = (user: { id: string; name: string; }) => {
+      setCurrentUser(user);
+      setView('interest');
+  };
+
+  const handleInterestSelection = async (interest: 'Male' | 'Female') => {
+      if (!currentUser) return;
+
+      const userGender = interest === 'Male' ? 'Female' : 'Male';
+      
+      const result = await updateUserProfile(currentUser.id, {
+          gender: userGender,
+          interested_in: interest,
+      });
+
+      if (result.error) {
+          toast({ variant: 'destructive', title: 'Error', description: result.error });
+      } else {
+          toast({ title: 'Profile Updated!', description: 'You can now start swiping.' });
+          router.push('/dashboard');
+      }
+  };
+
 
   const cardVariants = {
     initial: { y: '100vh', opacity: 0 },
@@ -152,14 +192,32 @@ export function AuthScreen() {
               <LoginForm
                 onSwitchToSignup={() => setView('signup')}
                 onSwitchToForgotPassword={() => {}}
+                onLoginSuccess={handleLoginSuccess}
               />
             </motion.div>
           )}
 
           {view === 'signup' && (
             <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <SignupForm onSwitchToLogin={() => setView('login')} />
+              <SignupForm onSwitchToLogin={() => setView('login')} onSignupSuccess={handleSignupSuccess} />
             </motion.div>
+          )}
+
+          {view === 'interest' && (
+              <motion.div key="interest" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+                  <div className="text-center p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-2xl max-w-sm mx-auto">
+                      <h2 className="text-2xl font-bold mb-2">Welcome, {currentUser?.name.split(' ')[0]}!</h2>
+                      <p className="text-white/80 mb-6">To find the best matches for you, please tell us who you're interested in.</p>
+                      <div className="flex flex-col gap-4">
+                          <Button size="lg" className="w-full rounded-full" onClick={() => handleInterestSelection('Male')}>
+                              I'm interested in Men
+                          </Button>
+                          <Button size="lg" className="w-full rounded-full" onClick={() => handleInterestSelection('Female')}>
+                              I'm interested in Women
+                          </Button>
+                      </div>
+                  </div>
+              </motion.div>
           )}
         </AnimatePresence>
       </div>
