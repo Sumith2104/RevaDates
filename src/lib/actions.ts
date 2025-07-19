@@ -677,27 +677,38 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
     }
     const supabase = createClient();
     const now = getISTTimestamp();
+    const messageData: any = {
+        match_id: matchId,
+        sender_id: senderId,
+        recipient_id: recipientId,
+        content: content,
+        created_at: now,
+    };
+    
+    // The temp_id was only for the client, so we don't send it to the DB.
+    // However, we need to associate the returned message with the tempId on the client.
+    // We can't do that directly here, but the realtime subscription will handle it.
+    // The INSERT payload needs to be valid.
+    
     const { data, error } = await supabase
         .from('messages')
-        .insert({
-            match_id: matchId,
-            sender_id: senderId,
-            recipient_id: recipientId,
-            content: content,
-            created_at: now,
-            temp_id: tempId, // Store the temporary ID
-        })
+        .insert(messageData)
         .select()
         .single();
-    
+
     if (error) {
+        console.error('SendMessage Error:', error);
         return { data: null, error: 'Could not send the message.' };
     }
 
+    // Add the tempId to the returned data so the client can find it.
+    const returnedData = data ? { ...data, tempId: tempId } : null;
+
     revalidatePath(`/chats/${matchId}`);
     revalidatePath('/chats');
-    return { data, error: null };
+    return { data: returnedData, error: null };
 }
+
 
 export async function getMatchDetails(matchId: string, currentUserId: string) {
     if (!matchId) return { data: null, error: 'Match ID required' };

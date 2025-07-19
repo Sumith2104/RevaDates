@@ -99,7 +99,8 @@ export default function ChatPage() {
                     
                     setMessages(prevMessages => {
                         // Check if we are replacing an optimistic message
-                        const existingIndex = prevMessages.findIndex(m => m.id === receivedMessage.tempId);
+                        const existingIndex = prevMessages.findIndex(m => m.tempId && m.tempId === receivedMessage.tempId);
+                        
                         if (existingIndex !== -1) {
                             const newMessages = [...prevMessages];
                             newMessages[existingIndex] = receivedMessage;
@@ -150,6 +151,9 @@ export default function ChatPage() {
              setNewMessage(content); // Re-populate input on error
              // Remove optimistic message on error
              setMessages(prev => prev.filter(m => m.id !== tempId));
+        } else {
+            // The realtime subscription will handle replacing the temp message
+            // with the real one. So we don't need to do anything here on success.
         }
     };
 
@@ -201,7 +205,7 @@ export default function ChatPage() {
                     
                     const isFirstInBlock = !prevMessage || prevMessage.sender_id !== message.sender_id;
                     const showAvatar = !isCurrentUser && isFirstInBlock;
-                    const isOptimistic = typeof message.id === 'string' && message.id.startsWith('temp_');
+                    const isOptimistic = !!message.tempId;
 
                     return (
                         <React.Fragment key={message.id}>
