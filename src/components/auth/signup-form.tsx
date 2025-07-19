@@ -11,15 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { sendOtpEmail } from '@/lib/actions';
+import { sendOtpEmail, createUser } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
+    onSignupSuccess: (user: { id: string; gender: string | null; interested_in: string | null; name: string; }) => void;
 }
 
-export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin }, ref) => {
+export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin, onSignupSuccess }, ref) => {
   const [step, setStep] = React.useState<'details' | 'otp'>('details');
   const [generatedOtp, setGeneratedOtp] = React.useState('');
   const [enteredOtp, setEnteredOtp] = React.useState(new Array(4).fill(""));
@@ -61,7 +62,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   const saveUserLocation = (userId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-            // Resolve even if location is not supported, so signup can continue
             resolve();
             return;
         }
@@ -87,7 +87,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                     title: 'Location Skipped',
                     description: "You can enable location later in your settings for better matches.",
                 });
-                // Resolve so signup can continue
                 resolve();
             }
         );
@@ -118,50 +117,37 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         return;
     }
 
-    const firstName = formData.get('firstName') as string;
-    const lastName = formData.get('lastName') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const dobYear = formData.get('dobYear') as string;
-    const dobMonth = formData.get('dobMonth') as string;
-    const dobDay = formData.get('dobDay') as string;
+    const userData = {
+        firstName: formData.get('firstName') as string,
+        lastName: formData.get('lastName') as string,
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+        dobYear: formData.get('dobYear') as string,
+        dobMonth: formData.get('dobMonth') as string,
+        dobDay: formData.get('dobDay') as string,
+    };
     
-    const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
-        name: `${firstName} ${lastName}`,
-        email,
-        password, // Storing password directly. Should be hashed in a real app.
-        dob: `${dobYear}-${dobMonth}-${dobDay}`,
-        bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
-        photos: [],
-        // Timestamps will now be set by the server action or database default
-    }).select().single();
+    const result = await createUser(userData);
 
-    if (insertError) {
+    if (result.error || !result.data) {
         setIsLoading(false);
         toast({
           variant: 'destructive',
           title: 'Signup Failed',
-          description: insertError.message,
+          description: result.error,
         });
-    } else if (newUser) {
-        localStorage.setItem('currentUserId', newUser.id);
+    } else {
+        localStorage.setItem('currentUserId', result.data.id);
         
-        // Now attempt to get location
-        await saveUserLocation(newUser.id);
+        await saveUserLocation(result.data.id);
         
         setIsLoading(false);
         toast({
           title: 'Account Created!',
           description: 'Welcome to RevaDates!',
         });
-        router.push('/dashboard');
-    } else {
-        setIsLoading(false);
-        toast({
-          variant: 'destructive',
-          title: 'Signup Failed',
-          description: 'Could not create account. Please try again.',
-        });
+        
+        onSignupSuccess(result.data);
     }
   };
 

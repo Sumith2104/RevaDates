@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { addMinutes, formatISO } from 'date-fns';
+import { addMinutes } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
 
 const EmailSchema = z.object({
@@ -18,7 +18,6 @@ const timeZone = 'Asia/Kolkata';
 function getISTTimestamp() {
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
-    // Format to ISO 8601 with timezone offset, e.g., '2023-10-27T15:30:00+05:30'
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
@@ -28,6 +27,28 @@ function getFutureISTTimestamp(minutesToAdd: number) {
     const futureDate = addMinutes(now, minutesToAdd);
     const zonedDate = toZonedTime(futureDate, timeZone);
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
+}
+
+export async function createUser(userData: Record<string, any>) {
+  const supabase = createClient();
+  const now = getISTTimestamp();
+
+  const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
+      name: `${userData.firstName} ${userData.lastName}`,
+      email: userData.email,
+      password: userData.password, 
+      dob: `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`,
+      bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
+      photos: [],
+      created_at: now,
+      updated_at: now,
+  }).select('id, name, gender, interested_in').single();
+
+  if (insertError) {
+      return { data: null, error: insertError.message };
+  }
+
+  return { data: newUser, error: null };
 }
 
 
@@ -546,6 +567,7 @@ export async function updateUserProfile(userId: string, updates: Record<string, 
         return { error: 'Could not update your profile.' };
     }
     revalidatePath('/profile');
+    revalidatePath('/dashboard');
     return { success: true };
 }
 
