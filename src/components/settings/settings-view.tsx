@@ -179,6 +179,8 @@ export function SettingsView() {
     const saveSettings = async () => {
         setSaving(true);
         const supabase = createClient();
+        const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        
         const { error } = await supabase
             .from('profiles')
             .update({
@@ -186,7 +188,7 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
-                updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+                updated_at: now
             })
             .eq('id', currentUserId);
         
