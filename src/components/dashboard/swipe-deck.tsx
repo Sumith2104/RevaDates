@@ -288,19 +288,25 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
             </div>
           )}
         </div>
-        <div className="flex items-center justify-center gap-6">
-          <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
-            <X className="h-8 w-8" />
-          </Button>
+        <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-6">
+              <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
+                <X className="h-8 w-8" />
+              </Button>
 
-          <Button onClick={onUndo} variant="outline" size="icon" className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50" disabled={!canUndo || !!triggerSwipeDirection}>
-            <Undo2 className="h-6 w-6" />
-          </Button>
-          
-          <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
-            <Heart className="h-8 w-8 fill-current text-green-500" />
-          </Button>
+              <Button onClick={onUndo} variant="outline" size="icon" className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50" disabled={!canUndo || !!triggerSwipeDirection}>
+                <Undo2 className="h-6 w-6" />
+              </Button>
+              
+              <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
+                <Heart className="h-8 w-8 fill-current text-green-500" />
+              </Button>
+            </div>
+            <Button onClick={onRefresh} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-muted-foreground/50 text-muted-foreground hover:bg-muted/10" disabled={!!triggerSwipeDirection}>
+                <RefreshCcw className="h-7 w-7" />
+            </Button>
         </div>
+
 
          {/* Preload the next 3 images */}
         <div style={{ display: 'none' }}>
@@ -337,5 +343,3 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     </>
   );
 }
-
-    
