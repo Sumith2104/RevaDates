@@ -124,6 +124,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
 
+        const notificationTime = new Date().toISOString();
         // Create notifications for both users if their settings allow it
         if (swiperProfile?.match_notification) {
             await supabase.from('notifications').insert({
@@ -131,7 +132,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 sender_id: swipedId,
                 type: 'new_match',
                 message: `You matched with ${swipedProfile?.name}!`,
-                created_at: new Date().toISOString(),
+                created_at: notificationTime,
             });
         }
         if (swipedProfile?.match_notification) {
@@ -140,7 +141,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 sender_id: swiperId,
                 type: 'new_match',
                 message: `You matched with ${swiperProfile?.name}!`,
-                created_at: new Date().toISOString(),
+                created_at: notificationTime,
             });
         }
         
