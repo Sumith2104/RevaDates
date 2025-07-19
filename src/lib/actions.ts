@@ -685,9 +685,19 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         created_at: now,
     };
     
+    // The tempId is only for the client-side optimistic UI, so we pass it separately
+    // and add it to the final returned object. It's not saved in the DB.
+    messageData.tempId = tempId;
+    
     const { data, error } = await supabase
         .from('messages')
-        .insert(messageData)
+        .insert({
+            match_id: matchId,
+            sender_id: senderId,
+            recipient_id: recipientId,
+            content: content,
+            created_at: now,
+        })
         .select()
         .single();
 
@@ -733,3 +743,5 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
+
+    
