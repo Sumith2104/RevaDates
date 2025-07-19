@@ -24,9 +24,7 @@ export function AppHeader() {
         .eq('recipient_id', userId)
         .eq('is_read', false);
       
-      if (error) {
-        console.error('Error fetching unread count:', error);
-      } else {
+      if (!error) {
         setUnreadCount(count || 0);
       }
     };

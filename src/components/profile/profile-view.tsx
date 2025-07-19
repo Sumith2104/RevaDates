@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
-import { getMatches, updateUserProfilePhotos } from '@/lib/actions';
+import { getChatsAndMatches, updateUserProfilePhotos } from '@/lib/actions';
 import type { Match } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -60,12 +60,12 @@ function MatchesDialog({ userId }: { userId: string }) {
 
     const fetchMatches = React.useCallback(async () => {
         setIsLoading(true);
-        const result = await getMatches(userId);
+        const result = await getChatsAndMatches(userId);
         if (result.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
             setMatches([]);
         } else {
-            setMatches(result.data as Match[]);
+            setMatches(result.matches as Match[]);
         }
         setIsLoading(false);
     }, [userId, toast]);

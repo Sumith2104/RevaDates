@@ -28,20 +28,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  const handleInteraction = (e: React.ClipboardEvent<HTMLDivElement> | React.DragEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-    
-    // Allow interaction if it's an input/textarea
-    if (isInput) {
-        return;
-    }
-    
-    // Prevent default for other elements
-    e.preventDefault();
-  };
-
   return (
     <html lang="en" className="dark">
       <head>
@@ -54,14 +40,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body 
-        className="font-body antialiased"
-        onCopy={handleInteraction}
-        onPaste={handleInteraction}
-        onCut={handleInteraction}
-        onDragStart={handleInteraction}
-      >
-          {children}
+      <body className="font-body antialiased">
+        {children}
         <Toaster />
         <Analytics />
       </body>

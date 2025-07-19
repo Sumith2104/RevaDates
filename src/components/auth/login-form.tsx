@@ -28,7 +28,6 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
   const updateUserLocation = (userId: string): Promise<void> => {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-            console.log("Geolocation is not supported by this browser.");
             resolve(); // Resolve promise even if geolocation is not supported
             return;
         }
@@ -38,18 +37,14 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
                 const { latitude, longitude } = position.coords;
                 const locationString = `POINT(${longitude} ${latitude})`;
                 
-                const { error } = await supabase
+                await supabase
                     .from('profiles')
                     .update({ location: locationString })
                     .eq('id', userId);
 
-                if (error) {
-                    console.error("Error updating location:", error.message);
-                }
                 resolve();
             },
             (error) => {
-                console.error("Error getting location:", error.message);
                 toast({
                     variant: 'default',
                     title: 'Location Skipped',

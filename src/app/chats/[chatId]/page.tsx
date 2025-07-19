@@ -58,7 +58,7 @@ export default function ChatPage() {
         const messagesData = await getChatMessages(chatId);
 
         if (messagesData.error || !messagesData.data) {
-            console.error(messagesData.error);
+            // Error handling can be improved here
         } else {
             setMessages(prevMessages => {
                 // Only update if there are new messages to avoid unnecessary re-renders
@@ -82,14 +82,13 @@ export default function ChatPage() {
             ]);
 
             if (matchDetails.error || !matchDetails.data) {
-                console.error(matchDetails.error);
                 router.push('/chats');
                 return;
             }
             setMatchedUser(matchDetails.data as UserProfile);
 
             if (messagesData.error || !messagesData.data) {
-                console.error(messagesData.error);
+                // Handle error
             } else {
                 setMessages(messagesData.data as Message[]);
             }

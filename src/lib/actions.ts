@@ -51,7 +51,6 @@ export async function sendOtpEmail(email: string) {
     });
     return { error: null, otp };
   } catch (e) {
-    console.error('Failed to send email:', e);
     return { error: 'Failed to send verification email. Please try again.', otp: null };
   }
 }
@@ -73,7 +72,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   );
 
   if (swipeError) {
-    console.error('Error recording swipe:', swipeError);
     return { error: 'Could not record your swipe.' };
   }
   
@@ -84,12 +82,8 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
       .eq('id', swiperId)
       .single();
 
-    if (swiperProfileError) {
-      console.error('Error fetching swiper profile:', swiperProfileError);
-    }
-
     if (swiperProfile) {
-        const { error: notificationError } = await supabase.from('notifications').upsert(
+        await supabase.from('notifications').upsert(
             {
                 recipient_id: swipedId,
                 sender_id: swiperId,
@@ -99,10 +93,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             },
             { onConflict: 'recipient_id,sender_id,type', ignoreDuplicates: false }
         );
-
-        if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-        }
     }
 
 
@@ -115,7 +105,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // Ignore 'No rows found' error
-      console.error('Error checking for mutual like:', checkError);
       return { error: 'Could not check for a match.' };
     }
     
@@ -125,10 +114,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             .select('name, match_notification')
             .eq('id', swipedId)
             .single();
-
-        if (swipedProfileError) {
-            console.error('Error fetching swiped profile for match notification:', swipedProfileError);
-        }
       
         const { error: matchError } = await supabase.from('matches').insert({
           user1_id: swiperId,
@@ -136,7 +121,6 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         });
 
         if (matchError && matchError.code !== '23505') {
-          console.error('Error creating match:', matchError);
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
 
@@ -201,7 +185,6 @@ export async function sendPasswordResetOtp(email: string) {
         .eq('id', user.id);
 
     if (updateError) {
-        console.error("Error storing password reset OTP:", updateError);
         return { error: 'Could not create a reset code. Please try again.' };
     }
 
@@ -221,7 +204,6 @@ export async function sendPasswordResetOtp(email: string) {
         });
         return { success: true };
     } catch (e) {
-        console.error("Failed to send password reset email:", e);
         return { error: "Could not send the password reset code. Please try again later." };
     }
 }
@@ -267,7 +249,6 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
         .eq('id', user.id);
 
     if (updateError) {
-        console.error("Error updating password:", updateError);
         return { error: 'Could not update your password.' };
     }
 
@@ -288,7 +269,6 @@ export async function handleUndoSwipeAction(swiperId: string, swipedId: string) 
     .eq('swiped_id', swipedId);
 
   if (error) {
-    console.error('Error undoing swipe:', error);
     return { error: 'Could not undo your last swipe.' };
   }
 
@@ -313,7 +293,6 @@ export async function getNotifications(userId: string) {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("Error fetching notifications:", error);
         return { data: [], error: 'Could not fetch notifications.' };
     }
 
@@ -330,7 +309,6 @@ export async function markNotificationsAsRead(userId: string) {
         .eq('is_read', false);
     
     if (error) {
-        console.error("Error marking notifications as read:", error);
         return { error: 'Could not update notifications.' };
     }
     revalidatePath('/notifications');
@@ -350,7 +328,6 @@ export async function blockUser(blockerId: string, blockedId: string) {
   });
 
   if (error) {
-    console.error('Error blocking user:', error);
     return { error: 'Could not block the user.' };
   }
 
@@ -418,108 +395,11 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
         .eq('id', blockerId);
 
     if (updateError) {
-        console.error('Error unblocking user:', updateError);
         return { error: 'Could not unblock the user.' };
     }
 
     revalidatePath('/settings');
     return { success: true };
-}
-
-export async function getMatches(userId: string) {
-    if (!userId) return { data: [], error: 'User ID is required.' };
-    const supabase = createClient();
-
-    const { data: allMatches, error: matchesError } = await supabase
-        .from('matches')
-        .select('id, user1_id, user2_id')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-
-    if (matchesError) {
-        console.error('Error fetching matches:', matchesError);
-        return { data: [], error: 'Could not fetch your matches.' };
-    }
-
-    if (!allMatches || allMatches.length === 0) {
-        return { data: [], error: null };
-    }
-
-    const matchIds = allMatches.map(m => m.id);
-
-    const { data: matchesWithMessages, error: messagesError } = await supabase
-      .from('messages')
-      .select('match_id')
-      .in('match_id', matchIds)
-      .limit(matchIds.length);
-
-
-    if (messagesError) {
-        console.error('Error checking for messages:', messagesError);
-    }
-    
-    const matchIdsWithMessages = new Set(matchesWithMessages?.map(m => m.match_id) || []);
-    
-    const newMatches = allMatches.filter(match => !matchIdsWithMessages.has(match.id));
-    
-    if (newMatches.length === 0) {
-        return { data: [], error: null };
-    }
-
-    const matchedUserIds = newMatches.map(m => m.user1_id === userId ? m.user2_id : m.user1_id);
-
-    const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, photos')
-        .in('id', matchedUserIds);
-
-    if (profilesError) {
-        console.error('Error fetching profiles for new matches:', profilesError);
-        return { data: [], error: 'Could not fetch profiles for matches.' };
-    }
-
-    const profilesById = new Map(profiles.map(p => [p.id, p]));
-
-    const formattedMatches = newMatches.map(match => {
-        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
-        const matchedUser = profilesById.get(matchedUserId);
-        return {
-            id: match.id,
-            matchedUser: {
-                id: matchedUser?.id,
-                name: matchedUser?.name,
-                photos: matchedUser?.photos,
-            }
-        };
-    });
-
-    return { data: formattedMatches, error: null };
-}
-
-export async function getChats(userId: string) {
-    if (!userId) return { data: [], error: 'User ID is required.' };
-    const supabase = createClient();
-
-    // DANGER: This rpc call does not exist, and will fail.
-    const { data, error } = await supabase
-        .rpc('get_matches_with_messages', { current_user_id: userId });
-
-    if (error) {
-        console.error('Error fetching chats:', error);
-        return { data: [], error: 'Could not fetch your chats.' };
-    }
-    
-    const formattedChats = data.map((chat: any) => ({
-        id: chat.id,
-        matchedUser: {
-            id: chat.matched_user_id,
-            name: chat.matched_user_name,
-            photos: chat.matched_user_photos,
-        },
-        lastMessage: chat.last_message_content,
-        lastMessageTime: chat.last_message_created_at,
-    }));
-    
-    return { data: formattedChats, error: null };
 }
 
 export async function getChatsAndMatches(userId: string) {
@@ -533,7 +413,6 @@ export async function getChatsAndMatches(userId: string) {
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
     if (matchesError) {
-        console.error('Error fetching matches:', matchesError);
         return { chats: [], matches: [], error: 'Could not fetch your matches.' };
     }
 
@@ -555,7 +434,6 @@ export async function getChatsAndMatches(userId: string) {
         .order('created_at', { ascending: false });
 
     if (messagesError) {
-        console.error('Error fetching last messages:', messagesError);
         return { chats: [], matches: [], error: 'Could not fetch messages.' };
     }
     
@@ -582,7 +460,6 @@ export async function getChatsAndMatches(userId: string) {
         .in('id', allMatchedUserIds);
 
     if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
         return { chats: [], matches: [], error: 'Could not fetch profiles.' };
     }
 
@@ -636,7 +513,6 @@ export async function updateUserProfilePhotos(userId: string, photos: string[]) 
         .eq('id', userId);
 
     if (error) {
-        console.error('Error updating user photos:', error);
         return false;
     }
     revalidatePath('/profile');
@@ -661,20 +537,14 @@ export async function respondToLike(notificationId: string, recipientId: string,
     );
 
     if (swipeError) {
-        console.error('Error responding to like (swipe):', swipeError);
         return { error: 'Could not record your response.' };
     }
 
     // 2. Delete the notification that has been actioned
-    const { error: deleteError } = await supabase
+    await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId);
-
-    if (deleteError) {
-        console.error('Error deleting notification:', deleteError);
-        // Don't fail the whole action, just log it.
-    }
     
     // 3. If they liked back, check for a match and create one
     if (action === 'liked') {
@@ -687,7 +557,6 @@ export async function respondToLike(notificationId: string, recipientId: string,
             .single();
 
         if (checkError && checkError.code !== 'PGRST116') {
-            console.error('Error checking for mutual like:', checkError);
             return { error: 'Could not check for a match.' };
         }
         
@@ -699,7 +568,6 @@ export async function respondToLike(notificationId: string, recipientId: string,
             });
 
             if (matchError && matchError.code !== '23505') { // 23505 is unique violation
-                console.error('Error creating match:', matchError);
                 return { error: 'Could not create the match record.' };
             }
             
@@ -724,7 +592,6 @@ export async function getChatMessages(matchId: string) {
         .order('created_at', { ascending: true });
 
     if (error) {
-        console.error('Error fetching messages:', error);
         return { data: null, error: 'Could not fetch messages.' };
     }
     return { data, error: null };
@@ -748,7 +615,6 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         .single();
     
     if (error) {
-        console.error('Error sending message:', error);
         return { data: null, error: 'Could not send the message.' };
     }
 
@@ -785,5 +651,3 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
-
-    

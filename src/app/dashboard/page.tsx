@@ -74,7 +74,6 @@ export default function DashboardPage() {
         .single();
 
       if (currentUserError) {
-          console.error('Error fetching current user settings:', currentUserError);
           setLoading(false);
           return;
       }
@@ -102,7 +101,6 @@ export default function DashboardPage() {
         .eq('swiper_id', currentUserId);
 
       if (swipedError) {
-        console.error('Error fetching swiped users:', swipedError);
         setUsers([]);
         setLoading(false);
         return;
@@ -115,10 +113,6 @@ export default function DashboardPage() {
         .select('user1_id, user2_id')
         .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
 
-      if (matchedError) {
-        console.error('Error fetching matched users:', matchedError);
-        // Continue without match data if there's an error
-      }
       const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
       
       // Combine all users to exclude: current user, swiped users, matched users, and blocked users
@@ -144,7 +138,6 @@ export default function DashboardPage() {
       const { data: allProfiles, error: profilesError } = await query;
 
       if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
         setUsers([]);
         setLoading(false);
         return;

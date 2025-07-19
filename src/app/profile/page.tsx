@@ -29,8 +29,6 @@ export default function ProfilePage() {
         .single();
 
       if (error || !profile) {
-        console.error('Profile fetch error:', error);
-        // Handle error, maybe redirect or show a message
         setLoading(false);
       } else {
         setUser({
