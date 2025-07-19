@@ -685,11 +685,6 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         created_at: now,
     };
     
-    // The temp_id was only for the client, so we don't send it to the DB.
-    // However, we need to associate the returned message with the tempId on the client.
-    // We can't do that directly here, but the realtime subscription will handle it.
-    // The INSERT payload needs to be valid.
-    
     const { data, error } = await supabase
         .from('messages')
         .insert(messageData)
