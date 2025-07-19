@@ -13,13 +13,16 @@ import type { UserProfile, Message } from '@/lib/types';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
+import { isToday, isYesterday, format } from 'date-fns';
+
+const timeZone = 'Asia/Kolkata';
 
 const formatDateSeparator = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (isToday(date)) return 'Today';
-    if (isYesterday(date)) return 'Yesterday';
-    return format(date, 'MMMM d, yyyy');
+    const zonedDate = utcToZonedTime(new Date(dateStr), timeZone);
+    if (isToday(zonedDate)) return 'Today';
+    if (isYesterday(zonedDate)) return 'Yesterday';
+    return format(zonedDate, 'MMMM d, yyyy');
 };
 
 
@@ -230,7 +233,7 @@ export default function ChatPage() {
                                         <p className="text-base break-words">{message.content}</p>
                                     </div>
                                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end whitespace-nowrap">
-                                        {format(new Date(message.created_at), 'h:mm a')}
+                                        {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
                                     </span>
                                 </div>
                             </div>

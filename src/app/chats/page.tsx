@@ -11,6 +11,9 @@ import { getInitials, cn } from '@/lib/utils';
 import { Heart, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+
+const timeZone = 'Asia/Kolkata';
 
 function MatchItem({ match }: { match: Match }) {
     const router = useRouter();
@@ -37,7 +40,9 @@ function ChatItem({ chat }: { chat: Chat }) {
         router.push(`/chats/${chatId}`);
     };
     
-    const lastMessageTime = chat.lastMessageTime ? formatDistanceToNow(new Date(chat.lastMessageTime), { addSuffix: true }) : '';
+    const lastMessageTime = chat.lastMessageTime 
+        ? formatDistanceToNow(utcToZonedTime(new Date(chat.lastMessageTime), timeZone), { addSuffix: true }) 
+        : '';
 
     return (
         <div 
