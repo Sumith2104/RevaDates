@@ -313,7 +313,7 @@ export async function markNotificationsAsRead(userId: string) {
     const supabase = createClient();
     const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ is_read: true, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
         .eq('recipient_id', userId)
         .eq('is_read', false);
     
