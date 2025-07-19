@@ -1,6 +1,9 @@
 
 'use server';
 
+import { config } from 'dotenv';
+config();
+
 import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
