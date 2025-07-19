@@ -311,9 +311,10 @@ export async function getNotifications(userId: string) {
 export async function markNotificationsAsRead(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
     const supabase = createClient();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
+        .update({ is_read: true, updated_at: now })
         .eq('recipient_id', userId)
         .eq('is_read', false);
     
@@ -516,10 +517,11 @@ export async function updateUserProfile(userId: string, updates: Record<string, 
         return { error: 'User ID is required.' };
     }
     const supabase = createClient();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     const { error } = await supabase
         .from('profiles')
-        .update({ ...updates, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
+        .update({ ...updates, updated_at: now })
         .eq('id', userId);
 
     if (error) {
@@ -534,10 +536,11 @@ export async function updateUserProfilePhotos(userId: string, photos: string[]) 
         return { error: 'User ID is required.' };
     }
     const supabase = createClient();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     const { error } = await supabase
         .from('profiles')
-        .update({ photos, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
+        .update({ photos, updated_at: now })
         .eq('id', userId);
 
     if (error) {
@@ -633,6 +636,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         return { data: null, error: 'Missing required fields to send message.' };
     }
     const supabase = createClient();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -640,7 +644,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
             sender_id: senderId,
             recipient_id: recipientId,
             content: content,
-            created_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+            created_at: now,
         })
         .select()
         .single();
