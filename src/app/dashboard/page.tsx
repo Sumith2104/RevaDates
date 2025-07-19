@@ -78,19 +78,20 @@ export default function DashboardPage() {
           return;
       }
       
+      // Check if user has photos BEFORE fetching anyone else
+      if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
+          setShowPhotoPrompt(true);
+          setLoading(false); // Stop loading, show the prompt
+          return; // Exit early
+      }
+      
       const { 
           discovery_age_min: minAge, 
           discovery_age_max: maxAge, 
           discovery_distance_km: maxDistance,
           location: currentUserLocationStr,
           blocked_users: blockedUsers,
-          photos: currentUserPhotos,
       } = currentUserProfile;
-
-      // Check if user has photos
-      if (!currentUserPhotos || currentUserPhotos.length === 0) {
-          setShowPhotoPrompt(true);
-      }
       
       const currentUserLocation = parseLocation(currentUserLocationStr);
 
@@ -128,8 +129,7 @@ export default function DashboardPage() {
       let query = supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false })
-        .order('updated_at', { ascending: false, nullsFirst: false });
+        .order('created_at', { ascending: false });
 
       if (allExcludedIds.length > 0) {
         query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
@@ -204,8 +204,14 @@ export default function DashboardPage() {
           </AppShell>
       )
   }
-
-  if (!users || users.length === 0) {
+  
+  const handlePromptLater = () => {
+    setShowPhotoPrompt(false);
+  }
+  
+  // If the prompt is shown, we might not have users loaded yet.
+  // The main content should only show if the prompt isn't active.
+  if (!showPhotoPrompt && (!users || users.length === 0)) {
     return (
       <AppShell>
         <AppHeader />
@@ -219,16 +225,12 @@ export default function DashboardPage() {
     );
   }
 
-  const handlePromptLater = () => {
-    setShowPhotoPrompt(false);
-  }
-
   return (
     <>
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          <SwipeDeck users={users} currentUserId={currentUserId!} />
+          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} />}
         </div>
       </AppShell>
       <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
