@@ -43,6 +43,26 @@ function parseLocation(locationString: string): { latitude: number; longitude: n
     return null;
 }
 
+// Fisher-Yates (aka Knuth) Shuffle
+function shuffle(array: any[]) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex > 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
+
 export default function DashboardPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
@@ -59,137 +79,137 @@ export default function DashboardPage() {
     }
   }, [router]);
   
-  React.useEffect(() => {
-    async function fetchProfiles() {
-      if (!currentUserId) return;
-      setLoading(true);
+  const fetchProfiles = React.useCallback(async () => {
+    if (!currentUserId) return;
+    setLoading(true);
 
-      const supabase = createClient();
+    const supabase = createClient();
 
-      // First, get the current user's profile including settings, location, and blocked users
-      const { data: currentUserProfile, error: currentUserError } = await supabase
-        .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users, photos')
-        .eq('id', currentUserId)
-        .single();
+    // First, get the current user's profile including settings, location, and blocked users
+    const { data: currentUserProfile, error: currentUserError } = await supabase
+      .from('profiles')
+      .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users, photos')
+      .eq('id', currentUserId)
+      .single();
 
-      if (currentUserError) {
-          setLoading(false);
-          return;
-      }
-      
-      // Check if user has photos BEFORE fetching anyone else
-      if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
-          setShowPhotoPrompt(true);
-          setLoading(false); // Stop loading, show the prompt
-          return; // Exit early
-      }
-      
-      const { 
-          discovery_age_min: minAge, 
-          discovery_age_max: maxAge, 
-          discovery_distance_km: maxDistance,
-          location: currentUserLocationStr,
-          blocked_users: blockedUsers,
-      } = currentUserProfile;
-      
-      const currentUserLocation = parseLocation(currentUserLocationStr);
-
-      // Get IDs of users the current user has already swiped on
-      const { data: swipedUsersData, error: swipedError } = await supabase
-        .from('swipes')
-        .select('swiped_id')
-        .eq('swiper_id', currentUserId);
-
-      if (swipedError) {
-        setUsers([]);
+    if (currentUserError) {
         setLoading(false);
         return;
-      }
-      const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+    }
+    
+    // Check if user has photos BEFORE fetching anyone else
+    if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
+        setShowPhotoPrompt(true);
+        setLoading(false); // Stop loading, show the prompt
+        return; // Exit early
+    }
+    
+    const { 
+        discovery_age_min: minAge, 
+        discovery_age_max: maxAge, 
+        discovery_distance_km: maxDistance,
+        location: currentUserLocationStr,
+        blocked_users: blockedUsers,
+    } = currentUserProfile;
+    
+    const currentUserLocation = parseLocation(currentUserLocationStr);
 
-      // Get IDs of users the current user has already matched with
-      const { data: matchedUsersData, error: matchedError } = await supabase
-        .from('matches')
-        .select('user1_id, user2_id')
-        .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+    // Get IDs of users the current user has already swiped on
+    const { data: swipedUsersData, error: swipedError } = await supabase
+      .from('swipes')
+      .select('swiped_id')
+      .eq('swiper_id', currentUserId);
 
-      const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
-      
-      // Combine all users to exclude: current user, swiped users, matched users, and blocked users
-      const excludedIds = new Set([
-        currentUserId, 
-        ...swipedUserIds,
-        ...matchedUserIds, 
-        ...(blockedUsers || [])
-      ]);
-      const allExcludedIds = Array.from(excludedIds);
-      
-      // Fetch all potential profiles (excluding the ones determined above), ordered by most recent
-      let query = supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+    if (swipedError) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+    const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
 
-      if (allExcludedIds.length > 0) {
-        query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
-      }
-      
-      const { data: allProfiles, error: profilesError } = await query;
+    // Get IDs of users the current user has already matched with
+    const { data: matchedUsersData, error: matchedError } = await supabase
+      .from('matches')
+      .select('user1_id, user2_id')
+      .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
 
-      if (profilesError) {
-        setUsers([]);
-        setLoading(false);
-        return;
-      }
+    const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
+    
+    // Combine all users to exclude: current user, swiped users, matched users, and blocked users
+    const excludedIds = new Set([
+      currentUserId, 
+      ...swipedUserIds,
+      ...matchedUserIds, 
+      ...(blockedUsers || [])
+    ]);
+    const allExcludedIds = Array.from(excludedIds);
+    
+    // Fetch all potential profiles (excluding the ones determined above), ordered by most recent
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      // Filter profiles in the application code
-      const filteredProfiles = allProfiles
-        .map(profile => {
-            const age = differenceInYears(new Date(), new Date(profile.dob));
-            let distance = null;
-            const profileLocation = parseLocation(profile.location);
+    if (allExcludedIds.length > 0) {
+      query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+    }
+    
+    const { data: allProfiles, error: profilesError } = await query;
 
-            if (currentUserLocation && profileLocation) {
-                distance = getDistanceInKm(
-                    currentUserLocation.latitude,
-                    currentUserLocation.longitude,
-                    profileLocation.latitude,
-                    profileLocation.longitude
-                );
-            }
-            
-            return {
-                ...profile,
-                age,
-                distance, // distance in km
-                distance_meters: distance !== null ? distance * 1000 : null,
-            };
-        })
-        .filter(profile => {
-            // Age filter
-            const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
-            if (!isAgeMatch) return false;
-
-            // Distance filter
-            if (currentUserLocation) { // Only filter by distance if current user has a location
-                if (profile.distance === null) return false; // If we require location, exclude those without
-                return profile.distance <= maxDistance;
-            }
-            
-            return true; // If no location, don't filter by distance
-        });
-
-      if (filteredProfiles) {
-        setUsers(filteredProfiles);
-      }
-       setLoading(false);
+    if (profilesError) {
+      setUsers([]);
+      setLoading(false);
+      return;
     }
 
+    // Filter profiles in the application code
+    const filteredProfiles = allProfiles
+      .map(profile => {
+          const age = differenceInYears(new Date(), new Date(profile.dob));
+          let distance = null;
+          const profileLocation = parseLocation(profile.location);
+
+          if (currentUserLocation && profileLocation) {
+              distance = getDistanceInKm(
+                  currentUserLocation.latitude,
+                  currentUserLocation.longitude,
+                  profileLocation.latitude,
+                  profileLocation.longitude
+              );
+          }
+          
+          return {
+              ...profile,
+              age,
+              distance, // distance in km
+              distance_meters: distance !== null ? distance * 1000 : null,
+          };
+      })
+      .filter(profile => {
+          // Age filter
+          const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
+          if (!isAgeMatch) return false;
+
+          // Distance filter
+          if (currentUserLocation) { // Only filter by distance if current user has a location
+              if (profile.distance === null) return false; // If we require location, exclude those without
+              return profile.distance <= maxDistance;
+          }
+          
+          return true; // If no location, don't filter by distance
+      });
+
+    if (filteredProfiles) {
+      setUsers(shuffle(filteredProfiles));
+    }
+     setLoading(false);
+  }, [currentUserId]);
+
+  React.useEffect(() => {
     if (currentUserId) {
         fetchProfiles();
     }
-  }, [currentUserId, router]);
+  }, [currentUserId, fetchProfiles]);
 
 
   if (loading) {
@@ -207,92 +227,9 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
-    // After dismissing, we should load profiles
-    async function fetchProfilesAfterDismiss() {
-       if (!currentUserId) return;
-        setLoading(true);
-
-        const supabase = createClient();
-
-        // Get the current user's profile
-        const { data: currentUserProfile, error: currentUserError } = await supabase
-            .from('profiles')
-            .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users')
-            .eq('id', currentUserId)
-            .single();
-
-        if (currentUserError) {
-            setUsers([]);
-            setLoading(false);
-            return;
-        }
-
-        const {
-            discovery_age_min: minAge,
-            discovery_age_max: maxAge,
-            discovery_distance_km: maxDistance,
-            location: currentUserLocationStr,
-            blocked_users: blockedUsers,
-        } = currentUserProfile;
-
-        const currentUserLocation = parseLocation(currentUserLocationStr);
-
-        const { data: swipedUsersData, error: swipedError } = await supabase
-            .from('swipes')
-            .select('swiped_id')
-            .eq('swiper_id', currentUserId);
-        const swipedUserIds = swipedError ? [] : swipedUsersData.map(item => item.swiped_id);
-
-        const { data: matchedUsersData, error: matchedError } = await supabase
-            .from('matches')
-            .select('user1_id, user2_id')
-            .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
-        const matchedUserIds = matchedError ? [] : matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId);
-
-        const excludedIds = Array.from(new Set([currentUserId, ...swipedUserIds, ...matchedUserIds, ...(blockedUsers || [])]));
-
-        let query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        if (excludedIds.length > 0) {
-            query = query.not('id', 'in', `(${excludedIds.join(',')})`);
-        }
-
-        const { data: allProfiles, error: profilesError } = await query;
-        if (profilesError) {
-            setUsers([]);
-            setLoading(false);
-            return;
-        }
-
-        const filteredProfiles = allProfiles
-            .map(profile => ({
-                ...profile,
-                age: differenceInYears(new Date(), new Date(profile.dob)),
-                distance_meters: (() => {
-                    const profileLocation = parseLocation(profile.location);
-                    if (currentUserLocation && profileLocation) {
-                        return getDistanceInKm(currentUserLocation.latitude, currentUserLocation.longitude, profileLocation.latitude, profileLocation.longitude) * 1000;
-                    }
-                    return null;
-                })(),
-            }))
-            .filter(profile => {
-                const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
-                if (!isAgeMatch) return false;
-                if (currentUserLocation) {
-                    if (profile.distance_meters === null) return false;
-                    return (profile.distance_meters / 1000) <= maxDistance;
-                }
-                return true;
-            });
-        
-        setUsers(filteredProfiles);
-        setLoading(false);
-    }
-    fetchProfilesAfterDismiss();
+    fetchProfiles();
   }
   
-  // If the prompt is shown, we might not have users loaded yet.
-  // The main content should only show if the prompt isn't active.
   if (showPhotoPrompt) {
      return (
         <AppShell>
@@ -334,7 +271,7 @@ export default function DashboardPage() {
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} />}
+          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={fetchProfiles} />}
         </div>
       </AppShell>
     </>

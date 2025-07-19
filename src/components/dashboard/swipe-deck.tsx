@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, X, Undo2, ShieldAlert } from 'lucide-react';
+import { Heart, X, Undo2, ShieldAlert, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -123,9 +123,10 @@ function AnimatedCard({
 interface SwipeDeckProps {
   users: UserProfile[];
   currentUserId: string;
+  onRefresh: () => void;
 }
 
-export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps) {
+export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
   const [history, setHistory] = React.useState<UserProfile[]>([]);
   const [isUndoing, setIsUndoing] = React.useState(false);
@@ -314,8 +315,8 @@ export function SwipeDeck({ users: initialUsers, currentUserId }: SwipeDeckProps
           <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-12 w-12 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
             <X className="h-6 w-6" />
           </Button>
-          <Button onClick={handleUndo} variant="outline" size="icon" disabled={history.length === 0 || isUndoing || !!triggerSwipeDirection} className="h-10 w-10 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50">
-            <Undo2 className="h-5 w-5" />
+          <Button onClick={onRefresh} variant="outline" size="icon" className="h-10 w-10 rounded-full border-blue-500 text-blue-500 hover:bg-blue-500/10 disabled:opacity-50">
+            <RefreshCcw className="h-5 w-5" />
           </Button>
           <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-12 w-12 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
             <Heart className="h-6 w-6 fill-current text-green-500" />
