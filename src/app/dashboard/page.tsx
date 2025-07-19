@@ -243,7 +243,7 @@ export default function DashboardPage() {
   if (loading) {
       return (
           <AppShell>
-            <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <AppHeader />
             <div className="flex-1 flex flex-col pt-16">
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                   <p className="text-xl font-medium">Finding profiles for you...</p>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
   if (showPhotoPrompt) {
      return (
         <AppShell>
-            <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <AppHeader />
              <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
                 <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
                     <AlertDialogHeader className="text-center sm:text-center">
@@ -283,7 +283,7 @@ export default function DashboardPage() {
   if (!users || users.length === 0) {
     return (
       <AppShell>
-        <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+        <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
             <p className="text-xl font-medium">No new profiles found.</p>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
   return (
     <>
       <AppShell>
-        <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+        <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
           {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />}
         </div>

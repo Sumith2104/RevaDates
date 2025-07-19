@@ -3,13 +3,13 @@
 
 import Link from 'next/link';
 import * as React from 'react';
-import { Heart, User, Bell, Undo2 } from 'lucide-react';
+import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { usePathname } from 'next/navigation';
 
 
-export function AppHeader({ onUndo, canUndo }: { onUndo?: () => void; canUndo?: boolean }) {
+export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
   const pathname = usePathname();
   
@@ -54,8 +54,6 @@ export function AppHeader({ onUndo, canUndo }: { onUndo?: () => void; canUndo?: 
 
   }, []);
 
-  const isDashboard = pathname === '/dashboard';
-
   return (
     <header className="fixed top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -64,12 +62,6 @@ export function AppHeader({ onUndo, canUndo }: { onUndo?: () => void; canUndo?: 
           <span>RevaDates</span>
         </Link>
         <div className="flex items-center gap-2">
-           {isDashboard && onUndo && (
-            <Button onClick={onUndo} variant="ghost" size="icon" disabled={!canUndo}>
-              <Undo2 className="h-6 w-6" />
-              <span className="sr-only">Undo Swipe</span>
-            </Button>
-          )}
           <Button asChild variant="ghost" size="icon" className="relative">
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
