@@ -128,8 +128,8 @@ export default function DashboardPage() {
       let query = supabase
         .from('profiles')
         .select('*')
-        .order('updated_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false, nullsFirst: false });
 
       if (allExcludedIds.length > 0) {
         query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
