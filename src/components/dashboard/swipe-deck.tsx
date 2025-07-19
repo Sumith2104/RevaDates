@@ -124,12 +124,12 @@ interface SwipeDeckProps {
   users: UserProfile[];
   currentUserId: string;
   onRefresh: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
 }
 
-export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh }: SwipeDeckProps) {
+export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUndo, canUndo }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
-  const [history, setHistory] = React.useState<UserProfile[]>([]);
-  const [isUndoing, setIsUndoing] = React.useState(false);
   const [isBioVisible, setIsBioVisible] = React.useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = React.useState<'left' | 'right' | null>(null);
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
@@ -145,7 +145,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh }: Swi
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
-    setHistory(prev => [swipedUser, ...prev]);
     // State update now happens after animation in onSwipe callback
     setUsers(prev => prev.slice(0, -1));
 
@@ -158,7 +157,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh }: Swi
        });
        // Revert state on error
        setUsers(prev => [swipedUser, ...prev]);
-       setHistory(prev => prev.slice(1));
        return;
     }
 
@@ -168,27 +166,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh }: Swi
             description: `You and ${swipedUser.name} have liked each other.`,
         });
     }
-  };
-  
-  const handleUndo = async () => {
-    if (history.length === 0 || isUndoing) return;
-
-    setIsBioVisible(false);
-    setIsUndoing(true);
-    const lastUser = history[0];
-    const result = await handleUndoSwipeAction(currentUserId, lastUser.id);
-    
-    if (result.error) {
-      toast({
-        variant: "destructive",
-        title: "Undo failed",
-        description: result.error,
-      });
-    } else {
-      setHistory(prev => prev.slice(1));
-      setUsers(prev => [...prev, lastUser]);
-    }
-    setIsUndoing(false);
   };
   
   const handleBlock = async () => {

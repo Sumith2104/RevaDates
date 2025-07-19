@@ -19,6 +19,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from '@/components/shared/app-header';
+import { handleUndoSwipeAction } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 // Haversine formula to calculate distance between two lat/lon points
 function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -66,9 +68,11 @@ function shuffle(array: any[]) {
 export default function DashboardPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
+  const [swipedHistory, setSwipedHistory] = React.useState<UserProfile[]>([]);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -211,11 +215,35 @@ export default function DashboardPage() {
     }
   }, [currentUserId, fetchProfiles]);
 
+  const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
+    if (!users) return;
+    setUsers(users.filter(u => u.id !== swipedUser.id));
+    setSwipedHistory(prev => [swipedUser, ...prev]);
+  };
+  
+  const handleUndo = async () => {
+    if (swipedHistory.length === 0 || !currentUserId) return;
+
+    const lastSwipedUser = swipedHistory[0];
+    const result = await handleUndoSwipeAction(currentUserId, lastSwipedUser.id);
+    
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "Undo failed",
+        description: result.error,
+      });
+    } else {
+      setSwipedHistory(prev => prev.slice(1));
+      setUsers(prev => prev ? [...prev, lastSwipedUser] : [lastSwipedUser]);
+    }
+  };
+
 
   if (loading) {
       return (
           <AppShell>
-            <AppHeader />
+            <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
             <div className="flex-1 flex flex-col pt-16">
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                   <p className="text-xl font-medium">Finding profiles for you...</p>
@@ -233,7 +261,7 @@ export default function DashboardPage() {
   if (showPhotoPrompt) {
      return (
         <AppShell>
-            <AppHeader />
+            <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
              <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
                 <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
                     <AlertDialogHeader className="text-center sm:text-center">
@@ -255,7 +283,7 @@ export default function DashboardPage() {
   if (!users || users.length === 0) {
     return (
       <AppShell>
-        <AppHeader />
+        <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
         <div className="flex-1 flex flex-col pt-16">
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
             <p className="text-xl font-medium">No new profiles found.</p>
@@ -269,9 +297,9 @@ export default function DashboardPage() {
   return (
     <>
       <AppShell>
-        <AppHeader />
+        <AppHeader onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
         <div className="flex-1 flex flex-col pt-16">
-          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={() => fetchProfiles(true)} />}
+          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />}
         </div>
       </AppShell>
     </>
