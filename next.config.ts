@@ -2,15 +2,7 @@
 require('dotenv').config();
 import type {NextConfig} from 'next';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-let supabaseHostname = '';
-if (supabaseUrl) {
-  try {
-    supabaseHostname = new URL(supabaseUrl).hostname;
-  } catch (e) {
-    console.error('Invalid NEXT_PUBLIC_SUPABASE_URL:', e);
-  }
-}
+const supabaseHostname = 'babzgrswhtfxqqolfjpi.supabase.co';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -28,13 +20,13 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Add Supabase storage domain only if the URL is set and valid
-      ...(supabaseHostname ? [{
-        protocol: 'https' as const,
+      // Add Supabase storage domain
+      {
+        protocol: 'https',
         hostname: supabaseHostname,
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
-      }] : []),
+      },
     ],
   },
 };
