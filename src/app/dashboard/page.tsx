@@ -207,11 +207,115 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
+    // After dismissing, we should load profiles
+    async function fetchProfilesAfterDismiss() {
+       if (!currentUserId) return;
+        setLoading(true);
+
+        const supabase = createClient();
+
+        // Get the current user's profile
+        const { data: currentUserProfile, error: currentUserError } = await supabase
+            .from('profiles')
+            .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users')
+            .eq('id', currentUserId)
+            .single();
+
+        if (currentUserError) {
+            setUsers([]);
+            setLoading(false);
+            return;
+        }
+
+        const {
+            discovery_age_min: minAge,
+            discovery_age_max: maxAge,
+            discovery_distance_km: maxDistance,
+            location: currentUserLocationStr,
+            blocked_users: blockedUsers,
+        } = currentUserProfile;
+
+        const currentUserLocation = parseLocation(currentUserLocationStr);
+
+        const { data: swipedUsersData, error: swipedError } = await supabase
+            .from('swipes')
+            .select('swiped_id')
+            .eq('swiper_id', currentUserId);
+        const swipedUserIds = swipedError ? [] : swipedUsersData.map(item => item.swiped_id);
+
+        const { data: matchedUsersData, error: matchedError } = await supabase
+            .from('matches')
+            .select('user1_id, user2_id')
+            .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+        const matchedUserIds = matchedError ? [] : matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId);
+
+        const excludedIds = Array.from(new Set([currentUserId, ...swipedUserIds, ...matchedUserIds, ...(blockedUsers || [])]));
+
+        let query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (excludedIds.length > 0) {
+            query = query.not('id', 'in', `(${excludedIds.join(',')})`);
+        }
+
+        const { data: allProfiles, error: profilesError } = await query;
+        if (profilesError) {
+            setUsers([]);
+            setLoading(false);
+            return;
+        }
+
+        const filteredProfiles = allProfiles
+            .map(profile => ({
+                ...profile,
+                age: differenceInYears(new Date(), new Date(profile.dob)),
+                distance_meters: (() => {
+                    const profileLocation = parseLocation(profile.location);
+                    if (currentUserLocation && profileLocation) {
+                        return getDistanceInKm(currentUserLocation.latitude, currentUserLocation.longitude, profileLocation.latitude, profileLocation.longitude) * 1000;
+                    }
+                    return null;
+                })(),
+            }))
+            .filter(profile => {
+                const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
+                if (!isAgeMatch) return false;
+                if (currentUserLocation) {
+                    if (profile.distance_meters === null) return false;
+                    return (profile.distance_meters / 1000) <= maxDistance;
+                }
+                return true;
+            });
+        
+        setUsers(filteredProfiles);
+        setLoading(false);
+    }
+    fetchProfilesAfterDismiss();
   }
   
   // If the prompt is shown, we might not have users loaded yet.
   // The main content should only show if the prompt isn't active.
-  if (!showPhotoPrompt && (!users || users.length === 0)) {
+  if (showPhotoPrompt) {
+     return (
+        <AppShell>
+            <AppHeader />
+             <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
+                <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+                    <AlertDialogHeader className="text-center sm:text-center">
+                        <AlertDialogTitle className="text-white text-lg font-semibold">Upload a Profile Photo</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                            Profiles with photos get more matches. Add a photo to show your best self!
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 flex flex-row sm:flex-row w-full gap-2">
+                        <AlertDialogAction onClick={() => router.push('/profile')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
+                        <AlertDialogCancel onClick={handlePromptLater} className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </AppShell>
+     )
+  }
+
+  if (!users || users.length === 0) {
     return (
       <AppShell>
         <AppHeader />
@@ -233,20 +337,6 @@ export default function DashboardPage() {
           {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} />}
         </div>
       </AppShell>
-      <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
-          <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
-              <AlertDialogHeader className="text-center sm:text-center">
-                  <AlertDialogTitle className="text-white text-lg font-semibold">Upload a Profile Photo</AlertDialogTitle>
-                  <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                      Profiles with photos get more matches. Add a photo to show your best self!
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-6 flex flex-row sm:flex-row w-full gap-2">
-                  <AlertDialogAction onClick={() => router.push('/profile')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
-                  <AlertDialogCancel onClick={handlePromptLater} className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

@@ -42,7 +42,7 @@ export async function createUser(userData: Record<string, any>) {
       photos: [],
       created_at: now,
       updated_at: now,
-  }).select('id, name, gender, interested_in').single();
+  }).select('id').single();
 
   if (insertError) {
       return { data: null, error: insertError.message };
@@ -726,5 +726,3 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
-
-    

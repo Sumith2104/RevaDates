@@ -15,9 +15,10 @@ import { motion } from 'framer-motion';
 interface LoginFormProps {
     onSwitchToSignup: () => void;
     onSwitchToForgotPassword: () => void;
+    onLoginSuccess: () => void;
 }
 
-export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToSignup, onSwitchToForgotPassword }, ref) => {
+export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }, ref) => {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
@@ -85,7 +86,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
         title: 'Login Successful',
         description: `Welcome back, ${data.name.split(' ')[0]}!`,
       });
-      router.push('/dashboard');
+      onLoginSuccess();
     }
   };
 
