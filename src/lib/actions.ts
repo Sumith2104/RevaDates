@@ -6,24 +6,28 @@ import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { addMinutes, formatISO } from 'date-fns';
+import { toZonedTime, format } from 'date-fns-tz';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
 });
 
-// Helper function to get current IST time as ISO string
+const timeZone = 'Asia/Kolkata';
+
+// Helper function to get current IST time as ISO string for Supabase
 function getISTTimestamp() {
     const now = new Date();
-    const istDate = addMinutes(now, 330);
-    return formatISO(istDate);
+    const zonedDate = toZonedTime(now, timeZone);
+    // Format to ISO 8601 with timezone offset, e.g., '2023-10-27T15:30:00+05:30'
+    return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
-// Helper function to get future IST time as ISO string
+// Helper function to get future IST time as ISO string for Supabase
 function getFutureISTTimestamp(minutesToAdd: number) {
     const now = new Date();
     const futureDate = addMinutes(now, minutesToAdd);
-    const istDate = addMinutes(futureDate, 330);
-    return formatISO(istDate);
+    const zonedDate = toZonedTime(futureDate, timeZone);
+    return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
 
@@ -700,3 +704,5 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
+
+    

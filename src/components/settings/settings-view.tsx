@@ -26,7 +26,6 @@ import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
-import { addMinutes, formatISO } from 'date-fns';
 
 export function BlockedUsersDialog({ userId }: { userId: string }) {
     const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
@@ -178,11 +177,6 @@ export function SettingsView() {
         setSaving(true);
         const supabase = createClient();
         
-        // Use user-provided method for IST
-        const now = new Date();
-        const istDate = addMinutes(now, 330);
-        const formattedTimestamp = formatISO(istDate);
-        
         const { error } = await supabase
             .from('profiles')
             .update({
@@ -190,7 +184,6 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
-                updated_at: formattedTimestamp
             })
             .eq('id', currentUserId);
         
@@ -330,3 +323,5 @@ export function SettingsView() {
     </div>
   );
 }
+
+    

@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { addMinutes, formatISO } from 'date-fns';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
@@ -127,11 +126,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
     
-    // Use user-provided method for IST
-    const now = new Date();
-    const istDate = addMinutes(now, 330);
-    const formattedTimestamp = formatISO(istDate);
-    
     const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
         email,
@@ -139,8 +133,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
         photos: [],
-        created_at: formattedTimestamp,
-        updated_at: formattedTimestamp,
+        // Timestamps will now be set by the server action or database default
     }).select().single();
 
     if (insertError) {
@@ -343,3 +336,5 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   );
 });
 SignupForm.displayName = 'SignupForm';
+
+    
