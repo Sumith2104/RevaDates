@@ -11,7 +11,7 @@ import { getInitials, cn } from '@/lib/utils';
 import { Heart, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -41,7 +41,7 @@ function ChatItem({ chat }: { chat: Chat }) {
     };
     
     const lastMessageTime = chat.lastMessageTime 
-        ? formatDistanceToNow(utcToZonedTime(new Date(chat.lastMessageTime), timeZone), { addSuffix: true }) 
+        ? formatDistanceToNow(toZonedTime(new Date(chat.lastMessageTime), timeZone), { addSuffix: true }) 
         : '';
 
     return (

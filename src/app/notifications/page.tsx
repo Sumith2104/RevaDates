@@ -11,7 +11,7 @@ import { getInitials } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import type { Notification } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -187,7 +187,7 @@ export default function NotificationsPage() {
                                     <div className="flex-grow">
                                         <p className="text-sm font-semibold">{notif.message}</p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {formatDistanceToNow(utcToZonedTime(new Date(notif.created_at), timeZone), { addSuffix: true })}
+                                            {formatDistanceToNow(toZonedTime(new Date(notif.created_at), timeZone), { addSuffix: true })}
                                         </p>
                                         {notif.type === 'new_like' && (
                                             <div className="flex items-center gap-2 mt-3">

@@ -13,13 +13,13 @@ import type { UserProfile, Message } from '@/lib/types';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
+import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { isToday, isYesterday, format } from 'date-fns';
 
 const timeZone = 'Asia/Kolkata';
 
 const formatDateSeparator = (dateStr: string) => {
-    const zonedDate = utcToZonedTime(new Date(dateStr), timeZone);
+    const zonedDate = toZonedTime(new Date(dateStr), timeZone);
     if (isToday(zonedDate)) return 'Today';
     if (isYesterday(zonedDate)) return 'Yesterday';
     return format(zonedDate, 'MMMM d, yyyy');
