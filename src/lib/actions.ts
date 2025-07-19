@@ -61,12 +61,14 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   }
 
   const supabase = createClient();
+  const now = new Date().toISOString();
 
   const { error: swipeError } = await supabase.from('swipes').upsert(
     {
       swiper_id: swiperId,
       swiped_id: swipedId,
       action: action,
+      created_at: now,
     },
     { onConflict: 'swiper_id,swiped_id' }
   );
@@ -89,7 +91,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 sender_id: swiperId,
                 type: 'new_like',
                 message: `${swiperProfile.name} liked your profile!`,
-                created_at: new Date().toISOString(),
+                created_at: now,
             },
             { onConflict: 'recipient_id,sender_id,type', ignoreDuplicates: false }
         );
@@ -118,6 +120,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         const { error: matchError } = await supabase.from('matches').insert({
           user1_id: swiperId,
           user2_id: swipedId,
+          created_at: now,
         });
 
         if (matchError && matchError.code !== '23505') {
@@ -182,6 +185,7 @@ export async function sendPasswordResetOtp(email: string) {
         .update({
             password_reset_token: otp, 
             password_reset_token_expires_at: expires.toISOString(),
+            updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
@@ -246,6 +250,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
             password: password, // Passwords should be hashed!
             password_reset_token: null,
             password_reset_token_expires_at: null,
+            updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
@@ -392,7 +397,7 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
 
     const { error: updateError } = await supabase
         .from('profiles')
-        .update({ blocked_users: newBlocked })
+        .update({ blocked_users: newBlocked, updated_at: new Date().toISOString() })
         .eq('id', blockerId);
 
     if (updateError) {
@@ -410,8 +415,9 @@ export async function getChatsAndMatches(userId: string) {
     // Get all matches for the user
     const { data: allMatches, error: matchesError } = await supabase
         .from('matches')
-        .select('id, user1_id, user2_id')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+        .select('id, user1_id, user2_id, created_at')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .order('created_at', { ascending: false });
 
     if (matchesError) {
         return { chats: [], matches: [], error: 'Could not fetch your matches.' };
@@ -502,22 +508,40 @@ export async function getChatsAndMatches(userId: string) {
     return { chats: formattedChats, matches: formattedMatches, error: null };
 }
 
-export async function updateUserProfilePhotos(userId: string, photos: string[]) {
+export async function updateUserProfile(userId: string, updates: Record<string, any>) {
     if (!userId) {
-        return false;
+        return { error: 'User ID is required.' };
     }
     const supabase = createClient();
 
     const { error } = await supabase
         .from('profiles')
-        .update({ photos })
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', userId);
 
     if (error) {
-        return false;
+        return { error: 'Could not update your profile.' };
     }
     revalidatePath('/profile');
-    return true;
+    return { success: true };
+}
+
+export async function updateUserProfilePhotos(userId: string, photos: string[]) {
+    if (!userId) {
+        return { error: 'User ID is required.' };
+    }
+    const supabase = createClient();
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ photos, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+    if (error) {
+        return { error: 'Could not update your photos.' };
+    }
+    revalidatePath('/profile');
+    return { success: true };
 }
 
 export async function respondToLike(notificationId: string, recipientId: string, senderId: string, action: 'liked' | 'rejected') {
@@ -526,6 +550,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
     }
 
     const supabase = createClient();
+    const now = new Date().toISOString();
     
     // 1. Record the swipe from the recipient back to the original sender
     const { error: swipeError } = await supabase.from('swipes').upsert(
@@ -533,6 +558,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
             swiper_id: recipientId,
             swiped_id: senderId,
             action: action,
+            created_at: now,
         },
         { onConflict: 'swiper_id,swiped_id' }
     );
@@ -566,6 +592,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
             const { error: matchError } = await supabase.from('matches').insert({
                 user1_id: recipientId,
                 user2_id: senderId,
+                created_at: now,
             });
 
             if (matchError && matchError.code !== '23505') { // 23505 is unique violation

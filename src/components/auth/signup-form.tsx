@@ -61,7 +61,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   const saveUserLocation = (userId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-            console.log("Geolocation is not supported by this browser.");
             // Resolve even if location is not supported, so signup can continue
             resolve();
             return;
@@ -78,13 +77,11 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                     .eq('id', userId);
 
                 if (error) {
-                    console.error("Error updating location:", error);
                     // Don't block signup, but log the error.
                 }
                 resolve();
             },
             (error) => {
-                console.error("Error getting location:", error.message);
                 toast({
                     variant: 'default',
                     title: 'Location Skipped',
@@ -128,6 +125,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const dobYear = formData.get('dobYear') as string;
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
+    const now = new Date().toISOString();
     
     const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
@@ -136,6 +134,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
         bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
         photos: [],
+        created_at: now,
+        updated_at: now,
     }).select().single();
 
     if (insertError) {

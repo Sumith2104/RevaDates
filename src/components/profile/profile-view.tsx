@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
-import { getChatsAndMatches, updateUserProfilePhotos } from '@/lib/actions';
+import { getChatsAndMatches, updateUserProfile, updateUserProfilePhotos } from '@/lib/actions';
 import type { Match } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -147,39 +147,29 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
   
-  const updateProfileDetails = async () => {
+  const handleSave = async () => {
     setSaving(true);
-    const { data, error } = await supabase
-        .from('profiles')
-        .update({
-            name: user.name,
-            bio: user.bio,
-            email: user.email,
-            phone: user.phone,
-        })
-        .eq('id', user.id);
-
+    const result = await updateUserProfile(user.id, {
+      name: user.name,
+      bio: user.bio,
+      email: user.email,
+      phone: user.phone,
+    });
     setSaving(false);
-    if (error) {
+
+    if (result.error) {
         toast({
             variant: 'destructive',
             title: 'Error saving profile',
-            description: error.message,
+            description: result.error,
         });
-        return false;
-    } 
-    return true;
-  }
-  
-  const handleSave = async () => {
-    const success = await updateProfileDetails();
-    if (success) {
-      toast({
-          title: 'Profile Saved',
-          description: 'Your profile has been updated.',
-      });
-      setIsEditing(false);
-      router.refresh();
+    } else {
+        toast({
+            title: 'Profile Saved',
+            description: 'Your profile has been updated.',
+        });
+        setIsEditing(false);
+        router.refresh();
     }
   };
 
@@ -213,13 +203,19 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (publicUrl) {
       const updatedPhotos = [publicUrl, ...(user.photos || [])];
       setUser(prev => ({...prev, photos: updatedPhotos}));
-      const success = await updateUserProfilePhotos(user.id, updatedPhotos);
-       if (success) {
+      const result = await updateUserProfilePhotos(user.id, updatedPhotos);
+       if (!result.error) {
         toast({
             title: 'Photo Uploaded',
             description: 'Your new photo is now your primary one.',
         });
         router.refresh();
+      } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error updating photos',
+            description: result.error,
+        });
       }
     }
     
@@ -236,12 +232,17 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     const newPhotoOrder = [newPrimaryPhoto, ...currentPhotos];
     
     setUser(prev => ({...prev, photos: newPhotoOrder}));
-    const success = await updateUserProfilePhotos(user.id, newPhotoOrder);
-    if (success) {
+    const result = await updateUserProfilePhotos(user.id, newPhotoOrder);
+    if (!result.error) {
         toast({ title: 'Main Photo Updated' });
         router.refresh();
     } else {
         setUser(prev => ({...prev, photos: user.photos})); // Revert on failure
+        toast({
+            variant: 'destructive',
+            title: 'Error updating photos',
+            description: result.error,
+        });
     }
   }
 
@@ -252,11 +253,17 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     
     // Note: We are not deleting the file from Supabase storage itself,
     // just removing the reference from the user's profile.
-    const success = await updateUserProfilePhotos(user.id, newPhotoList);
-    if (success) {
+    const result = await updateUserProfilePhotos(user.id, newPhotoList);
+    if (!result.error) {
         toast({ title: 'Photo Removed' });
         setUser(prev => ({...prev, photos: newPhotoList}));
         router.refresh();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error removing photo',
+            description: result.error,
+        });
     }
     setDeletingPhoto(null);
   }
