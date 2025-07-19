@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const timeZone = 'Asia/Kolkata';
 
 const EmailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -61,7 +64,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
   }
 
   const supabase = createClient();
-  const now = new Date().toISOString();
+  const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
   const { error: swipeError } = await supabase.from('swipes').upsert(
     {
@@ -127,7 +130,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
         }
 
-        const notificationTime = new Date().toISOString();
+        const notificationTime = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
         // Create notifications for both users if their settings allow it
         if (swiperProfile?.match_notification) {
             await supabase.from('notifications').insert({
@@ -184,8 +187,8 @@ export async function sendPasswordResetOtp(email: string) {
         .from('profiles')
         .update({
             password_reset_token: otp, 
-            password_reset_token_expires_at: expires.toISOString(),
-            updated_at: new Date().toISOString(),
+            password_reset_token_expires_at: formatInTimeZone(expires, timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+            updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
         })
         .eq('id', user.id);
 
@@ -250,7 +253,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
             password: password, // Passwords should be hashed!
             password_reset_token: null,
             password_reset_token_expires_at: null,
-            updated_at: new Date().toISOString(),
+            updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
         })
         .eq('id', user.id);
 
@@ -397,7 +400,7 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
 
     const { error: updateError } = await supabase
         .from('profiles')
-        .update({ blocked_users: newBlocked, updated_at: new Date().toISOString() })
+        .update({ blocked_users: newBlocked, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
         .eq('id', blockerId);
 
     if (updateError) {
@@ -516,7 +519,7 @@ export async function updateUserProfile(userId: string, updates: Record<string, 
 
     const { error } = await supabase
         .from('profiles')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
         .eq('id', userId);
 
     if (error) {
@@ -534,7 +537,7 @@ export async function updateUserProfilePhotos(userId: string, photos: string[]) 
 
     const { error } = await supabase
         .from('profiles')
-        .update({ photos, updated_at: new Date().toISOString() })
+        .update({ photos, updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") })
         .eq('id', userId);
 
     if (error) {
@@ -550,7 +553,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
     }
 
     const supabase = createClient();
-    const now = new Date().toISOString();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     
     // 1. Record the swipe from the recipient back to the original sender
     const { error: swipeError } = await supabase.from('swipes').upsert(
@@ -637,7 +640,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
             sender_id: senderId,
             recipient_id: recipientId,
             content: content,
-            created_at: new Date().toISOString(),
+            created_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
         })
         .select()
         .single();

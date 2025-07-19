@@ -26,6 +26,9 @@ import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const timeZone = 'Asia/Kolkata';
 
 export function BlockedUsersDialog({ userId }: { userId: string }) {
     const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
@@ -157,7 +160,6 @@ export function SettingsView() {
         .single();
       
       if (error) {
-        console.error('Error fetching settings:', error);
         toast({ variant: 'destructive', title: 'Could not load your settings.' });
       } else if (data) {
         setAgeRange([data.discovery_age_min || 18, data.discovery_age_max || 80]);
@@ -184,6 +186,7 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
+                updated_at: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
             })
             .eq('id', currentUserId);
         

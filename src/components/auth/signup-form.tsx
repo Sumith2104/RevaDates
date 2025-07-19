@@ -14,6 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const timeZone = 'Asia/Kolkata';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
@@ -125,7 +128,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const dobYear = formData.get('dobYear') as string;
     const dobMonth = formData.get('dobMonth') as string;
     const dobDay = formData.get('dobDay') as string;
-    const now = new Date().toISOString();
+    const now = formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     
     const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
         name: `${firstName} ${lastName}`,
@@ -338,5 +341,3 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   );
 });
 SignupForm.displayName = 'SignupForm';
-
-    
