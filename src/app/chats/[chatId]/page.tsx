@@ -12,7 +12,6 @@ import { getMatchDetails, getChatMessages, sendMessage } from '@/lib/actions';
 import type { UserProfile, Message } from '@/lib/types';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { isToday, isYesterday, format } from 'date-fns';
 
@@ -36,7 +35,6 @@ export default function ChatPage() {
     const [newMessage, setNewMessage] = React.useState('');
     const [loading, setLoading] = React.useState(true);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
-    const supabase = React.useMemo(() => createClient(), []);
 
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
@@ -80,49 +78,40 @@ export default function ChatPage() {
         }
         fetchInitialData();
     }, [chatId, currentUserId, router]);
-
+    
+    // Polling for new messages
     React.useEffect(() => {
-        if (!chatId) return;
-        
-        const channel = supabase
-            .channel(`public:messages:match_id=eq.${chatId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages',
-                    filter: `match_id=eq.${chatId}`
-                },
-                (payload) => {
-                    const receivedMessage = payload.new as Message;
+        if (!chatId || !currentUserId) return;
+
+        const interval = setInterval(async () => {
+            const messagesData = await getChatMessages(chatId);
+            if (!messagesData.error && messagesData.data) {
+                // This merging logic handles optimistic updates correctly.
+                setMessages(prevMessages => {
+                    const optimisticMessages = prevMessages.filter(m => m.tempId);
+                    const serverMessages = messagesData.data as Message[];
                     
-                    setMessages(prevMessages => {
-                        // Check if we are replacing an optimistic message
-                        const existingIndex = prevMessages.findIndex(m => m.tempId && m.tempId === receivedMessage.tempId);
-                        
-                        if (existingIndex !== -1) {
-                            const newMessages = [...prevMessages];
-                            newMessages[existingIndex] = receivedMessage;
-                            return newMessages;
+                    const finalMessages = [...serverMessages];
+                    
+                    // Keep optimistic message if server hasn't confirmed it yet
+                    optimisticMessages.forEach(optMsg => {
+                        if (!finalMessages.some(sMsg => sMsg.id === optMsg.id || sMsg.tempId === optMsg.tempId)) {
+                            finalMessages.push(optMsg);
                         }
-
-                        // Avoid duplicates from real-time events if message already exists
-                        if (prevMessages.some(m => m.id === receivedMessage.id)) {
-                            return prevMessages;
-                        }
-                        
-                        // Add new message from other user
-                        return [...prevMessages, receivedMessage];
                     });
-                }
-            )
-            .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [chatId, supabase]);
+                    // Simple update if lengths differ
+                    if (finalMessages.length !== prevMessages.length) {
+                        return finalMessages;
+                    }
+                    return prevMessages;
+                });
+            }
+        }, 1000); // Poll every 1 second
+
+        return () => clearInterval(interval);
+    }, [chatId, currentUserId]);
+
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -132,7 +121,6 @@ export default function ChatPage() {
         const tempId = `temp_${Date.now()}`;
         setNewMessage('');
         
-        // Optimistically add message to UI
         const optimisticMessage: Message = {
             id: tempId,
             tempId: tempId,
@@ -148,12 +136,11 @@ export default function ChatPage() {
         const result = await sendMessage(chatId, currentUserId, matchedUser.id, content, tempId);
         
         if (result.error || !result.data) {
-             setNewMessage(content); // Re-populate input on error
-             // Remove optimistic message on error
+             setNewMessage(content);
              setMessages(prev => prev.filter(m => m.id !== tempId));
         } else {
-            // The realtime subscription will handle replacing the temp message
-            // with the real one. So we don't need to do anything here on success.
+            // Replace optimistic with real message from server response
+            setMessages(prev => prev.map(m => m.id === tempId ? result.data as Message : m));
         }
     };
 
