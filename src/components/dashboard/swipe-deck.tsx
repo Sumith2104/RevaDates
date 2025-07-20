@@ -249,8 +249,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                     animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
                     transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
                 >
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                  <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                        {activeUser.distance_meters !== null && (
+                            <p className="text-white/70 text-sm">{formatDistance(activeUser.distance_meters)}</p>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="ghost"
@@ -275,9 +280,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                         </motion.div>
                     )}
                   </AnimatePresence>
-                  {activeUser.distance_meters !== null && (
-                      <p className="text-white/70 text-sm mt-2">{formatDistance(activeUser.distance_meters)}</p>
-                  )}
                 </motion.div>
               </div>
             </AnimatedCard>
