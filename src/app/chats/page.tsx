@@ -25,7 +25,9 @@ function MatchItem({ match }: { match: Match }) {
     return (
         <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer" onClick={() => navigateToChat(match.id)}>
             <Avatar className="h-16 w-16 border-2 border-primary">
-                <AvatarImage src={match.matchedUser.photos?.[0]} className="object-cover" />
+                {match.matchedUser.photos?.[0] && (
+                    <AvatarImage src={match.matchedUser.photos[0]} className="object-cover" />
+                )}
                 <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
             </Avatar>
             <p className="text-sm font-medium truncate w-16 text-center">{match.matchedUser.name.split(' ')[0]}</p>
@@ -50,7 +52,9 @@ function ChatItem({ chat }: { chat: Chat }) {
             onClick={() => navigateToChat(chat.id)}
         >
             <Avatar className="h-12 w-12">
-                <AvatarImage src={chat.matchedUser.photos?.[0]} className="object-cover" />
+                {chat.matchedUser.photos?.[0] && (
+                    <AvatarImage src={chat.matchedUser.photos[0]} className="object-cover" />
+                )}
                 <AvatarFallback>{getInitials(chat.matchedUser.name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
