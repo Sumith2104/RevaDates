@@ -52,4 +52,6 @@ export type Message = {
     content: string;
     created_at: string;
     tempId?: string; // Optional temporary ID for optimistic UI
+    is_read: boolean;
 };
+

@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getInitials, cn } from '@/lib/utils';
-import { getMatchDetails, getChatMessages, sendMessage } from '@/lib/actions';
+import { getMatchDetails, getChatMessages, sendMessage, markMessagesAsRead } from '@/lib/actions';
 import type { UserProfile, Message } from '@/lib/types';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Check, CheckCheck } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { isToday, isYesterday, format } from 'date-fns';
@@ -53,6 +53,11 @@ export default function ChatPage() {
       scrollToBottom();
     }, [messages, scrollToBottom]);
 
+    const handleMarkAsRead = React.useCallback(async () => {
+        if (!chatId || !currentUserId) return;
+        await markMessagesAsRead(chatId, currentUserId);
+    }, [chatId, currentUserId]);
+
     React.useEffect(() => {
         if (!currentUserId || !chatId) return;
 
@@ -73,11 +78,12 @@ export default function ChatPage() {
                 // Handle error
             } else {
                 setMessages(messagesData.data as Message[]);
+                handleMarkAsRead();
             }
             setLoading(false);
         }
         fetchInitialData();
-    }, [chatId, currentUserId, router]);
+    }, [chatId, currentUserId, router, handleMarkAsRead]);
     
     // Polling for new messages
     React.useEffect(() => {
@@ -86,23 +92,25 @@ export default function ChatPage() {
         const interval = setInterval(async () => {
             const messagesData = await getChatMessages(chatId);
             if (!messagesData.error && messagesData.data) {
-                // This merging logic handles optimistic updates correctly.
+                const newMessages = messagesData.data as Message[];
+                const hasNewUnread = newMessages.some(m => m.recipient_id === currentUserId && !m.is_read);
+                if (hasNewUnread) {
+                    handleMarkAsRead();
+                }
+
                 setMessages(prevMessages => {
                     const optimisticMessages = prevMessages.filter(m => m.tempId);
-                    const serverMessages = messagesData.data as Message[];
                     
-                    const finalMessages = [...serverMessages];
+                    const finalMessages = [...newMessages];
                     
-                    // Keep optimistic message if server hasn't confirmed it yet
                     optimisticMessages.forEach(optMsg => {
                         if (!finalMessages.some(sMsg => sMsg.id === optMsg.id || sMsg.tempId === optMsg.tempId)) {
                             finalMessages.push(optMsg);
                         }
                     });
 
-                    // Simple update if lengths differ
-                    if (finalMessages.length !== prevMessages.length) {
-                        return finalMessages;
+                    if (finalMessages.length !== prevMessages.length || JSON.stringify(finalMessages) !== JSON.stringify(prevMessages)) {
+                         return finalMessages;
                     }
                     return prevMessages;
                 });
@@ -110,7 +118,7 @@ export default function ChatPage() {
         }, 1000); // Poll every 1 second
 
         return () => clearInterval(interval);
-    }, [chatId, currentUserId]);
+    }, [chatId, currentUserId, handleMarkAsRead]);
 
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -129,6 +137,7 @@ export default function ChatPage() {
             recipient_id: matchedUser.id,
             content: content,
             created_at: new Date().toISOString(),
+            is_read: false,
         };
 
         setMessages(prev => [...prev, optimisticMessage]);
@@ -225,9 +234,16 @@ export default function ChatPage() {
                                     )}>
                                         <p className="text-base break-words">{message.content}</p>
                                     </div>
-                                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end whitespace-nowrap">
-                                        {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
-                                    </span>
+                                    <div className="flex items-center gap-1 self-end">
+                                        {isCurrentUser && !isOptimistic && (
+                                            message.is_read 
+                                                ? <CheckCheck className="h-4 w-4 text-blue-500" />
+                                                : <Check className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                        <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                                            {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </React.Fragment>

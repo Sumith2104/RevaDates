@@ -755,3 +755,20 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
+
+export async function markMessagesAsRead(matchId: string, userId: string) {
+    if (!matchId || !userId) return { error: 'Match ID and User ID are required.' };
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('match_id', matchId)
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
+
+    if (error) {
+        return { error: 'Could not mark messages as read.' };
+    }
+    revalidatePath(`/chats/${matchId}`);
+    return { success: true };
+}
