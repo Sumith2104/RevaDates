@@ -275,7 +275,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                         </motion.div>
                     )}
                   </AnimatePresence>
-                  {activeUser.distance !== null && (
+                  {activeUser.distance_meters !== null && (
                       <p className="text-white/70 text-sm mt-2">{formatDistance(activeUser.distance_meters)}</p>
                   )}
                 </motion.div>
