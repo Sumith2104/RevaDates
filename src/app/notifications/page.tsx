@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                                 <div className="flex items-start gap-4 p-4 rounded-lg bg-muted">
                                     <div className="relative">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={notif.sender?.photos?.[0] || ''} alt={notif.sender?.name} />
+                                            <AvatarImage src={notif.sender?.photos?.[0] || null} alt={notif.sender?.name || 'User avatar'} />
                                             <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
                                         </Avatar>
                                         <div className="absolute -bottom-1 -right-1 bg-pink-500 rounded-full p-1 border-2 border-background">
