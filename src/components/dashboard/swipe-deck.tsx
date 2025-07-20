@@ -207,7 +207,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
   const formatDistance = (distanceInMeters: number | null) => {
     if (distanceInMeters === null) return null;
     if (distanceInMeters < 1000) {
-      return `${distanceInMeters} meters away`;
+      return `${Math.round(distanceInMeters)} meters away`;
     }
     const distanceInKm = (distanceInMeters / 1000).toFixed(1);
     return `${distanceInKm} km away`;
