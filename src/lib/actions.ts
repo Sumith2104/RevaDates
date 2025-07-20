@@ -772,3 +772,23 @@ export async function markMessagesAsRead(matchId: string, userId: string) {
     revalidatePath(`/chats/${matchId}`);
     return { success: true };
 }
+
+
+export async function updateUserLocation(userId: string, lat: number, lon: number) {
+    if (!userId) return { error: 'User ID is required.' };
+    if (lat === undefined || lon === undefined) return { error: 'Latitude and Longitude are required.' };
+
+    const supabase = createClient();
+    const locationString = `POINT(${lon} ${lat})`;
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ location: locationString, updated_at: getISTTimestamp() })
+        .eq('id', userId);
+
+    if (error) {
+        return { error: 'Could not update your location.' };
+    }
+
+    return { success: true };
+}

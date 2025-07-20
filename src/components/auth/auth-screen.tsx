@@ -6,29 +6,103 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
-import { Heart } from 'lucide-react';
+import { Heart, MapPin, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { updateUserLocation } from '@/lib/actions';
 
+const TYPING_SPEED = 100;
 const phrases = [
-  "Take It All Off",
-  "Bare It All",
-  "Show Some Skin",
-  "Thirsty For Water",
-  "Lose the Layers",
-  "Drop Everything Now",
-  "Feel The Curve",
-  "Reveal Your Body",
-  "Strip Without Shame",
-  "Go All Natural",
-  "Nothing Left On",
-  "Feel Fully Free"
+  "Find your perfect match.",
+  "Connect with real people.",
+  "Discover meaningful relationships.",
+  "Your next great date is a swipe away."
 ];
 
-const TYPING_SPEED = 50;
+function LocationPermissionPrompt({ onComplete }: { onComplete: () => void }) {
+    const [status, setStatus] = React.useState<'idle' | 'loading' | 'error'>('idle');
+    const { toast } = useToast();
+
+    const handleAllowLocation = async () => {
+        const currentUserId = localStorage.getItem('currentUserId');
+        if (!currentUserId) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not find user to update." });
+            onComplete();
+            return;
+        }
+
+        setStatus('loading');
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const result = await updateUserLocation(currentUserId, latitude, longitude);
+                if (result.error) {
+                    toast({ variant: 'destructive', title: "Error", description: result.error });
+                } else {
+                    toast({ title: "Location Saved!", description: "We've updated your location." });
+                }
+                onComplete();
+            },
+            (error) => {
+                setStatus('error');
+                toast({
+                    variant: 'destructive',
+                    title: "Location Denied",
+                    description: "You can enable location services in your browser settings later.",
+                });
+                onComplete();
+            }
+        );
+    };
+
+    const handleSkip = () => {
+        onComplete();
+    };
+
+    return (
+        <AlertDialog open={true}>
+            <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+                <AlertDialogHeader className="text-center sm:text-center">
+                    <MapPin className="mx-auto h-12 w-12 text-primary mb-2" />
+                    <AlertDialogTitle className="text-white text-lg font-semibold">Enable Location Services</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                        RevaDates uses your location to show you potential matches nearby.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-6 flex flex-col sm:flex-col w-full gap-2">
+                    <AlertDialogAction
+                        onClick={handleAllowLocation}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md"
+                        disabled={status === 'loading'}
+                    >
+                         {status === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Allow Location
+                    </AlertDialogAction>
+                    <AlertDialogCancel
+                        onClick={handleSkip}
+                        className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0"
+                    >
+                        Maybe Later
+                    </AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 
 export function AuthScreen() {
-  const [view, setView] = React.useState<'start' | 'login' | 'signup'>('start');
+  const [view, setView] = React.useState<'start' | 'login' | 'signup' | 'location'>('start');
   const [typedPhrase, setTypedPhrase] = React.useState('');
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -67,7 +141,7 @@ export function AuthScreen() {
   }, [typedPhrase, activePhrase, isDeleting]);
 
   const handleBackdropClick = () => {
-    if (view !== 'start') {
+    if (view !== 'start' && view !== 'location') {
       setView('start');
     }
   };
@@ -77,8 +151,12 @@ export function AuthScreen() {
   };
 
   const handleSignupSuccess = () => {
-      router.push('/dashboard');
+      setView('location');
   };
+  
+  const handleLocationComplete = () => {
+      router.push('/dashboard');
+  }
 
   const cardVariants = {
     initial: { y: '100vh', opacity: 0 },
@@ -174,6 +252,12 @@ export function AuthScreen() {
             <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
               <SignupForm onSwitchToLogin={() => setView('login')} onSignupSuccess={handleSignupSuccess} />
             </motion.div>
+          )}
+
+          {view === 'location' && (
+             <motion.div key="location" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+                <LocationPermissionPrompt onComplete={handleLocationComplete} />
+             </motion.div>
           )}
 
         </AnimatePresence>

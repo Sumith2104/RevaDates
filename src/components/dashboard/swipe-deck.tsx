@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, X, Undo2, ShieldAlert, RefreshCcw } from 'lucide-react';
+import { Heart, X, Undo2, ShieldAlert, RefreshCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -206,6 +206,16 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
   
   const hasPhoto = activeUser?.photos && activeUser.photos.length > 0;
   
+  const formattedDistance = React.useMemo(() => {
+    if (activeUser?.distance_meters === null || activeUser?.distance_meters === undefined) {
+      return null;
+    }
+    if (activeUser.distance_meters < 1000) {
+      return `${(activeUser.distance_meters / 100).toFixed(1)} km away`;
+    }
+    return `${(activeUser.distance_meters / 1000).toFixed(1)} km away`;
+  }, [activeUser?.distance_meters]);
+  
   return (
     <>
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
@@ -243,6 +253,12 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                   <div className="flex justify-between items-start">
                     <div>
                         <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
+                        {formattedDistance && (
+                            <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
+                                <MapPin className="h-4 w-4" />
+                                {formattedDistance}
+                            </p>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button 

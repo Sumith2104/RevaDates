@@ -43,6 +43,30 @@ function shuffle(array: any[]) {
   return array;
 }
 
+// Helper to parse location from Supabase
+function parseLocation(locationString: string | null): { lat: number; lon: number } | null {
+  if (!locationString) return null;
+  // Expected format: "POINT(lon lat)"
+  const match = locationString.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
+  if (match) {
+    return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+  }
+  return null;
+}
+
+// Helper to calculate distance
+function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in km
+}
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -71,7 +95,7 @@ export default function DashboardPage() {
     // First, get the current user's profile including settings, location, and blocked users
     const { data: currentUserProfile, error: currentUserError } = await supabase
       .from('profiles')
-      .select('discovery_age_min, discovery_age_max, blocked_users, photos')
+      .select('discovery_age_min, discovery_age_max, blocked_users, photos, location')
       .eq('id', currentUserId)
       .single();
 
@@ -91,8 +115,11 @@ export default function DashboardPage() {
         discovery_age_min: minAge, 
         discovery_age_max: maxAge, 
         blocked_users: blockedUsers,
+        location: currentUserLocationString,
     } = currentUserProfile;
     
+    const currentUserLocation = parseLocation(currentUserLocationString);
+
     // Get IDs of users the current user has already swiped on
     const { data: swipedUsersData, error: swipedError } = await supabase
       .from('swipes')
@@ -145,9 +172,28 @@ export default function DashboardPage() {
     const filteredProfiles = allProfiles
       .map(profile => {
           const age = differenceInYears(new Date(), new Date(profile.dob));
+          const profileLocation = parseLocation(profile.location);
+          let distance = null;
+          let distance_meters = null;
+          
+          if (currentUserLocation && profileLocation) {
+              distance_meters = getDistanceInKm(
+                  currentUserLocation.lat, currentUserLocation.lon,
+                  profileLocation.lat, profileLocation.lon
+              ) * 1000;
+              
+              if (distance_meters < 1000) {
+                  distance = `${Math.round(distance_meters / 10) * 10} m away`;
+              } else {
+                  distance = `${Math.round(distance_meters / 1000)} km away`;
+              }
+          }
+
           return {
               ...profile,
               age,
+              distance,
+              distance_meters,
           };
       })
       .filter(profile => {

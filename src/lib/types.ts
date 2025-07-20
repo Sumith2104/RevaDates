@@ -6,6 +6,9 @@ export interface UserProfile {
   photos: string[];
   bio: string;
   blocked_users?: string[];
+  location?: string | null;
+  distance?: string | null;
+  distance_meters?: number | null;
 }
 
 export interface Match {
