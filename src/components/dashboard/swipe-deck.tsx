@@ -253,10 +253,10 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                   <div className="flex justify-between items-start">
                     <div>
                         <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                        {formattedDistance && (
+                        {activeUser.distance && (
                             <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
                                 <MapPin className="h-4 w-4" />
-                                {formattedDistance}
+                                {activeUser.distance}
                             </p>
                         )}
                     </div>
