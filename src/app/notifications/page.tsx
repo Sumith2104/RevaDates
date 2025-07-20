@@ -176,7 +176,7 @@ export default function NotificationsPage() {
                             <AnimatedNotificationItem key={notif.id}>
                                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted">
                                     <div className="relative">
-                                        <Avatar className="h-12 w-12">
+                                        <Avatar className="h-20 w-20">
                                             {notif.sender?.photos?.[0] && (
                                                 <AvatarImage src={notif.sender.photos[0]} alt={notif.sender.name || 'User avatar'} />
                                             )}
