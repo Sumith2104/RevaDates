@@ -645,6 +645,29 @@ export async function respondToLike(notificationId: string, recipientId: string,
                 return { error: 'Could not create the match record.' };
             }
             
+            // Fetch profiles for notification messages
+            const { data: profiles, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, name, match_notification')
+                .in('id', [recipientId, senderId]);
+
+            if (!profilesError && profiles) {
+                const recipientProfile = profiles.find(p => p.id === recipientId);
+                const senderProfile = profiles.find(p => p.id === senderId);
+
+                // Notify the original sender about the new match
+                if (senderProfile?.match_notification) {
+                     await supabase.from('notifications').insert({
+                        recipient_id: senderId,
+                        sender_id: recipientId,
+                        type: 'new_match',
+                        message: `You matched with ${recipientProfile?.name}!`,
+                        created_at: now,
+                    });
+                }
+            }
+
+
             // Revalidate paths to update UI
             revalidatePath('/chats');
             revalidatePath('/notifications');
@@ -677,17 +700,6 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
     }
     const supabase = createClient();
     const now = getISTTimestamp();
-    const messageData: any = {
-        match_id: matchId,
-        sender_id: senderId,
-        recipient_id: recipientId,
-        content: content,
-        created_at: now,
-    };
-    
-    // The tempId is only for the client-side optimistic UI, so we pass it separately
-    // and add it to the final returned object. It's not saved in the DB.
-    messageData.tempId = tempId;
     
     const { data, error } = await supabase
         .from('messages')
@@ -743,5 +755,3 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
 
     return { data: profile, error: null };
 }
-
-    
