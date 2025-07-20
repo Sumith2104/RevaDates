@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 interface LoginFormProps {
     onSwitchToSignup: () => void;
     onSwitchToForgotPassword: () => void;
-    onLoginSuccess: () => void;
+    onLoginSuccess: (userId: string) => void;
 }
 
 export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }, ref) => {
@@ -45,14 +45,12 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
         description: 'Invalid email or password. Please try again.',
       });
     } else {
-      localStorage.setItem('currentUserId', data.id);
-      
       setIsLoading(false);
       toast({
         title: 'Login Successful',
         description: `Welcome back, ${data.name.split(' ')[0]}!`,
       });
-      onLoginSuccess();
+      onLoginSuccess(data.id);
     }
   };
 

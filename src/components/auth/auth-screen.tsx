@@ -146,8 +146,9 @@ export function AuthScreen() {
     }
   };
 
-  const handleLoginSuccess = () => {
-      router.push('/dashboard');
+  const handleLoginSuccess = (userId: string) => {
+      localStorage.setItem('currentUserId', userId);
+      setView('location');
   };
 
   const handleSignupSuccess = () => {
