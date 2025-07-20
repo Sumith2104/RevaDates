@@ -26,37 +26,6 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const updateUserLocation = (userId: string): Promise<void> => {
-    return new Promise((resolve) => {
-        if (!navigator.geolocation) {
-            resolve(); // Resolve promise even if geolocation is not supported
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const locationString = `POINT(${longitude} ${latitude})`;
-                
-                await supabase
-                    .from('profiles')
-                    .update({ location: locationString })
-                    .eq('id', userId);
-
-                resolve();
-            },
-            (error) => {
-                toast({
-                    variant: 'default',
-                    title: 'Location Skipped',
-                    description: "Could not access your location. You can enable it in settings for better matches.",
-                });
-                resolve(); // Resolve promise even on error
-            }
-        );
-    });
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -77,9 +46,6 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
       });
     } else {
       localStorage.setItem('currentUserId', data.id);
-      
-      // Wait for location update to complete before moving on
-      await updateUserLocation(data.id);
       
       setIsLoading(false);
       toast({

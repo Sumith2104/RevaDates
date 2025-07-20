@@ -204,15 +204,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     setIsBioVisible(false);
   }, [activeUser?.id]);
   
-  const formatDistance = (distanceInMeters: number | null) => {
-    if (distanceInMeters === null) return null;
-    if (distanceInMeters < 1000) {
-      return `${Math.round(distanceInMeters)} meters away`;
-    }
-    const distanceInKm = (distanceInMeters / 1000).toFixed(1);
-    return `${distanceInKm} km away`;
-  };
-  
   const hasPhoto = activeUser?.photos && activeUser.photos.length > 0;
   
   return (
@@ -252,9 +243,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                   <div className="flex justify-between items-start">
                     <div>
                         <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                        {activeUser.distance_meters !== null && (
-                            <p className="text-white/70 text-sm mt-1">{formatDistance(activeUser.distance_meters)}</p>
-                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button 

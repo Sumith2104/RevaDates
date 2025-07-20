@@ -126,12 +126,10 @@ export function SettingsView() {
   const [saving, setSaving] = React.useState(false);
   
   const [ageRange, setAgeRange] = React.useState([18, 80]);
-  const [distance, setDistance] = React.useState([50]);
   const [matchNotification, setMatchNotification] = React.useState(true);
 
   // Debounce the settings to avoid excessive database writes
   const debouncedAgeRange = useDebounce(ageRange, 500);
-  const debouncedDistance = useDebounce(distance, 500);
   const debouncedMatchNotification = useDebounce(matchNotification, 500);
 
   React.useEffect(() => {
@@ -152,7 +150,7 @@ export function SettingsView() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, discovery_distance_km, match_notification')
+        .select('discovery_age_min, discovery_age_max, match_notification')
         .eq('id', currentUserId)
         .single();
       
@@ -160,7 +158,6 @@ export function SettingsView() {
         toast({ variant: 'destructive', title: 'Could not load your settings.' });
       } else if (data) {
         setAgeRange([data.discovery_age_min || 18, data.discovery_age_max || 80]);
-        setDistance([data.discovery_distance_km || 50]);
         setMatchNotification(data.match_notification ?? true);
       }
       setLoading(false);
@@ -182,7 +179,6 @@ export function SettingsView() {
             .update({
                 discovery_age_min: debouncedAgeRange[0],
                 discovery_age_max: debouncedAgeRange[1],
-                discovery_distance_km: debouncedDistance[0],
                 match_notification: debouncedMatchNotification,
             })
             .eq('id', currentUserId);
@@ -194,7 +190,7 @@ export function SettingsView() {
     };
     
     saveSettings();
-  }, [debouncedAgeRange, debouncedDistance, debouncedMatchNotification, currentUserId, loading, toast]);
+  }, [debouncedAgeRange, debouncedMatchNotification, currentUserId, loading, toast]);
 
 
   const handleLogout = () => {
@@ -261,20 +257,6 @@ export function SettingsView() {
         <CardContent className="space-y-8 pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <Label htmlFor="distance">Maximum Distance</Label>
-                <span>{distance[0]} km</span>
-            </div>
-            <Slider
-              id="distance"
-              min={1}
-              max={200}
-              step={1}
-              value={distance}
-              onValueChange={setDistance}
-            />
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
                 <Label htmlFor="age-range">Age Range</Label>
                 <span>{ageRange[0]} - {ageRange[1]}</span>
             </div>
@@ -323,5 +305,3 @@ export function SettingsView() {
     </div>
   );
 }
-
-    

@@ -24,29 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 
-// Haversine formula to calculate distance between two lat/lon points
-function getDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Radius of the Earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Function to parse POINT(lon lat) string
-function parseLocation(locationString: string): { latitude: number; longitude: number } | null {
-    if (!locationString) return null;
-    const match = locationString.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
-    if (match && match.length === 3) {
-        return { longitude: parseFloat(match[1]), latitude: parseFloat(match[2]) };
-    }
-    return null;
-}
-
 // Fisher-Yates (aka Knuth) Shuffle
 function shuffle(array: any[]) {
   let currentIndex = array.length,  randomIndex;
@@ -94,7 +71,7 @@ export default function DashboardPage() {
     // First, get the current user's profile including settings, location, and blocked users
     const { data: currentUserProfile, error: currentUserError } = await supabase
       .from('profiles')
-      .select('discovery_age_min, discovery_age_max, discovery_distance_km, location, blocked_users, photos')
+      .select('discovery_age_min, discovery_age_max, blocked_users, photos')
       .eq('id', currentUserId)
       .single();
 
@@ -113,13 +90,9 @@ export default function DashboardPage() {
     const { 
         discovery_age_min: minAge, 
         discovery_age_max: maxAge, 
-        discovery_distance_km: maxDistance,
-        location: currentUserLocationStr,
         blocked_users: blockedUsers,
     } = currentUserProfile;
     
-    const currentUserLocation = parseLocation(currentUserLocationStr);
-
     // Get IDs of users the current user has already swiped on
     const { data: swipedUsersData, error: swipedError } = await supabase
       .from('swipes')
@@ -172,23 +145,9 @@ export default function DashboardPage() {
     const filteredProfiles = allProfiles
       .map(profile => {
           const age = differenceInYears(new Date(), new Date(profile.dob));
-          let distance = null;
-          const profileLocation = parseLocation(profile.location);
-
-          if (currentUserLocation && profileLocation) {
-              distance = getDistanceInKm(
-                  currentUserLocation.latitude,
-                  currentUserLocation.longitude,
-                  profileLocation.latitude,
-                  profileLocation.longitude
-              );
-          }
-          
           return {
               ...profile,
               age,
-              distance, // distance in km
-              distance_meters: distance !== null ? distance * 1000 : null,
           };
       })
       .filter(profile => {
@@ -196,13 +155,7 @@ export default function DashboardPage() {
           const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
           if (!isAgeMatch) return false;
 
-          // Distance filter
-          if (currentUserLocation) { // Only filter by distance if current user has a location
-              if (profile.distance === null) return false; // If we require location, exclude those without
-              return profile.distance <= maxDistance;
-          }
-          
-          return true; // If no location, don't filter by distance
+          return true;
       });
 
     if (filteredProfiles) {
@@ -289,7 +242,7 @@ export default function DashboardPage() {
         <div className="flex-1 flex flex-col pt-16">
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
             <p className="text-xl font-medium">No new profiles found.</p>
-            <p className="mt-2">Try increasing your distance range in Settings, or check back later!</p>
+            <p className="mt-2">Try increasing your age range in Settings, or check back later!</p>
             <Button onClick={() => fetchProfiles(true)} variant="outline" className="mt-4">
               <RefreshCcw className="mr-2 h-4 w-4" />
               Refresh
@@ -311,5 +264,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

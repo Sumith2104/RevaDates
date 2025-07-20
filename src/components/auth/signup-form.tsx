@@ -59,40 +59,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     }
   };
   
-  const saveUserLocation = (userId: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            resolve();
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const locationString = `POINT(${longitude} ${latitude})`;
-
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ location: locationString })
-                    .eq('id', userId);
-
-                if (error) {
-                    // Don't block signup, but log the error.
-                }
-                resolve();
-            },
-            (error) => {
-                toast({
-                    variant: 'default',
-                    title: 'Location Skipped',
-                    description: "You can enable location later in your settings for better matches.",
-                });
-                resolve();
-            }
-        );
-    });
-  };
-
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -138,8 +104,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         });
     } else {
         localStorage.setItem('currentUserId', result.data.id);
-        
-        await saveUserLocation(result.data.id);
         
         setIsLoading(false);
         toast({
