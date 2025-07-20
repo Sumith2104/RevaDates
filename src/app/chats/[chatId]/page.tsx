@@ -212,7 +212,7 @@ export default function ChatPage() {
                                     <span className="bg-muted px-2 py-1 rounded-full">{formatDateSeparator(message.created_at)}</span>
                                 </div>
                             )}
-                            <div className={cn("flex w-full items-end gap-2 group", isCurrentUser && "justify-end")}>
+                            <div className={cn("flex w-full items-end gap-2", isCurrentUser && "justify-end")}>
                                 {showAvatar && (
                                     <Avatar className="h-8 w-8 self-end">
                                         {matchedUser.photos?.[0] && (
@@ -224,25 +224,26 @@ export default function ChatPage() {
                                 {!showAvatar && !isCurrentUser && (
                                     <div className="w-8" /> 
                                 )}
-                                <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse")}>
-                                    <div className={cn(
-                                        "rounded-2xl px-4 py-2",
-                                        isCurrentUser 
-                                            ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                            : 'bg-muted rounded-bl-none',
-                                        isOptimistic && 'opacity-70'
-                                    )}>
-                                        <p className="text-base break-words">{message.content}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 self-end">
+                                <div className={cn(
+                                    "rounded-2xl px-3 py-2 max-w-[80%] flex items-end gap-2",
+                                    isCurrentUser 
+                                        ? 'bg-primary text-primary-foreground rounded-br-none' 
+                                        : 'bg-muted rounded-bl-none',
+                                    isOptimistic && 'opacity-70'
+                                )}>
+                                    <p className="text-base break-words whitespace-pre-wrap">{message.content}</p>
+                                    <div className="flex items-center gap-1 self-end flex-shrink-0">
+                                        <span className={cn(
+                                          "text-xs opacity-70 whitespace-nowrap",
+                                          isCurrentUser ? "text-primary-foreground" : "text-muted-foreground"
+                                        )}>
+                                            {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
+                                        </span>
                                         {isCurrentUser && !isOptimistic && (
                                             message.is_read 
                                                 ? <CheckCheck className="h-4 w-4 text-blue-500" />
-                                                : <Check className="h-4 w-4 text-muted-foreground" />
+                                                : <Check className="h-4 w-4" />
                                         )}
-                                        <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                                            {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
-                                        </span>
                                     </div>
                                 </div>
                             </div>
