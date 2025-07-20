@@ -177,7 +177,9 @@ export default function ChatPage() {
                     <ArrowLeft className="h-6 w-6" />
                 </Button>
                 <Avatar>
-                    <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                    {matchedUser.photos?.[0] && (
+                        <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
+                    )}
                     <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                 </Avatar>
                 <h2 className="font-semibold text-lg">{matchedUser.name}</h2>
@@ -204,7 +206,9 @@ export default function ChatPage() {
                             <div className={cn("flex w-full items-end gap-2 group", isCurrentUser && "justify-end")}>
                                 {showAvatar && (
                                     <Avatar className="h-8 w-8 self-end">
-                                        <AvatarImage src={matchedUser.photos?.[0]} className="object-cover" />
+                                        {matchedUser.photos?.[0] && (
+                                            <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
+                                        )}
                                         <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                                     </Avatar>
                                 )}
