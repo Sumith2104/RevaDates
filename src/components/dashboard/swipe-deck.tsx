@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, X, Undo2, ShieldAlert, RefreshCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { handleSwipeAction, handleUndoSwipeAction, blockUser, getDistanceBetweenUsers } from '@/lib/actions';
+import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -119,18 +119,9 @@ function AnimatedCard({
 }
 
 function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId: string }) {
-    const [distance, setDistance] = React.useState<number | null>(null);
     const [isBioVisible, setIsBioVisible] = React.useState(false);
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const { toast } = useToast();
-
-    React.useEffect(() => {
-        const fetchDistance = async () => {
-            const dist = await getDistanceBetweenUsers(currentUserId, user.id);
-            setDistance(dist);
-        };
-        fetchDistance();
-    }, [currentUserId, user.id]);
 
     const handleBlock = async () => {
         const result = await blockUser(currentUserId, user.id);
@@ -150,6 +141,16 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
     }
     
     const hasPhoto = user?.photos && user.photos.length > 0;
+    
+    const formatDistance = (meters: number | null | undefined) => {
+        if (meters === null || meters === undefined) return null;
+        if (meters < 1000) {
+            return `${Math.round(meters / 10) * 10} m away`;
+        }
+        return `${(meters / 1000).toFixed(1)} km away`;
+    };
+    
+    const distanceString = formatDistance(user.distance_meters);
 
     return (
         <>
@@ -178,10 +179,10 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
                   <div className="flex justify-between items-start">
                     <div>
                         <h2 className="text-3xl font-bold text-white">{user.name}, {user.age}</h2>
-                        {distance !== null && (
+                        {distanceString && (
                             <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
                                 <MapPin className="h-4 w-4" />
-                                {distance.toFixed(1)} km away
+                                {distanceString}
                             </p>
                         )}
                     </div>

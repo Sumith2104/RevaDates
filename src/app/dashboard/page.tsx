@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from '@/components/shared/app-header';
-import { handleUndoSwipeAction } from '@/lib/actions';
+import { handleUndoSwipeAction, getDistanceBetweenUsers } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
@@ -140,25 +140,30 @@ export default function DashboardPage() {
       return;
     }
 
-    // Filter profiles in the application code
-    const filteredProfiles = allProfiles
-      .map(profile => {
-          const age = differenceInYears(new Date(), new Date(profile.dob));
-          return {
-              ...profile,
-              age,
-          };
-      })
+    // Filter profiles in the application code and calculate distances
+    const profilesWithAge = allProfiles
+      .map(profile => ({
+          ...profile,
+          age: differenceInYears(new Date(), new Date(profile.dob)),
+      }))
       .filter(profile => {
-          // Age filter
           const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
-          if (!isAgeMatch) return false;
-
-          return true;
+          return isAgeMatch;
       });
 
-    if (filteredProfiles) {
-      setUsers(shuffle(filteredProfiles));
+    // Pre-load all distances
+    const profilesWithDistance = await Promise.all(
+      profilesWithAge.map(async (profile) => {
+        const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
+        return {
+          ...profile,
+          distance_meters: distance !== null ? distance * 1000 : null,
+        };
+      })
+    );
+
+    if (profilesWithDistance) {
+      setUsers(shuffle(profilesWithDistance));
     }
      setLoading(false);
   }, [currentUserId]);
