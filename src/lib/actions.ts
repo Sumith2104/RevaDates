@@ -792,3 +792,20 @@ export async function updateUserLocation(userId: string, lat: number, lon: numbe
 
     return { success: true };
 }
+
+
+export async function getDistanceBetweenUsers(userA: string, userB: string): Promise<number | null> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('get_distance_km', {
+    user_a: userA,
+    user_b: userB,
+  });
+
+  if (error) {
+    console.error('Error getting distance:', error.message);
+    return null;
+  }
+
+  return data;
+}

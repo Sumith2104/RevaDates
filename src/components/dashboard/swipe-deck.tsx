@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, X, Undo2, ShieldAlert, RefreshCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
+import { handleSwipeAction, handleUndoSwipeAction, blockUser, getDistanceBetweenUsers } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
 
 interface AnimatedCardProps {
   children: React.ReactNode;
@@ -119,6 +118,116 @@ function AnimatedCard({
   );
 }
 
+function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId: string }) {
+    const [distance, setDistance] = React.useState<number | null>(null);
+    const [isBioVisible, setIsBioVisible] = React.useState(false);
+    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
+    const { toast } = useToast();
+
+    React.useEffect(() => {
+        const fetchDistance = async () => {
+            const dist = await getDistanceBetweenUsers(currentUserId, user.id);
+            setDistance(dist);
+        };
+        fetchDistance();
+    }, [currentUserId, user.id]);
+
+    const handleBlock = async () => {
+        const result = await blockUser(currentUserId, user.id);
+        if (result.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: result.error,
+            });
+        } else {
+            toast({
+                title: 'User Blocked',
+                description: `You will no longer see ${user.name}'s profile.`,
+            });
+        }
+        setIsBlockConfirmOpen(false);
+    }
+    
+    const hasPhoto = user?.photos && user.photos.length > 0;
+
+    return (
+        <>
+            <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card" onClick={() => setIsBioVisible(v => !v)}>
+                <div className="relative w-full h-full">
+                    {hasPhoto ? (
+                        <Image
+                            src={user.photos[0]}
+                            alt={user.name}
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                    ) : (
+                        <div className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
+                            {getInitials(user.name)}
+                        </div>
+                    )}
+                </div>
+                <motion.div 
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
+                    initial={{ height: '33.33%' }}
+                    animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
+                    transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-3xl font-bold text-white">{user.name}, {user.age}</h2>
+                        {distance !== null && (
+                            <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
+                                <MapPin className="h-4 w-4" />
+                                {distance.toFixed(1)} km away
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="ghost"
+                            size="icon"
+                            className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20"
+                            onClick={(e) => { e.stopPropagation(); setIsBlockConfirmOpen(true); }}
+                         >
+                            <ShieldAlert className="h-6 w-6" />
+                            <span className="sr-only">Block and Report</span>
+                        </Button>
+                    </div>
+                  </div>
+                  <AnimatePresence>
+                    {isBioVisible && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
+                            exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+                            className="overflow-hidden"
+                        >
+                            <p className="text-white/90 mt-2 text-base">{user.bio}</p>
+                        </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+            </div>
+            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
+                <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+                    <AlertDialogHeader className="text-center sm:text-center">
+                        <AlertDialogTitle className="text-white text-lg font-semibold">Block {user.name}?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                            Are you sure you want to block this user?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
+                        <AlertDialogAction onClick={handleBlock} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+}
 
 interface SwipeDeckProps {
   users: UserProfile[];
@@ -130,9 +239,7 @@ interface SwipeDeckProps {
 
 export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUndo, canUndo }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
-  const [isBioVisible, setIsBioVisible] = React.useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = React.useState<'left' | 'right' | null>(null);
-  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
   const { toast } = useToast();
   
   const activeIndex = users.length - 1;
@@ -141,7 +248,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (activeIndex < 0) return;
     
-    setIsBioVisible(false);
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
@@ -168,27 +274,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     }
   };
   
-  const handleBlock = async () => {
-    if (!activeUser) return;
-
-    const result = await blockUser(currentUserId, activeUser.id);
-    if (result.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: result.error,
-      });
-    } else {
-      toast({
-        title: 'User Blocked',
-        description: `You will no longer see ${activeUser.name}'s profile.`,
-      });
-      // Remove from deck immediately
-      setUsers(prev => prev.slice(0, -1));
-    }
-    setIsBlockConfirmOpen(false);
-  }
-
   const triggerSwipe = (direction: 'left' | 'right') => {
     if (!activeUser) return;
     setTriggerSwipeDirection(direction);
@@ -196,96 +281,21 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
 
   React.useEffect(() => {
     setUsers(initialUsers);
-    setIsBioVisible(false);
   }, [initialUsers]);
-
-  React.useEffect(() => {
-    // Reset bio visibility when the active user changes
-    setIsBioVisible(false);
-  }, [activeUser?.id]);
-  
-  const hasPhoto = activeUser?.photos && activeUser.photos.length > 0;
-  
-  const formattedDistance = React.useMemo(() => {
-    if (activeUser?.distance_meters === null || activeUser?.distance_meters === undefined) {
-      return null;
-    }
-    if (activeUser.distance_meters < 1000) {
-      return `${(activeUser.distance_meters / 100).toFixed(1)} km away`;
-    }
-    return `${(activeUser.distance_meters / 1000).toFixed(1)} km away`;
-  }, [activeUser?.distance_meters]);
   
   return (
     <>
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
         <div className="relative w-full aspect-[3/4]" style={{ perspective: 800 }}>
+          <AnimatePresence>
           {activeUser ? (
             <AnimatedCard
               key={activeUser.id}
               onSwipe={handleSwipe}
-              onTap={() => setIsBioVisible(v => !v)}
               triggerSwipeDirection={triggerSwipeDirection}
               setTriggerSwipeDirection={setTriggerSwipeDirection}
             >
-              <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card">
-                 <div className="relative w-full h-full">
-                    {hasPhoto ? (
-                        <Image
-                            src={activeUser.photos[0]}
-                            alt={activeUser.name}
-                            fill
-                            className="object-cover"
-                            priority
-                        />
-                    ) : (
-                        <div className="w-full h-full rounded-lg bg-muted text-6xl font-bold flex items-center justify-center">
-                            {getInitials(activeUser.name)}
-                        </div>
-                    )}
-                </div>
-                <motion.div 
-                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end"
-                    initial={{ height: '33.33%' }}
-                    animate={{ height: isBioVisible ? '66.66%' : '33.33%' }}
-                    transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                        <h2 className="text-3xl font-bold text-white">{activeUser.name}, {activeUser.age}</h2>
-                        {activeUser.distance && (
-                            <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
-                                <MapPin className="h-4 w-4" />
-                                {activeUser.distance}
-                            </p>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            variant="ghost"
-                            size="icon"
-                            className="text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20"
-                            onClick={(e) => { e.stopPropagation(); setIsBlockConfirmOpen(true); }}
-                         >
-                            <ShieldAlert className="h-6 w-6" />
-                            <span className="sr-only">Block and Report</span>
-                        </Button>
-                    </div>
-                  </div>
-                  <AnimatePresence>
-                    {isBioVisible && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0, transition: { delay: 0.2, duration: 0.4 } }}
-                            exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
-                            className="overflow-hidden"
-                        >
-                            <p className="text-white/90 mt-2 text-base">{activeUser.bio}</p>
-                        </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </div>
+              <CardContent user={activeUser} currentUserId={currentUserId} />
             </AnimatedCard>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -293,6 +303,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
                 <p className="mt-2">Check back later or adjust your filters.</p>
             </div>
           )}
+          </AnimatePresence>
         </div>
         <div className="flex flex-col items-center justify-center gap-4">
             <div className="flex items-center justify-center gap-6">
@@ -330,22 +341,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
           ))}
         </div>
       </div>
-      {activeUser && (
-        <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-            <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
-                <AlertDialogHeader className="text-center sm:text-center">
-                    <AlertDialogTitle className="text-white text-lg font-semibold">Block {activeUser.name}?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                        Are you sure you want to block this user?
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
-                    <AlertDialogAction onClick={handleBlock} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
-                    <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-      )}
     </>
   );
 }
