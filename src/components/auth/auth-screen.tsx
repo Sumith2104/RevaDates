@@ -29,46 +29,15 @@ const phrases = [
   "Your next great date is a swipe away."
 ];
 
-function LocationPermissionPrompt({ onComplete }: { onComplete: () => void }) {
-    const [status, setStatus] = React.useState<'idle' | 'loading' | 'error'>('idle');
-    const { toast } = useToast();
+function LocationPermissionPrompt({ onComplete, onAllow }: { onComplete: () => void; onAllow: () => Promise<void> }) {
+    const [status, setStatus] = React.useState<'idle' | 'loading'>('idle');
 
-    const handleAllowLocation = async () => {
-        const currentUserId = localStorage.getItem('currentUserId');
-        if (!currentUserId) {
-            toast({ variant: 'destructive', title: "Error", description: "Could not find user to update." });
-            onComplete();
-            return;
-        }
-
+    const handleAllow = async () => {
         setStatus('loading');
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const result = await updateUserLocation(currentUserId, latitude, longitude);
-                if (result.error) {
-                    toast({ variant: 'destructive', title: "Error", description: result.error });
-                } else {
-                    toast({ title: "Location Saved!", description: "We've updated your location." });
-                }
-                onComplete();
-            },
-            (error) => {
-                setStatus('error');
-                toast({
-                    variant: 'destructive',
-                    title: "Location Denied",
-                    description: "You can enable location services in your browser settings later.",
-                });
-                onComplete();
-            }
-        );
+        await onAllow();
+        setStatus('idle');
     };
-
-    const handleSkip = () => {
-        onComplete();
-    };
-
+    
     return (
         <AlertDialog open={true}>
             <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
@@ -81,7 +50,7 @@ function LocationPermissionPrompt({ onComplete }: { onComplete: () => void }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter className="mt-6 flex flex-col sm:flex-col w-full gap-2">
                     <AlertDialogAction
-                        onClick={handleAllowLocation}
+                        onClick={handleAllow}
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md"
                         disabled={status === 'loading'}
                     >
@@ -89,7 +58,7 @@ function LocationPermissionPrompt({ onComplete }: { onComplete: () => void }) {
                         Allow Location
                     </AlertDialogAction>
                     <AlertDialogCancel
-                        onClick={handleSkip}
+                        onClick={onComplete}
                         className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0"
                     >
                         Maybe Later
@@ -139,6 +108,82 @@ export function AuthScreen() {
 
     return () => clearTimeout(timeoutId);
   }, [typedPhrase, activePhrase, isDeleting]);
+  
+  const handleLocationComplete = React.useCallback(() => {
+      router.push('/dashboard');
+  }, [router]);
+  
+  const attemptToGetLocation = React.useCallback(async (userId: string) => {
+    return new Promise<void>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            const result = await updateUserLocation(userId, latitude, longitude);
+            if (result.error) {
+                toast({ variant: 'destructive', title: "Error", description: result.error });
+            }
+            handleLocationComplete();
+            resolve();
+        },
+        () => {
+            // Failure to get location silently - this will be handled by the permission check
+            // which will then show the prompt.
+            resolve();
+        },
+        { timeout: 5000 } // Don't wait forever
+      );
+    });
+  }, [toast, handleLocationComplete]);
+  
+  const handleLocationLogic = React.useCallback(async (userId: string) => {
+      if (navigator.permissions) {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        if (permission.state === 'granted') {
+            await attemptToGetLocation(userId);
+        } else {
+            // If prompt or denied, we show our custom dialog.
+            setView('location');
+        }
+      } else {
+          // Fallback for older browsers
+          setView('location');
+      }
+  }, [attemptToGetLocation]);
+  
+  const handleAllowLocationFromPrompt = React.useCallback(async () => {
+    const currentUserId = localStorage.getItem('currentUserId');
+    if (!currentUserId) {
+        toast({ variant: 'destructive', title: "Error", description: "Could not find user to update." });
+        handleLocationComplete();
+        return;
+    }
+
+    await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const result = await updateUserLocation(currentUserId, latitude, longitude);
+                if (result.error) {
+                    toast({ variant: 'destructive', title: "Error", description: result.error });
+                } else {
+                    toast({ title: "Location Saved!", description: "We've updated your location." });
+                }
+                handleLocationComplete();
+                resolve();
+            },
+            (error) => {
+                toast({
+                    variant: 'destructive',
+                    title: "Location Denied",
+                    description: "You can enable location services in your browser settings later.",
+                });
+                handleLocationComplete();
+                resolve();
+            }
+        );
+    });
+  }, [toast, handleLocationComplete]);
+
 
   const handleBackdropClick = () => {
     if (view !== 'start' && view !== 'location') {
@@ -146,18 +191,16 @@ export function AuthScreen() {
     }
   };
 
-  const handleLoginSuccess = (userId: string) => {
+  const handleLoginSuccess = async (userId: string) => {
+      localStorage.setItem('currentUserId', userId);
+      await handleLocationLogic(userId);
+  };
+
+  const handleSignupSuccess = async (userId: string) => {
+      // For sign up, we always ask for location the first time.
       localStorage.setItem('currentUserId', userId);
       setView('location');
   };
-
-  const handleSignupSuccess = () => {
-      setView('location');
-  };
-  
-  const handleLocationComplete = () => {
-      router.push('/dashboard');
-  }
 
   const cardVariants = {
     initial: { y: '100vh', opacity: 0 },
@@ -257,7 +300,7 @@ export function AuthScreen() {
 
           {view === 'location' && (
              <motion.div key="location" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-                <LocationPermissionPrompt onComplete={handleLocationComplete} />
+                <LocationPermissionPrompt onComplete={handleLocationComplete} onAllow={handleAllowLocationFromPrompt} />
              </motion.div>
           )}
 

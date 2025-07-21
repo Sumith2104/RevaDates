@@ -17,7 +17,7 @@ import { motion } from 'framer-motion';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
-    onSignupSuccess: () => void;
+    onSignupSuccess: (userId: string) => void;
 }
 
 export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin, onSignupSuccess }, ref) => {
@@ -111,7 +111,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
           description: 'Welcome to RevaDates!',
         });
         
-        onSignupSuccess();
+        onSignupSuccess(result.data.id);
     }
   };
 
