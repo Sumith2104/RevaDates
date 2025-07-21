@@ -288,10 +288,13 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
+                  {userPhotos[0] ? (
                     <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
-                    <AvatarFallback className="text-3xl">
-                        {getInitials(user.name)}
+                  ) : (
+                    <AvatarFallback className="bg-white text-black text-2xl font-bold">
+                      {getInitials(user.name)}
                     </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="flex-grow">
                     {isEditing ? (
