@@ -38,7 +38,7 @@ export async function createUser(userData: Record<string, any>) {
       email: userData.email,
       password: userData.password, 
       dob: `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`,
-      bio: "Tell us more about yourself! Share a short bio that shows your personality, interests, and what you're looking for. Add your hobbies (e.g., reading, hiking, gaming), what kind of connection you seek (friendship, serious relationship, etc.), and your current city. Upload a few photos that best represent you, and optionally verify your profile to earn a trusted badge. The more complete your profile, the better your matches!",
+      bio: "",
       photos: [],
       created_at: now,
       updated_at: now,
