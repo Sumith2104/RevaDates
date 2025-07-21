@@ -177,15 +177,16 @@ export default function DashboardPage() {
           let distance_meters = null;
           
           if (currentUserLocation && profileLocation) {
-              distance_meters = getDistanceInKm(
+              const distKm = getDistanceInKm(
                   currentUserLocation.lat, currentUserLocation.lon,
                   profileLocation.lat, profileLocation.lon
-              ) * 1000;
+              );
+              distance_meters = distKm * 1000;
               
-              if (distance_meters < 1000) {
+              if (distKm < 1) {
                   distance = `${Math.round(distance_meters / 10) * 10} m away`;
               } else {
-                  distance = `${Math.round(distance_meters / 1000)} km away`;
+                  distance = `${Math.round(distKm)} km away`;
               }
           }
 
