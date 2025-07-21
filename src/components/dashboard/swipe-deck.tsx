@@ -6,9 +6,9 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, X, Undo2, ShieldAlert, RefreshCcw, MapPin } from 'lucide-react';
+import { Heart, X, Undo2, ShieldAlert, RefreshCcw, MapPin, Eye, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { handleSwipeAction, handleUndoSwipeAction, blockUser } from '@/lib/actions';
+import { handleSwipeAction, blockUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -177,15 +177,7 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
                     transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                        <h2 className="text-3xl font-bold text-white">{user.name}, {user.age}</h2>
-                        {distanceString && (
-                            <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
-                                <MapPin className="h-4 w-4" />
-                                {distanceString}
-                            </p>
-                        )}
-                    </div>
+                    <h2 className="text-3xl font-bold text-white">{user.name}, {user.age}</h2>
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="ghost"
@@ -198,6 +190,12 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
                         </Button>
                     </div>
                   </div>
+                   {distanceString && (
+                        <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            {distanceString}
+                        </p>
+                    )}
                   <AnimatePresence>
                     {isBioVisible && (
                         <motion.div

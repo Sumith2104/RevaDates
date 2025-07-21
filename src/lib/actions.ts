@@ -809,3 +809,21 @@ export async function getDistanceBetweenUsers(userA: string, userB: string): Pro
 
   return data;
 }
+
+export async function getIsMatch(userA: string, userB: string): Promise<boolean> {
+    if (!userA || !userB) return false;
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`(user1_id.eq.${userA},user2_id.eq.${userB}),(user1_id.eq.${userB},user2_id.eq.${userA})`)
+        .limit(1)
+        .single();
+    
+    if (error || !data) {
+        return false;
+    }
+
+    return true;
+}
