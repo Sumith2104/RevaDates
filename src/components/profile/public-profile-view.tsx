@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { VenetianMask } from 'lucide-react';
+import { VenetianMask, MapPin } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -21,6 +21,16 @@ export function PublicProfileView({ user, currentUserId }: PublicProfileViewProp
   const router = useRouter();
   const age = differenceInYears(new Date(), user.dob);
   const userPhotos = user.photos || [];
+
+  const formatDistance = (meters: number | null | undefined) => {
+    if (meters === null || meters === undefined) return null;
+    if (meters < 1000) {
+        return `${Math.round(meters / 10) * 10} m away`;
+    }
+    return `${(meters / 1000).toFixed(1)} km away`;
+  };
+
+  const distanceString = formatDistance(user.distance_meters);
 
   return (
     <div className="flex flex-col h-full">
@@ -41,9 +51,17 @@ export function PublicProfileView({ user, currentUserId }: PublicProfileViewProp
                 </Avatar>
                 <div className="flex-grow">
                   <p className="text-2xl font-semibold">{user.name}, {age}</p>
-                  <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                    <VenetianMask className="h-4 w-4" />
-                    <p>{user.gender}</p>
+                  <div className="flex flex-col gap-1 text-muted-foreground mt-1">
+                      <div className="flex items-center gap-2">
+                        <VenetianMask className="h-4 w-4" />
+                        <p>{user.gender}</p>
+                      </div>
+                      {distanceString && (
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <p>{distanceString}</p>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
