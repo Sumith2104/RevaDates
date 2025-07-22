@@ -153,6 +153,10 @@ function CardContent({ user, currentUserId, onBlock }: { user: UserProfile, curr
     
     const distanceString = formatDistance(user.distance_meters);
 
+    const nameParts = user.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ');
+
     return (
         <>
             <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl bg-card" onClick={() => setIsBioVisible(v => !v)}>
@@ -178,7 +182,9 @@ function CardContent({ user, currentUserId, onBlock }: { user: UserProfile, curr
                     transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
                 >
                   <div className="flex justify-between items-start">
-                    <h2 className="text-3xl font-bold text-white">{user.name}, {user.age}</h2>
+                    <h2 className="text-3xl font-bold text-white leading-tight">
+                        {firstName}<br/>{lastName}, {user.age}
+                    </h2>
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="ghost"
