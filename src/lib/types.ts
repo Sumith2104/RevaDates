@@ -3,6 +3,7 @@ export interface UserProfile {
   id: string;
   name: string;
   age: number;
+  gender: string;
   photos: string[];
   bio: string;
   blocked_users?: string[];

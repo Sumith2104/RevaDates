@@ -38,6 +38,7 @@ export async function createUser(userData: Record<string, any>) {
       email: userData.email,
       password: userData.password, 
       dob: `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`,
+      gender: userData.gender,
       bio: "",
       photos: [],
       created_at: now,

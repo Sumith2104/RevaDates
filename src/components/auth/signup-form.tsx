@@ -91,6 +91,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         dobYear: formData.get('dobYear') as string,
         dobMonth: formData.get('dobMonth') as string,
         dobDay: formData.get('dobDay') as string,
+        gender: formData.get('gender') as string,
     };
     
     const result = await createUser(userData);
@@ -225,6 +226,19 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
             <div className="grid gap-2 text-left">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} className="rounded-lg" />
+            </div>
+            <div className="grid gap-2 text-left">
+                <Label htmlFor="gender">Gender</Label>
+                <Select name="gender" required disabled={isLoading}>
+                    <SelectTrigger className="rounded-lg">
+                        <SelectValue placeholder="Select your gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
             <div className="grid gap-2 text-left">
               <Label>Date of Birth</Label>

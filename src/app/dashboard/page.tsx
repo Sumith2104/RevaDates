@@ -70,7 +70,7 @@ export default function DashboardPage() {
     // First, get the current user's profile including settings, location, and blocked users
     const { data: currentUserProfile, error: currentUserError } = await supabase
       .from('profiles')
-      .select('discovery_age_min, discovery_age_max, blocked_users, photos')
+      .select('discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users, photos')
       .eq('id', currentUserId)
       .single();
 
@@ -88,7 +88,8 @@ export default function DashboardPage() {
     
     const { 
         discovery_age_min: minAge, 
-        discovery_age_max: maxAge, 
+        discovery_age_max: maxAge,
+        discovery_gender_preference: genderPreference, 
         blocked_users: blockedUsers,
     } = currentUserProfile;
 
@@ -130,6 +131,13 @@ export default function DashboardPage() {
 
     if (allExcludedIds.length > 0) {
       query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+    }
+
+    // Apply gender preference filter
+    if (genderPreference === 'men') {
+        query = query.eq('gender', 'Male');
+    } else if (genderPreference === 'women') {
+        query = query.eq('gender', 'Female');
     }
     
     const { data: allProfiles, error: profilesError } = await query;

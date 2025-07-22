@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star } from 'lucide-react';
+import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star, VenetianMask } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,7 @@ type User = {
     dob: Date;
     photos: string[] | null;
     bio: string;
+    gender: string;
     updated_at: string;
 };
 
@@ -302,6 +303,10 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                     ) : (
                         <p className="text-2xl font-semibold">{user.name}, {age}</p>
                     )}
+                     <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                        <VenetianMask className="h-4 w-4" />
+                        <p>{user.gender}</p>
+                     </div>
                 </div>
             </div>
             <div>
