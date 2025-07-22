@@ -438,7 +438,7 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
     }
 
     const currentBlocked = data.blocked_users || [];
-    const newBlocked = currentBlocked.filter(id => id !== unblockedId);
+    const newBlocked = currentBlocked.filter((id: string) => id !== unblockedId);
 
     const { error: updateError } = await supabase
         .from('profiles')
