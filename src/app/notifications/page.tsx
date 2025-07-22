@@ -9,7 +9,6 @@ import { Bell, Heart, X, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
-import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import type { Notification } from '@/lib/types';
@@ -55,67 +54,47 @@ export default function NotificationsPage() {
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
         if (!userId) {
-            setError('You must be logged in to see notifications.');
-            setLoading(false);
+            router.push('/login');
             return;
         }
         setCurrentUserId(userId);
-
-        const fetchInitialNotifications = async () => {
-            setLoading(true);
-            const result = await getNotifications(userId);
-            if (result.error) {
-                setError(result.error);
-            } else {
-                setNotifications(result.data as Notification[]);
-                await markNotificationsAsRead(userId);
-            }
-            setLoading(false);
-        };
-
-        fetchInitialNotifications();
-    }, []);
-
+    }, [router]);
+    
     React.useEffect(() => {
         if (!currentUserId) return;
 
-        const supabase = createClient();
-        const channel = supabase
-            .channel('realtime-notifications-list')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `recipient_id=eq.${currentUserId}`,
-                },
-                async (payload) => {
-                    const newNotification = payload.new as Notification;
-                    
-                    const { data: senderProfile, error: profileError } = await supabase
-                        .from('profiles')
-                        .select('name, photos')
-                        .eq('id', newNotification.sender_id)
-                        .single();
+        async function fetchData(initialLoad = false) {
+            if (initialLoad) setLoading(true);
 
-                    if (profileError) {
-                        return;
+            const result = await getNotifications(currentUserId);
+            
+            if (result.error) {
+                setError(result.error);
+            } else {
+                setNotifications(prev => {
+                    const newNotifications = result.data as Notification[];
+                    // A simple check to see if notifications have actually changed to avoid needless re-renders
+                    if (JSON.stringify(prev) !== JSON.stringify(newNotifications)) {
+                        return newNotifications;
                     }
-                    
-                    newNotification.sender = senderProfile;
+                    return prev;
+                });
+                
+                // Mark as read, but don't wait for it to avoid blocking UI updates
+                markNotificationsAsRead(currentUserId);
+            }
 
-                    setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
-                    await markNotificationsAsRead(currentUserId);
-                }
-            )
-            .subscribe();
+            if (initialLoad) setLoading(false);
+        }
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        fetchData(true); // Initial fetch
+
+        const interval = setInterval(() => fetchData(false), 1000); // Poll every second
+
+        return () => clearInterval(interval); // Cleanup
     }, [currentUserId]);
-    
+
+
     const handleResponse = async (notificationId: string, senderId: string, action: 'liked' | 'rejected') => {
         if (!currentUserId) return;
 
@@ -130,7 +109,7 @@ export default function NotificationsPage() {
                 description: `You can now start chatting.`,
             });
         } else {
-            // It was a rejection or not a match, just remove it
+            // It was a rejection or not a match, just remove it from the view instantly
             setNotifications(prev => prev.filter(n => n.id !== notificationId));
         }
     };

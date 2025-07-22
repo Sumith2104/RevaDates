@@ -6,17 +6,18 @@ import { AppShell } from '@/components/shared/app-shell';
 import { getChatsAndMatches } from '@/lib/actions';
 import type { Match, Chat } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { MatchItem } from '@/components/chats/match-item';
 import { ChatItem } from '@/components/chats/chat-item';
-
+import { Input } from '@/components/ui/input';
 
 export default function ChatsPage() {
     const [matches, setMatches] = React.useState<Match[]>([]);
     const [chats, setChats] = React.useState<Chat[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = React.useState('');
     const router = useRouter();
 
     React.useEffect(() => {
@@ -51,6 +52,15 @@ export default function ChatsPage() {
         return () => clearInterval(interval); // Cleanup on component unmount
 
     }, [router]);
+    
+    const filteredChats = React.useMemo(() => {
+        if (!searchTerm) {
+          return chats;
+        }
+        return chats.filter(chat => 
+          chat.matchedUser.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [chats, searchTerm]);
 
     return (
         <AppShell>
@@ -81,7 +91,18 @@ export default function ChatsPage() {
                 </div>
 
                 <div className="flex-1 flex flex-col">
-                    <h1 className="text-3xl font-bold mb-4">Messages</h1>
+                    <div className="flex justify-between items-center mb-4">
+                        <h1 className="text-3xl font-bold">Messages</h1>
+                    </div>
+                     <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            placeholder="Search chats..."
+                            className="pl-10 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     {loading && (
                          <div className="space-y-4">
                             {[...Array(3)].map((_, i) => (
@@ -95,15 +116,15 @@ export default function ChatsPage() {
                             ))}
                         </div>
                     )}
-                    {!loading && chats.length === 0 && (
+                    {!loading && filteredChats.length === 0 && (
                          <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg flex-1 flex flex-col justify-center items-center">
                             <MessageSquare className="mx-auto h-8 w-8 mb-2" />
-                            <p className="text-sm">Start a conversation with a new match!</p>
+                            <p className="text-sm">{searchTerm ? "No chats found." : "Start a conversation with a new match!"}</p>
                         </div>
                     )}
-                    {!loading && chats.length > 0 && (
+                    {!loading && filteredChats.length > 0 && (
                         <div className="space-y-2">
-                            {chats.map(chat => <ChatItem key={chat.id} chat={chat} />)}
+                            {filteredChats.map(chat => <ChatItem key={chat.id} chat={chat} />)}
                         </div>
                     )}
 

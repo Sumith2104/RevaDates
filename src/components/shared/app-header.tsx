@@ -6,12 +6,10 @@ import * as React from 'react';
 import { Heart, User, Bell, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
-import { usePathname } from 'next/navigation';
 
 
 export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const pathname = usePathname();
   
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -31,25 +29,14 @@ export function AppHeader() {
       }
     };
     
+    // Initial fetch
     fetchUnreadCount();
 
-    const channel = supabase.channel('realtime-notifications-count')
-      .on(
-        'postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'notifications',
-          filter: `recipient_id=eq.${userId}` 
-        }, 
-        (payload) => {
-          fetchUnreadCount();
-        }
-      )
-      .subscribe();
+    // Poll every 1 second
+    const interval = setInterval(fetchUnreadCount, 1000);
       
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
 
   }, []);
@@ -82,5 +69,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-    
