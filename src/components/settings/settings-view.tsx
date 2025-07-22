@@ -271,7 +271,7 @@ export function SettingsView() {
               max={80}
               step={1}
               value={ageRange}
-              onValue-change={setAgeRange}
+              onValueChange={setAgeRange}
             />
           </div>
         </CardContent>
