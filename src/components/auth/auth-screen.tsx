@@ -24,12 +24,7 @@ import { updateUserLocation } from '@/lib/actions';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 
 const TYPING_SPEED = 100;
-const phrases = [
-  "Find your perfect match.",
-  "Connect with real people.",
-  "Discover meaningful relationships.",
-  "Your next great date is a swipe away."
-];
+const phrases = [ "Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free" ];
 
 function LocationPermissionPrompt({ onComplete, onAllow }: { onComplete: () => void; onAllow: () => Promise<void> }) {
     const [status, setStatus] = React.useState<'idle' | 'loading'>('idle');
