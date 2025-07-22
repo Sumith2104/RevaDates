@@ -98,10 +98,12 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     setIsLoading(true);
 
     const onboardingData = new FormData(e.currentTarget);
+    const genderPreference = onboardingData.get('genderPreference') as string;
+    
     const fullUserData = {
         ...formData,
-        gender: onboardingData.get('gender') as string,
-        genderPreference: onboardingData.get('genderPreference') as string,
+        gender: genderPreference === 'men' ? 'Female' : 'Male',
+        genderPreference: genderPreference,
     };
     
     const result = await createUser(fullUserData);
@@ -177,18 +179,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                         <CardDescription>This helps us find you better matches.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="gender">I am a...</Label>
-                            <Select name="gender" required disabled={isLoading}>
-                                <SelectTrigger className="rounded-lg">
-                                    <SelectValue placeholder="Select your gender" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Male">Man</SelectItem>
-                                    <SelectItem value="Female">Woman</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="genderPreference">I am interested in...</Label>
                             <Select name="genderPreference" required disabled={isLoading}>
