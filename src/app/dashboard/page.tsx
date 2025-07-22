@@ -75,6 +75,7 @@ export default function DashboardPage() {
       .single();
 
     if (currentUserError) {
+        toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
         setLoading(false);
         return;
     }
@@ -100,6 +101,7 @@ export default function DashboardPage() {
       .eq('swiper_id', currentUserId);
 
     if (swipedError) {
+      toast({ variant: 'destructive', title: "Database Error", description: "Could not fetch your swipe history." });
       setUsers([]);
       setLoading(false);
       return;
@@ -143,6 +145,7 @@ export default function DashboardPage() {
     const { data: allProfiles, error: profilesError } = await query;
 
     if (profilesError) {
+      toast({ variant: 'destructive', title: "Database Error", description: "Could not fetch new profiles to show." });
       setUsers([]);
       setLoading(false);
       return;
@@ -174,7 +177,7 @@ export default function DashboardPage() {
       setUsers(shuffle(profilesWithDistance));
     }
      setLoading(false);
-  }, [currentUserId]);
+  }, [currentUserId, toast]);
 
   React.useEffect(() => {
     if (currentUserId) {
@@ -202,7 +205,7 @@ export default function DashboardPage() {
       });
     } else {
       setSwipedHistory(prev => prev.slice(1));
-      setUsers(prev => prev ? [...prev, lastSwipedUser] : [lastSwipedUser]);
+      setUsers(prev => prev ? [lastSwipedUser, ...prev] : [lastSwipedUser]);
     }
   };
 
@@ -270,7 +273,7 @@ export default function DashboardPage() {
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />}
+          {users && users.length > 0 && <SwipeDeck users={users} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />}
         </div>
       </AppShell>
     </>

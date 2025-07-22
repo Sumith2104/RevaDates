@@ -118,7 +118,7 @@ function AnimatedCard({
   );
 }
 
-function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId: string }) {
+function CardContent({ user, currentUserId, onBlock }: { user: UserProfile, currentUserId: string, onBlock: () => void }) {
     const [isBioVisible, setIsBioVisible] = React.useState(false);
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const { toast } = useToast();
@@ -134,8 +134,9 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
         } else {
             toast({
                 title: 'User Blocked',
-                description: `You will no longer see ${user.name}'s profile or be seen by them.`,
+                description: `You will no longer see ${user.name}'s profile.`,
             });
+            onBlock(); // Callback to parent to remove from deck
         }
         setIsBlockConfirmOpen(false);
     }
@@ -215,7 +216,7 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
                     <AlertDialogHeader className="text-center sm:text-center">
                         <AlertDialogTitle className="text-white text-lg font-semibold">Block {user.name}?</AlertDialogTitle>
                         <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                            Are you sure you want to block this user? You won't see their profile again.
+                            Are you sure? You won't see their profile again and this cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
@@ -231,12 +232,13 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
 interface SwipeDeckProps {
   users: UserProfile[];
   currentUserId: string;
+  onSwipe: (swipedUser: UserProfile) => void;
   onRefresh: () => void;
   onUndo: () => void;
   canUndo: boolean;
 }
 
-export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUndo, canUndo }: SwipeDeckProps) {
+export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefresh, onUndo, canUndo }: SwipeDeckProps) {
   const [users, setUsers] = React.useState(initialUsers);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = React.useState<'left' | 'right' | null>(null);
   const { toast } = useToast();
@@ -250,7 +252,10 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
-    // State update now happens after animation in onSwipe callback
+    // Optimistically update parent state via callback
+    onSwipe(swipedUser);
+    
+    // Optimistically update local state to remove card
     setUsers(prev => prev.slice(0, -1));
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
@@ -260,15 +265,15 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
         title: "Swipe Error",
         description: result.error,
        });
-       // Revert state on error
-       setUsers(prev => [swipedUser, ...prev]);
+       // Revert state on error by triggering undo logic in parent
+       onUndo(); 
        return;
     }
 
     if (result.match) {
         toast({
             title: "It's a Match! 🎉",
-            description: `You and ${swipedUser.name} have liked each other.`,
+            description: `You and ${swipedUser.name} can now chat.`,
         });
     }
   };
@@ -282,6 +287,13 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     setUsers(initialUsers);
   }, [initialUsers]);
   
+  const handleBlockFromCard = () => {
+    if (activeUser) {
+        onSwipe(activeUser); // This removes the user from the parent's `users` state
+        setUsers(prev => prev.filter(u => u.id !== activeUser.id)); // Also remove locally
+    }
+  }
+
   return (
     <>
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm mx-auto p-4 gap-4 overflow-hidden">
@@ -294,7 +306,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
               triggerSwipeDirection={triggerSwipeDirection}
               setTriggerSwipeDirection={setTriggerSwipeDirection}
             >
-              <CardContent user={activeUser} currentUserId={currentUserId} />
+              <CardContent user={activeUser} currentUserId={currentUserId} onBlock={handleBlockFromCard} />
             </AnimatedCard>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
