@@ -13,7 +13,7 @@ export function useCurrentUser() {
     setLoading(true);
     const userId = localStorage.getItem('currentUserId');
     if (!userId) {
-      router.push('/login');
+      router.push('/');
     } else {
       setUser(userId);
     }
@@ -22,5 +22,3 @@ export function useCurrentUser() {
 
   return { user, loading };
 }
-
-    
