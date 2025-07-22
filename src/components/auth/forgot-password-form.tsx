@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetOtp, resetPasswordWithOtp } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
@@ -42,7 +42,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
     if (result.error) {
         toast({
             variant: 'destructive',
-            title: 'Error',
+            title: 'Request Failed',
             description: result.error,
         });
     } else {
