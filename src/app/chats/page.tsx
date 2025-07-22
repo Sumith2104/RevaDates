@@ -63,7 +63,7 @@ function ChatItem({ chat }: { chat: Chat }) {
                     <p className="font-semibold truncate">{chat.matchedUser.name}</p>
                     <p className="text-xs text-muted-foreground whitespace-nowrap">{lastMessageTime}</p>
                 </div>
-                 <div className="flex items-center gap-2">
+                 <div className="flex items-center justify-between gap-2">
                     <p className={cn("text-sm text-muted-foreground truncate", chat.unreadCount > 0 && "font-bold text-foreground")}>
                         {chat.lastMessage}
                     </p>
