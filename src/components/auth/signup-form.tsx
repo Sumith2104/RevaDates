@@ -21,10 +21,10 @@ interface SignupFormProps {
 }
 
 export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin, onSignupSuccess }, ref) => {
-  const [step, setStep] = React.useState<'details' | 'otp'>('details');
+  const [step, setStep] = React.useState<'details' | 'otp' | 'onboarding'>('details');
   const [generatedOtp, setGeneratedOtp] = React.useState('');
   const [enteredOtp, setEnteredOtp] = React.useState(new Array(4).fill(""));
-  const [formData, setFormData] = React.useState<FormData | null>(null);
+  const [formData, setFormData] = React.useState<any>(null); // Changed to any to be more flexible
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -37,7 +37,13 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
 
     const currentFormData = new FormData(e.currentTarget);
     const email = currentFormData.get('email') as string;
-    setFormData(currentFormData);
+    
+    // Store form data as a plain object
+    const details: {[key: string]: any} = {};
+    currentFormData.forEach((value, key) => {
+        details[key] = value;
+    });
+    setFormData(details);
     
     const result = await sendOtpEmail(email);
 
@@ -83,18 +89,22 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         return;
     }
 
-    const userData = {
-        firstName: formData.get('firstName') as string,
-        lastName: formData.get('lastName') as string,
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-        dobYear: formData.get('dobYear') as string,
-        dobMonth: formData.get('dobMonth') as string,
-        dobDay: formData.get('dobDay') as string,
-        gender: formData.get('gender') as string,
+    setIsLoading(false);
+    setStep('onboarding');
+  };
+  
+  const handleOnboardingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const onboardingData = new FormData(e.currentTarget);
+    const fullUserData = {
+        ...formData,
+        gender: onboardingData.get('gender') as string,
+        genderPreference: onboardingData.get('genderPreference') as string,
     };
     
-    const result = await createUser(userData);
+    const result = await createUser(fullUserData);
 
     if (result.error || !result.data) {
         setIsLoading(false);
@@ -114,7 +124,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         
         onSignupSuccess(result.data.id);
     }
-  };
+  }
+
 
   const handleOtpChange = (element: HTMLInputElement, index: number) => {
     if (isNaN(Number(element.value))) return;
@@ -155,6 +166,53 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     { value: '11', label: 'November' }, { value: '12', 'label': 'December' },
   ];
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  
+  if (step === 'onboarding') {
+    return (
+        <div ref={ref}>
+            <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
+                <form onSubmit={handleOnboardingSubmit}>
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl">Tell us about you</CardTitle>
+                        <CardDescription>This helps us find you better matches.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
+                        <div className="grid gap-2 text-left">
+                            <Label htmlFor="gender">I am a...</Label>
+                            <Select name="gender" required disabled={isLoading}>
+                                <SelectTrigger className="rounded-lg">
+                                    <SelectValue placeholder="Select your gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Male">Man</SelectItem>
+                                    <SelectItem value="Female">Woman</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2 text-left">
+                            <Label htmlFor="genderPreference">I am interested in...</Label>
+                            <Select name="genderPreference" required disabled={isLoading}>
+                                <SelectTrigger className="rounded-lg">
+                                    <SelectValue placeholder="Select your preference" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="men">Men</SelectItem>
+                                    <SelectItem value="women">Women</SelectItem>
+                                    <SelectItem value="everyone">Everyone</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Finish Signup
+                        </Button>
+                    </CardContent>
+                </form>
+            </Card>
+        </div>
+    );
+  }
 
   if (step === 'otp') {
     return (
@@ -192,7 +250,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
               </div>
               <Button type="submit" className="w-full rounded-full" disabled={isLoading || enteredOtp.join("").length !== 4}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify & Sign Up
+                  Verify
               </Button>
             </CardContent>
             <CardFooter className="flex-col gap-2">
@@ -215,30 +273,17 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
           <form onSubmit={handleDetailsSubmit} className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2 text-left">
-                <Label htmlFor="first-name">First name</Label>
-                <Input id="first-name" name="firstName" placeholder="John" required disabled={isLoading} className="rounded-lg" />
+                <Label htmlFor="firstName">First name</Label>
+                <Input id="firstName" name="firstName" placeholder="John" required disabled={isLoading} className="rounded-lg" />
               </div>
               <div className="grid gap-2 text-left">
-                <Label htmlFor="last-name">Last name</Label>
-                <Input id="last-name" name="lastName" placeholder="Doe" required disabled={isLoading} className="rounded-lg" />
+                <Label htmlFor="lastName">Last name</Label>
+                <Input id="lastName" name="lastName" placeholder="Doe" required disabled={isLoading} className="rounded-lg" />
               </div>
             </div>
             <div className="grid gap-2 text-left">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" name="email" placeholder="m@example.com" required disabled={isLoading} className="rounded-lg" />
-            </div>
-            <div className="grid gap-2 text-left">
-                <Label htmlFor="gender">Gender</Label>
-                <Select name="gender" required disabled={isLoading}>
-                    <SelectTrigger className="rounded-lg">
-                        <SelectValue placeholder="Select your gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                </Select>
             </div>
             <div className="grid gap-2 text-left">
               <Label>Date of Birth</Label>
@@ -300,3 +345,5 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   );
 });
 SignupForm.displayName = 'SignupForm';
+
+    

@@ -39,6 +39,7 @@ export async function createUser(userData: Record<string, any>) {
       password: userData.password, 
       dob: `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`,
       gender: userData.gender,
+      discovery_gender_preference: userData.genderPreference,
       bio: "",
       photos: [],
       created_at: now,
@@ -828,3 +829,5 @@ export async function getIsMatch(userA: string, userB: string): Promise<boolean>
 
     return true;
 }
+
+    
