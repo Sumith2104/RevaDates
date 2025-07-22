@@ -183,7 +183,9 @@ function CardContent({ user, currentUserId, onBlock }: { user: UserProfile, curr
                 >
                   <div className="flex justify-between items-start">
                     <h2 className="text-3xl font-bold text-white leading-tight">
-                        {firstName}<br/>{lastName}, {user.age}
+                        {firstName}
+                        {lastName && <br />}
+                        {lastName}, {user.age}
                     </h2>
                     <div className="flex items-center gap-2">
                         <Button 
