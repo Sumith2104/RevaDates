@@ -45,7 +45,7 @@ export function ChatItem({ chat }: { chat: Chat }) {
                     </p>
                     {chat.unreadCount > 0 && (
                         <Badge className="bg-white text-black text-xs px-2 py-0.5 rounded-full flex items-center justify-center min-w-[1rem] h-[1rem]">
-                          {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                          {chat.unreadCount > 4 ? '4+' : chat.unreadCount}
                         </Badge>
                     )}
                 </div>
