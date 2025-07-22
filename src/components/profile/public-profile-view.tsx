@@ -1,0 +1,86 @@
+
+'use client';
+
+import * as React from 'react';
+import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { VenetianMask } from 'lucide-react';
+import { differenceInYears } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { getInitials } from '@/lib/utils';
+import { AppShell } from '../shared/app-shell';
+import { Button } from '../ui/button';
+import { useRouter } from 'next/navigation';
+
+type User = {
+    id: string;
+    name: string;
+    dob: Date;
+    photos: string[] | null;
+    bio: string;
+    gender: string;
+};
+
+export function PublicProfileView({ user }: { user: User }) {
+  const router = useRouter();
+  const age = differenceInYears(new Date(), user.dob);
+  const userPhotos = user.photos || [];
+
+  return (
+    <div className="container mx-auto max-w-4xl p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-20 w-20">
+              {userPhotos[0] ? (
+                <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
+              ) : (
+                <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex-grow">
+              <p className="text-2xl font-semibold">{user.name}, {age}</p>
+              <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                <VenetianMask className="h-4 w-4" />
+                <p>{user.gender}</p>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">About Me</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">{user.bio || "No bio yet."}</p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Gallery</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userPhotos.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {userPhotos.map((photo, index) => (
+                <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
+                  <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-10">
+              <p>This user hasn't uploaded any photos yet.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Button variant="outline" onClick={() => router.back()} className="w-full">
+        Back
+      </Button>
+    </div>
+  );
+}

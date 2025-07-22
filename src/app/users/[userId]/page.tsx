@@ -6,10 +6,9 @@ import { AppShell } from '@/components/shared/app-shell';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ProfileView } from '@/components/profile/profile-view';
+import { PublicProfileView } from '@/components/profile/public-profile-view';
 import { Lock } from 'lucide-react';
 import { getIsMatch } from '@/lib/actions';
-import type { UserProfile } from '@/lib/types';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -32,6 +31,12 @@ export default function UserProfilePage() {
 
   React.useEffect(() => {
     if (!userId || !currentUserId) return;
+
+    // Don't load profile if viewing your own, redirect to /profile
+    if (userId === currentUserId) {
+      router.push('/profile');
+      return;
+    }
 
     async function fetchData() {
       setLoading(true);
@@ -66,7 +71,7 @@ export default function UserProfilePage() {
     }
 
     fetchData();
-  }, [userId, currentUserId]);
+  }, [userId, currentUserId, router]);
 
   if (loading) {
      return (
@@ -107,8 +112,7 @@ export default function UserProfilePage() {
 
   return (
     <AppShell>
-      <ProfileView user={profile} />
+      <PublicProfileView user={profile} />
     </AppShell>
   );
 }
-
