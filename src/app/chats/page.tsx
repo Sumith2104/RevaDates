@@ -28,6 +28,12 @@ export default function ChatsPage() {
         }
 
         async function fetchData(initialLoad = false) {
+            // This check ensures we never call the action with a null userId.
+            if (!userId) {
+                if(initialLoad) setLoading(false);
+                return;
+            }
+
             if(initialLoad) setLoading(true);
             
             const result = await getChatsAndMatches(userId);
