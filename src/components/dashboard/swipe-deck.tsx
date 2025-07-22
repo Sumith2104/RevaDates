@@ -293,7 +293,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
   const handleBlockFromCard = () => {
     if (activeUser) {
         onSwipe(activeUser); // This removes the user from the parent's `users` state
-        setUsers(prev => prev.filter(u => u.id !== activeUser.id)); // Also remove locally
     }
   }
 
@@ -358,3 +357,5 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
     </>
   );
 }
+
+    
