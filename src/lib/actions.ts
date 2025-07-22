@@ -480,7 +480,9 @@ export async function getChatsAndMatches(userId: string) {
         .select(`
             match_id,
             content,
-            created_at
+            created_at,
+            is_read,
+            recipient_id
         `)
         .in('match_id', matchIds)
         .order('created_at', { ascending: false });
@@ -489,14 +491,24 @@ export async function getChatsAndMatches(userId: string) {
         return { chats: [], matches: [], error: 'Could not fetch messages.' };
     }
     
+    // Create a map of the latest message for each chat
     const lastMessageMap = new Map<string, { content: string; created_at: string }>();
     const seenMatchIds = new Set<string>();
-
     if (lastMessages) {
         for (const msg of lastMessages) {
             if (!seenMatchIds.has(msg.match_id)) {
                 lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
                 seenMatchIds.add(msg.match_id);
+            }
+        }
+    }
+    
+    // Count unread messages for the current user per chat
+    const unreadCounts = new Map<string, number>();
+    if (lastMessages) {
+        for (const msg of lastMessages) {
+            if (msg.recipient_id === userId && !msg.is_read) {
+                unreadCounts.set(msg.match_id, (unreadCounts.get(msg.match_id) || 0) + 1);
             }
         }
     }
@@ -521,6 +533,7 @@ export async function getChatsAndMatches(userId: string) {
         const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
         const matchedUser = profilesById.get(matchedUserId);
         const lastMessage = lastMessageMap.get(match.id);
+        const unreadCount = unreadCounts.get(match.id) || 0;
         return {
             id: match.id,
             matchedUser: {
@@ -530,6 +543,7 @@ export async function getChatsAndMatches(userId: string) {
             },
             lastMessage: lastMessage?.content || null,
             lastMessageTime: lastMessage?.created_at || null,
+            unreadCount: unreadCount,
         };
     }).sort((a, b) => {
         if (!a.lastMessageTime) return 1;
@@ -829,5 +843,3 @@ export async function getIsMatch(userA: string, userB: string): Promise<boolean>
 
     return true;
 }
-
-    

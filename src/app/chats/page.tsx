@@ -12,6 +12,7 @@ import { Heart, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { Badge } from '@/components/ui/badge';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -62,7 +63,16 @@ function ChatItem({ chat }: { chat: Chat }) {
                     <p className="font-semibold truncate">{chat.matchedUser.name}</p>
                     <p className="text-xs text-muted-foreground whitespace-nowrap">{lastMessageTime}</p>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
+                 <div className="flex items-center gap-2">
+                    <p className={cn("text-sm text-muted-foreground truncate", chat.unreadCount > 0 && "font-bold text-foreground")}>
+                        {chat.lastMessage}
+                    </p>
+                    {chat.unreadCount > 0 && (
+                        <Badge variant="destructive" className="flex-shrink-0">
+                           New message
+                        </Badge>
+                    )}
+                </div>
             </div>
         </div>
     )

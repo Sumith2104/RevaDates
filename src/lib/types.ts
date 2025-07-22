@@ -30,6 +30,7 @@ export interface Chat {
     };
     lastMessage: string | null;
     lastMessageTime: string | null;
+    unreadCount: number;
 }
 
 export type Notification = {
