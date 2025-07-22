@@ -52,9 +52,12 @@ export default function NotificationsPage() {
     const router = useRouter();
 
     React.useEffect(() => {
-        if (!currentUserId) return;
-
         async function fetchData(initialLoad = false) {
+            // This check ensures we never call actions with a null userId.
+            if (!currentUserId) {
+                if (initialLoad) setLoading(false);
+                return;
+            }
             if (initialLoad) setLoading(true);
 
             const result = await getNotifications(currentUserId);
@@ -190,5 +193,3 @@ export default function NotificationsPage() {
         </AppShell>
     );
 }
-
-    
