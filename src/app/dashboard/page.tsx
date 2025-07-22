@@ -205,7 +205,9 @@ export default function DashboardPage() {
       return (
           <AppShell>
             <AppHeader />
-            <PageLoader />
+            <div className="flex-1 flex flex-col">
+                <PageLoader />
+            </div>
           </AppShell>
       )
   }

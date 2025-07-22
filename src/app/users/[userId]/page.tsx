@@ -82,7 +82,9 @@ export default function UserProfilePage() {
   if (loading || userLoading) {
      return (
         <AppShell>
-            <PageLoader />
+            <div className="flex-1 flex flex-col">
+                <PageLoader />
+            </div>
         </AppShell>
      );
   }

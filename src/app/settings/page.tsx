@@ -12,7 +12,9 @@ export default function SettingsPage() {
   if (loading || !user) {
     return (
       <AppShell>
-        <PageLoader />
+        <div className="flex-1 flex flex-col">
+            <PageLoader />
+        </div>
       </AppShell>
     );
   }
