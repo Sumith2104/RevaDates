@@ -112,7 +112,6 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
         <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
           <CardHeader className="text-center">
-            <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
             <CardTitle className="text-2xl">Password Reset</CardTitle>
             <CardDescription>Your password has been changed successfully.</CardDescription>
           </CardHeader>
@@ -129,7 +128,6 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
       <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
         <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
             <CardHeader className="text-center">
-                <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
                 <CardTitle className="text-2xl">Reset Password</CardTitle>
                 <CardDescription>Enter the code sent to your email and your new password.</CardDescription>
             </CardHeader>
@@ -201,7 +199,6 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
     <motion.div initial="initial" animate="animate" variants={cardVariants} ref={ref}>
       <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg">
         <CardHeader className="text-center">
-          <Heart className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>Enter your email and we'll send you a code to reset your password.</CardDescription>
         </CardHeader>
