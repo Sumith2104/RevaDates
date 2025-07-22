@@ -56,9 +56,13 @@ export default function UserProfilePage() {
           if (data.is_public) {
               setIsViewable(true);
           } else {
-              // If private, check for a match
-              const matchStatus = await getIsMatch(currentUserId, userId);
-              setIsViewable(matchStatus);
+              // If private, check for a match only if we have a valid currentUserId
+              if (currentUserId) {
+                const matchStatus = await getIsMatch(currentUserId, userId);
+                setIsViewable(matchStatus);
+              } else {
+                setIsViewable(false);
+              }
           }
           
           setProfile({
