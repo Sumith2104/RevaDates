@@ -41,8 +41,8 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
       setIsLoading(false);
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
-        description: 'Invalid email or password. Please try again.',
+        title: 'Login Unsuccessful',
+        description: 'The email or password you entered is incorrect. Please try again.',
       });
     } else {
       setIsLoading(false);

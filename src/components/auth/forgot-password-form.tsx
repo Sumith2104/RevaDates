@@ -57,7 +57,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-        toast({ variant: 'destructive', title: "Passwords don't match" });
+        toast({ variant: 'destructive', title: "Passwords Don't Match", description: "The passwords you entered do not match. Please re-enter them." });
         return;
     }
     
@@ -66,9 +66,9 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
     setIsLoading(false);
 
     if (result.error) {
-        toast({ variant: 'destructive', title: 'Error', description: result.error });
+        toast({ variant: 'destructive', title: 'Password Reset Failed', description: result.error });
     } else {
-        toast({ title: 'Success', description: 'Your password has been reset.' });
+        toast({ title: 'Success!', description: 'Your password has been reset successfully.' });
         setIsSuccess(true);
     }
   }

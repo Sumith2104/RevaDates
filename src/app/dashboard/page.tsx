@@ -189,7 +189,7 @@ export default function DashboardPage() {
     if (result.error) {
       toast({
         variant: "destructive",
-        title: "Undo failed",
+        title: "Undo Failed",
         description: result.error,
       });
     } else {

@@ -128,13 +128,13 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
         if (result.error) {
             toast({
                 variant: 'destructive',
-                title: 'Error',
+                title: 'Could Not Block User',
                 description: result.error,
             });
         } else {
             toast({
                 title: 'User Blocked',
-                description: `You will no longer see ${user.name}'s profile.`,
+                description: `You will no longer see ${user.name}'s profile or be seen by them.`,
             });
         }
         setIsBlockConfirmOpen(false);
@@ -215,7 +215,7 @@ function CardContent({ user, currentUserId }: { user: UserProfile, currentUserId
                     <AlertDialogHeader className="text-center sm:text-center">
                         <AlertDialogTitle className="text-white text-lg font-semibold">Block {user.name}?</AlertDialogTitle>
                         <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                            Are you sure you want to block this user?
+                            Are you sure you want to block this user? You won't see their profile again.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
@@ -257,7 +257,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onRefresh, onUnd
     if (result.error) {
        toast({
         variant: "destructive",
-        title: "Something went wrong",
+        title: "Swipe Error",
         description: result.error,
        });
        // Revert state on error

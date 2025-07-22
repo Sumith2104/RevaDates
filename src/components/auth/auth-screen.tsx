@@ -122,7 +122,7 @@ export function AuthScreen() {
             const { latitude, longitude } = position.coords;
             const result = await updateUserLocation(userId, latitude, longitude);
             if (result.error) {
-                toast({ variant: 'destructive', title: "Error", description: result.error });
+                toast({ variant: 'destructive', title: "Location Error", description: "Could not save your location. You can set it manually in your profile." });
             }
             handleLocationComplete();
             resolve();
@@ -155,7 +155,7 @@ export function AuthScreen() {
   const handleAllowLocationFromPrompt = React.useCallback(async () => {
     const currentUserId = localStorage.getItem('currentUserId');
     if (!currentUserId) {
-        toast({ variant: 'destructive', title: "Error", description: "Could not find user to update." });
+        toast({ variant: 'destructive', title: "User Not Found", description: "Could not find user to update location. Please log in again." });
         handleLocationComplete();
         return;
     }
@@ -166,7 +166,7 @@ export function AuthScreen() {
                 const { latitude, longitude } = position.coords;
                 const result = await updateUserLocation(currentUserId, latitude, longitude);
                 if (result.error) {
-                    toast({ variant: 'destructive', title: "Error", description: result.error });
+                    toast({ variant: 'destructive', title: "Location Error", description: result.error });
                 } else {
                     toast({ title: "Location Saved!", description: "We've updated your location." });
                 }
@@ -176,8 +176,8 @@ export function AuthScreen() {
             (error) => {
                 toast({
                     variant: 'destructive',
-                    title: "Location Denied",
-                    description: "You can enable location services in your browser settings later.",
+                    title: "Location Access Denied",
+                    description: "You can enable location services in your browser settings to find matches nearby.",
                 });
                 handleLocationComplete();
                 resolve();
@@ -273,7 +273,6 @@ export function AuthScreen() {
                   </Button>
                 </div>
 
-                {/* ✅ About link below the buttons */}
                 <button
                   onClick={scrollToAbout}
                   className="text-sm text-neutral-400 hover:text-white transition-colors mt-3 underline"

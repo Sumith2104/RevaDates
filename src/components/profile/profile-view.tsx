@@ -63,7 +63,7 @@ function MatchesDialog({ userId }: { userId: string }) {
         setIsLoading(true);
         const result = await getChatsAndMatches(userId);
         if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            toast({ variant: 'destructive', title: 'Could Not Load Matches', description: result.error });
             setMatches([]);
         } else {
             setMatches(result.matches as Match[]);
@@ -161,13 +161,13 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (result.error) {
         toast({
             variant: 'destructive',
-            title: 'Error saving profile',
+            title: 'Could Not Save Profile',
             description: result.error,
         });
     } else {
         toast({
             title: 'Profile Saved',
-            description: 'Your profile has been updated.',
+            description: 'Your profile has been updated successfully.',
         });
         setIsEditing(false);
         router.refresh();
@@ -214,7 +214,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
       } else {
         toast({
             variant: 'destructive',
-            title: 'Error updating photos',
+            title: 'Could Not Save Photo',
             description: result.error,
         });
       }
@@ -235,13 +235,13 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setUser(prev => ({...prev, photos: newPhotoOrder}));
     const result = await updateUserProfilePhotos(user.id, newPhotoOrder);
     if (!result.error) {
-        toast({ title: 'Main Photo Updated' });
+        toast({ title: 'Main Photo Updated', description: "Your primary photo has been changed." });
         router.refresh();
     } else {
         setUser(prev => ({...prev, photos: user.photos})); // Revert on failure
         toast({
             variant: 'destructive',
-            title: 'Error updating photos',
+            title: 'Update Failed',
             description: result.error,
         });
     }
@@ -262,7 +262,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     } else {
         toast({
             variant: 'destructive',
-            title: 'Error removing photo',
+            title: 'Could Not Remove Photo',
             description: result.error,
         });
     }

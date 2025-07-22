@@ -121,7 +121,7 @@ export default function NotificationsPage() {
         const result = await respondToLike(notificationId, currentUserId, senderId, action);
         
         if (result.error) {
-            toast({ variant: 'destructive', title: 'Something went wrong', description: result.error });
+            toast({ variant: 'destructive', title: 'Response Failed', description: result.error });
             // Re-fetch to get the state back in sync
             const result = await getNotifications(currentUserId);
              if (!result.error) {
@@ -132,7 +132,7 @@ export default function NotificationsPage() {
         if (result.match) {
             toast({
                 title: "It's a Match! 🎉",
-                description: `You can now chat with the user.`,
+                description: `You can now start chatting.`,
             });
         }
     };

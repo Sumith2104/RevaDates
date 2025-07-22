@@ -46,8 +46,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     if (result.error || !result.otp) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: result.error || 'An unknown error occurred.',
+        title: 'Could Not Send Code',
+        description: result.error || 'An unknown error occurred while sending the verification code.',
       });
     } else {
       setGeneratedOtp(result.otp);
@@ -66,8 +66,8 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     if (enteredOtp.join("") !== generatedOtp) {
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'Invalid OTP. Please try again.',
+          title: 'Invalid Code',
+          description: 'The verification code you entered is incorrect. Please try again.',
         });
         setIsLoading(false);
         return;
@@ -76,7 +76,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     if (!formData) {
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: 'Signup Error',
           description: 'An unexpected error occurred. Please go back and try again.',
         });
         setIsLoading(false);
@@ -100,7 +100,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
         toast({
           variant: 'destructive',
           title: 'Signup Failed',
-          description: result.error,
+          description: result.error || "We couldn't create your account. Please try again.",
         });
     } else {
         localStorage.setItem('currentUserId', result.data.id);

@@ -37,7 +37,7 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
         setIsLoading(true);
         const result = await getBlockedUsers(userId);
         if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            toast({ variant: 'destructive', title: 'Could Not Load Blocked Users', description: result.error });
             setBlockedUsers([]);
         } else {
             setBlockedUsers(result.data as UserProfile[]);
@@ -49,7 +49,7 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
         setIsUnblocking(unblockedId);
         const result = await unblockUser(userId, unblockedId);
         if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            toast({ variant: 'destructive', title: 'Could Not Unblock User', description: result.error });
         } else {
             toast({ title: 'User Unblocked' });
             setBlockedUsers(prev => prev.filter(u => u.id !== unblockedId));
@@ -155,7 +155,7 @@ export function SettingsView() {
         .single();
       
       if (error) {
-        toast({ variant: 'destructive', title: 'Could not load your settings.' });
+        toast({ variant: 'destructive', title: 'Could Not Load Settings', description: "We couldn't retrieve your current settings. Please try again later." });
       } else if (data) {
         setAgeRange([data.discovery_age_min || 18, data.discovery_age_max || 80]);
         setMatchNotification(data.match_notification ?? true);
@@ -185,7 +185,7 @@ export function SettingsView() {
         
         setSaving(false);
         if (error) {
-            toast({ variant: 'destructive', title: 'Error saving settings', description: error.message });
+            toast({ variant: 'destructive', title: 'Could Not Save Settings', description: error.message });
         }
     };
     
