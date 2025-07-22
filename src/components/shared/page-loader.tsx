@@ -24,7 +24,7 @@ export function PageLoader() {
           variants={containerVariants}
           initial="initial"
           animate="animate"
-          className="flex gap-2"
+          className="flex justify-center gap-2"
         >
           {[...Array(3)].map((_, i) => (
             <motion.span
