@@ -18,7 +18,7 @@ export function PageLoader() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
+    <div className="flex flex-1 flex-col items-center justify-center h-full text-center">
       <div className="p-8 rounded-lg bg-white/10 backdrop-blur-lg shadow-2xl">
         <motion.div
           variants={containerVariants}
