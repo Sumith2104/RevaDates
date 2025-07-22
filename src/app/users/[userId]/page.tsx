@@ -22,7 +22,16 @@ export default function UserProfilePage() {
   const [isViewable, setIsViewable] = React.useState(false);
 
   React.useEffect(() => {
-    if (!userId || !currentUserId) return;
+    // This effect should run when userId or currentUserId changes.
+    // The initial check for currentUserId is important because it might be null initially.
+    if (!userId || !currentUserId) {
+      if (!userLoading) {
+        // If we are done loading and still don't have IDs, something is wrong,
+        // but we avoid running fetch.
+        setLoading(false);
+      }
+      return;
+    }
 
     // Don't load profile if viewing your own, redirect to /profile
     if (userId === currentUserId) {
@@ -48,9 +57,14 @@ export default function UserProfilePage() {
           if (data.is_public) {
               setIsViewable(true);
           } else {
-              // If private, check for a match
-              const matchStatus = await getIsMatch(currentUserId, userId);
-              setIsViewable(matchStatus);
+              // If private, check for a match.
+              // We must re-check currentUserId here to satisfy TypeScript, as it's from an outer scope.
+              if (currentUserId) {
+                const matchStatus = await getIsMatch(currentUserId, userId);
+                setIsViewable(matchStatus);
+              } else {
+                setIsViewable(false); // Can't check for a match without the current user.
+              }
           }
           
           setProfile({
@@ -63,7 +77,7 @@ export default function UserProfilePage() {
     }
 
     fetchData();
-  }, [userId, currentUserId, router]);
+  }, [userId, currentUserId, router, userLoading]);
 
   if (loading || userLoading) {
      return (
@@ -108,5 +122,3 @@ export default function UserProfilePage() {
     </AppShell>
   );
 }
-
-    
