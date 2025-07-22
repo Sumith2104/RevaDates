@@ -223,14 +223,19 @@ export default function ChatPage() {
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-6 w-6" />
                 </Button>
-                <Avatar>
-                    {matchedUser.photos?.[0] && (
-                        <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
-                    )}
-                    <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                    <h2 className="font-semibold text-lg">{matchedUser.name}</h2>
+                <div
+                    className="flex items-center gap-4 flex-1 cursor-pointer"
+                    onClick={() => router.push(`/users/${matchedUser.id}`)}
+                >
+                    <Avatar>
+                        {matchedUser.photos?.[0] && (
+                            <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
+                        )}
+                        <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <h2 className="font-semibold text-lg">{matchedUser.name}</h2>
+                    </div>
                 </div>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
