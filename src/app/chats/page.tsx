@@ -11,8 +11,10 @@ import { useRouter } from 'next/navigation';
 import { MatchItem } from '@/components/chats/match-item';
 import { ChatItem } from '@/components/chats/chat-item';
 import { Input } from '@/components/ui/input';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function ChatsPage() {
+    const { user: userId, loading: userLoading } = useCurrentUser();
     const [matches, setMatches] = React.useState<Match[]>([]);
     const [chats, setChats] = React.useState<Chat[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -21,16 +23,14 @@ export default function ChatsPage() {
     const router = useRouter();
 
     React.useEffect(() => {
-        const userId = localStorage.getItem('currentUserId');
         if (!userId) {
-            router.push('/login');
             return;
         }
 
         async function fetchData(initialLoad = false) {
             if(initialLoad) setLoading(true);
             
-            const result = await getChatsAndMatches(userId!);
+            const result = await getChatsAndMatches(userId);
             
             if (result.error) {
                 setError(result.error);
@@ -51,7 +51,7 @@ export default function ChatsPage() {
 
         return () => clearInterval(interval); // Cleanup on component unmount
 
-    }, [router]);
+    }, [userId]);
     
     const filteredChats = React.useMemo(() => {
         if (!searchTerm) {
@@ -67,7 +67,7 @@ export default function ChatsPage() {
             <div className="container mx-auto max-w-2xl p-4 flex-1 flex flex-col">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold mb-4">New Matches</h1>
-                    {loading && (
+                    {(loading || userLoading) && (
                         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {[...Array(5)].map((_, i) => (
                                 <div key={i} className="flex flex-col items-center gap-2">
@@ -77,13 +77,13 @@ export default function ChatsPage() {
                             ))}
                         </div>
                     )}
-                     {!loading && matches.length === 0 && (
+                     {!(loading || userLoading) && matches.length === 0 && (
                         <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg">
                             <Heart className="mx-auto h-8 w-8 mb-2" />
                             <p className="text-sm">No new matches yet. Keep swiping!</p>
                         </div>
                     )}
-                    {!loading && matches.length > 0 && (
+                    {!(loading || userLoading) && matches.length > 0 && (
                         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {matches.map(match => <MatchItem key={match.id} match={match} />)}
                         </div>
@@ -103,7 +103,7 @@ export default function ChatsPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    {loading && (
+                    {(loading || userLoading) && (
                          <div className="space-y-4">
                             {[...Array(3)].map((_, i) => (
                                 <div key={i} className="flex items-center space-x-4">
@@ -116,13 +116,13 @@ export default function ChatsPage() {
                             ))}
                         </div>
                     )}
-                    {!loading && filteredChats.length === 0 && (
+                    {!(loading || userLoading) && filteredChats.length === 0 && (
                          <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg flex-1 flex flex-col justify-center items-center">
                             <MessageSquare className="mx-auto h-8 w-8 mb-2" />
                             <p className="text-sm">{searchTerm ? "No chats found." : "Start a conversation with a new match!"}</p>
                         </div>
                     )}
-                    {!loading && filteredChats.length > 0 && (
+                    {!(loading || userLoading) && filteredChats.length > 0 && (
                         <div className="space-y-2">
                             {filteredChats.map(chat => <ChatItem key={chat.id} chat={chat} />)}
                         </div>
@@ -133,3 +133,5 @@ export default function ChatsPage() {
         </AppShell>
     );
 }
+
+    

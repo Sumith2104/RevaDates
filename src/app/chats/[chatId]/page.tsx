@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -46,8 +47,9 @@ export default function ChatPage() {
     const router = useRouter();
     const params = useParams();
     const { toast } = useToast();
+    const { user: currentUserId, loading: userLoading } = useCurrentUser();
     const chatId = params.chatId as string;
-    const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
+    
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [newMessage, setNewMessage] = React.useState('');
@@ -55,15 +57,6 @@ export default function ChatPage() {
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-    React.useEffect(() => {
-        const userId = localStorage.getItem('currentUserId');
-        if (!userId) {
-            router.push('/login');
-        } else {
-            setCurrentUserId(userId);
-        }
-    }, [router]);
-    
     const scrollToBottom = React.useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
@@ -191,7 +184,7 @@ export default function ChatPage() {
         setIsBlockConfirmOpen(false);
     }
 
-    if (loading) {
+    if (loading || userLoading) {
         return (
             <div className="flex flex-col h-screen">
                 <header className="flex items-center gap-4 p-4 border-b">
@@ -348,3 +341,5 @@ export default function ChatPage() {
         </div>
     );
 }
+
+    

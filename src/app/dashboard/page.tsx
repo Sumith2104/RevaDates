@@ -23,6 +23,7 @@ import { handleUndoSwipeAction, getDistanceBetweenUsers } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 // Fisher-Yates (aka Knuth) Shuffle
 function shuffle(array: any[]) {
@@ -45,21 +46,12 @@ function shuffle(array: any[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user: currentUserId, loading: userLoading } = useCurrentUser();
   const [allUsers, setAllUsers] = React.useState<UserProfile[]>([]);
   const [swipedHistory, setSwipedHistory] = React.useState<UserProfile[]>([]);
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
-      router.push('/login');
-    } else {
-      setCurrentUserId(userId);
-    }
-  }, [router]);
   
   const fetchProfiles = React.useCallback(async (skipPhotoCheck = false) => {
     if (!currentUserId) return;
@@ -208,7 +200,7 @@ export default function DashboardPage() {
     }
   };
   
-  if (loading) {
+  if (loading || userLoading) {
       return (
           <AppShell>
             <AppHeader />
@@ -272,3 +264,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    

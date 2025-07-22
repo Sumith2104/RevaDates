@@ -9,25 +9,17 @@ import { PublicProfileView } from '@/components/profile/public-profile-view';
 import { Lock } from 'lucide-react';
 import { getIsMatch } from '@/lib/actions';
 import { AppShell } from '@/components/shared/app-shell';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
   const userId = params.userId as string;
 
+  const { user: currentUserId, loading: userLoading } = useCurrentUser();
   const [profile, setProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [isViewable, setIsViewable] = React.useState(false);
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const storedUserId = localStorage.getItem('currentUserId');
-    if (!storedUserId) {
-      router.push('/login');
-    } else {
-      setCurrentUserId(storedUserId);
-    }
-  }, [router]);
 
   React.useEffect(() => {
     if (!userId || !currentUserId) return;
@@ -56,13 +48,9 @@ export default function UserProfilePage() {
           if (data.is_public) {
               setIsViewable(true);
           } else {
-              // If private, check for a match only if we have a valid currentUserId
-              if (currentUserId) {
-                const matchStatus = await getIsMatch(currentUserId, userId);
-                setIsViewable(matchStatus);
-              } else {
-                setIsViewable(false);
-              }
+              // If private, check for a match
+              const matchStatus = await getIsMatch(currentUserId, userId);
+              setIsViewable(matchStatus);
           }
           
           setProfile({
@@ -77,7 +65,7 @@ export default function UserProfilePage() {
     fetchData();
   }, [userId, currentUserId, router]);
 
-  if (loading) {
+  if (loading || userLoading) {
      return (
         <AppShell>
             <div className="container mx-auto max-w-4xl p-4">
@@ -120,3 +108,5 @@ export default function UserProfilePage() {
     </AppShell>
   );
 }
+
+    

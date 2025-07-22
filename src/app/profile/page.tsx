@@ -7,16 +7,16 @@ import { ProfileView } from '@/components/profile/profile-view';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: currentUserId, loading: userLoading } = useCurrentUser();
   const [user, setUser] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    const currentUserId = localStorage.getItem('currentUserId');
     if (!currentUserId) {
-      router.push('/login');
       return;
     }
 
@@ -40,9 +40,9 @@ export default function ProfilePage() {
     }
 
     fetchProfile();
-  }, [router]);
+  }, [currentUserId]);
   
-  if (loading) {
+  if (loading || userLoading) {
      return (
         <AppShell>
             <div className="container mx-auto max-w-4xl p-4">
@@ -73,3 +73,5 @@ export default function ProfilePage() {
     </AppShell>
   );
 }
+
+    

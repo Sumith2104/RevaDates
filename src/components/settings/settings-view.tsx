@@ -118,11 +118,10 @@ export function BlockedUsersDialog({ userId }: { userId: string }) {
     )
 }
 
-export function SettingsView() {
+export function SettingsView({ userId }: { userId: string }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-
+  
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   
@@ -133,18 +132,9 @@ export function SettingsView() {
   const debouncedAgeRange = useDebounce(ageRange, 500);
   const debouncedMatchNotification = useDebounce(matchNotification, 500);
 
-  React.useEffect(() => {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
-      router.push('/login');
-    } else {
-      setCurrentUserId(userId);
-    }
-  }, [router]);
-
   // Effect to fetch initial settings
   React.useEffect(() => {
-    if (!currentUserId) return;
+    if (!userId) return;
 
     const fetchSettings = async () => {
       setLoading(true);
@@ -152,7 +142,7 @@ export function SettingsView() {
       const { data, error } = await supabase
         .from('profiles')
         .select('discovery_age_min, discovery_age_max, match_notification')
-        .eq('id', currentUserId)
+        .eq('id', userId)
         .single();
       
       if (error) {
@@ -165,11 +155,11 @@ export function SettingsView() {
     }
 
     fetchSettings();
-  }, [currentUserId, toast]);
+  }, [userId, toast]);
 
   // Effect to auto-save settings on change
   React.useEffect(() => {
-    if (loading || !currentUserId) return;
+    if (loading || !userId) return;
 
     const saveSettings = async () => {
         setSaving(true);
@@ -182,7 +172,7 @@ export function SettingsView() {
                 discovery_age_max: debouncedAgeRange[1],
                 match_notification: debouncedMatchNotification,
             })
-            .eq('id', currentUserId);
+            .eq('id', userId);
         
         setSaving(false);
         if (error) {
@@ -191,7 +181,7 @@ export function SettingsView() {
     };
     
     saveSettings();
-  }, [debouncedAgeRange, debouncedMatchNotification, currentUserId, loading, toast]);
+  }, [debouncedAgeRange, debouncedMatchNotification, userId, loading, toast]);
 
 
   const handleLogout = () => {
@@ -276,6 +266,15 @@ export function SettingsView() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+            <CardTitle>Security & Privacy</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <BlockedUsersDialog userId={userId} />
+        </CardContent>
+      </Card>
       
       <Card className="mt-6">
         <CardHeader>
@@ -310,3 +309,5 @@ export function SettingsView() {
     </div>
   );
 }
+
+    
