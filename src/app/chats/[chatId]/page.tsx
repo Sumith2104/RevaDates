@@ -8,12 +8,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getInitials, cn } from '@/lib/utils';
-import { getMatchDetails, getChatMessages, sendMessage, markMessagesAsRead } from '@/lib/actions';
+import { getMatchDetails, getChatMessages, sendMessage, markMessagesAsRead, blockUser } from '@/lib/actions';
 import type { UserProfile, Message } from '@/lib/types';
-import { ArrowLeft, Send, Check, CheckCheck } from 'lucide-react';
+import { ArrowLeft, Send, Check, CheckCheck, MoreVertical, User, ShieldAlert } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { isToday, isYesterday, format } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -28,12 +45,14 @@ const formatDateSeparator = (dateStr: string) => {
 export default function ChatPage() {
     const router = useRouter();
     const params = useParams();
+    const { toast } = useToast();
     const chatId = params.chatId as string;
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [newMessage, setNewMessage] = React.useState('');
     const [loading, setLoading] = React.useState(true);
+    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
@@ -152,6 +171,25 @@ export default function ChatPage() {
             setMessages(prev => prev.map(m => m.id === tempId ? result.data as Message : m));
         }
     };
+    
+    const handleBlock = async () => {
+        if (!currentUserId || !matchedUser) return;
+        const result = await blockUser(currentUserId, matchedUser.id);
+        if (result.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Could Not Block User',
+                description: result.error,
+            });
+        } else {
+            toast({
+                title: 'User Blocked',
+                description: `You will no longer see ${matchedUser.name}'s profile or chats.`,
+            });
+            router.push('/chats');
+        }
+        setIsBlockConfirmOpen(false);
+    }
 
     if (loading) {
         return (
@@ -191,7 +229,26 @@ export default function ChatPage() {
                     )}
                     <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                 </Avatar>
-                <h2 className="font-semibold text-lg">{matchedUser.name}</h2>
+                <div className="flex-1">
+                    <h2 className="font-semibold text-lg">{matchedUser.name}</h2>
+                </div>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(`/users/${matchedUser.id}`)}>
+                            <User className="mr-2 h-4 w-4" />
+                            <span>View Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsBlockConfirmOpen(true)} className="text-destructive focus:text-destructive">
+                            <ShieldAlert className="mr-2 h-4 w-4" />
+                            <span>Block User</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </header>
             
             {/* Messages */}
@@ -268,6 +325,21 @@ export default function ChatPage() {
                     </Button>
                 </form>
             </footer>
+            
+            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
+                <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+                    <AlertDialogHeader className="text-center sm:text-center">
+                        <AlertDialogTitle className="text-white text-lg font-semibold">Block {matchedUser.name}?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                            Are you sure? You won't see their profile again and this cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
+                        <AlertDialogAction onClick={handleBlock} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Block</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setIsBlockConfirmOpen(false)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
