@@ -22,8 +22,7 @@ import { AppHeader } from '@/components/shared/app-header';
 import { handleUndoSwipeAction, getDistanceBetweenUsers } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { RefreshCcw } from 'lucide-react';
 
 // Fisher-Yates (aka Knuth) Shuffle
 function shuffle(array: any[]) {
@@ -52,7 +51,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true);
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = React.useState('');
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -210,16 +208,6 @@ export default function DashboardPage() {
     }
   };
   
-  const filteredUsers = React.useMemo(() => {
-    if (!searchTerm) {
-      return allUsers;
-    }
-    return allUsers.filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allUsers, searchTerm]);
-
-
   if (loading) {
       return (
           <AppShell>
@@ -260,36 +248,24 @@ export default function DashboardPage() {
      )
   }
   
-  const noMoreProfiles = !filteredUsers || filteredUsers.length === 0;
+  const noMoreProfiles = !allUsers || allUsers.length === 0;
 
   return (
     <>
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          <div className="px-4 pt-2 pb-4">
-              <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                      placeholder="Search by name..."
-                      className="pl-10 w-full"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-              </div>
-          </div>
-          
           {noMoreProfiles ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                   <p className="text-xl font-medium">No new profiles found.</p>
-                  <p className="mt-2">{searchTerm ? "Try a different search term." : "Try increasing your age range in Settings, or check back later!"}</p>
+                  <p className="mt-2">Try increasing your age range in Settings, or check back later!</p>
                   <Button onClick={() => fetchProfiles(true)} variant="outline" className="mt-4">
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Refresh
                   </Button>
               </div>
           ) : (
-            <SwipeDeck users={filteredUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
           )}
         </div>
       </AppShell>
