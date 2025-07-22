@@ -255,8 +255,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
     // Optimistically update parent state via callback
     onSwipe(swipedUser);
     
-    // Optimistically update local state to remove card
-    setUsers(prev => prev.slice(0, -1));
+    // The parent component will manage the user list,
+    // so we don't need to call setUsers here to remove the card.
+    // The change in the 'users' prop will trigger a re-render.
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
     if (result.error) {
@@ -265,7 +266,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
         title: "Swipe Error",
         description: result.error,
        });
-       // Revert state on error by triggering undo logic in parent
+       // If there's an error, the parent should handle reverting the state.
+       // A robust implementation might involve a specific 'revertSwipe' callback.
+       // For now, onUndo is a reasonable way to handle this.
        onUndo(); 
        return;
     }
