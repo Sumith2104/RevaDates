@@ -53,7 +53,7 @@ export default function ChatsPage() {
 
         const interval = setInterval(() => {
             fetchData(false); // Subsequent fetches without loading state
-        }, 1000); // Refresh every 1 second
+        }, 5000); // Refresh every 5 seconds
 
         return () => clearInterval(interval); // Cleanup on component unmount
 

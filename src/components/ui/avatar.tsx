@@ -3,9 +3,8 @@
 
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
-
+import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { Slot } from "@radix-ui/react-slot"
 
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
@@ -24,15 +23,18 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & { asChild?: boolean }
->(({ className, asChild, ...props }, ref) => {
-  const Comp = asChild ? Slot : "img";
+  Omit<React.ComponentPropsWithoutRef<typeof Image>, 'asChild'> & {
+    asChild?: boolean;
+  }
+>(({ className, ...props }, ref) => {
   return (
-    <Comp
-      ref={ref}
-      className={cn("aspect-square h-full w-full object-cover", className)}
-      {...props}
-    />
+    <AvatarPrimitive.Image asChild>
+        <Image
+            ref={ref as React.Ref<HTMLImageElement>}
+            className={cn("aspect-square h-full w-full object-cover", className)}
+            {...props}
+        />
+    </AvatarPrimitive.Image>
   );
 });
 AvatarImage.displayName = AvatarPrimitive.Image.displayName

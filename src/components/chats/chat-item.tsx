@@ -30,7 +30,7 @@ export function ChatItem({ chat }: { chat: Chat }) {
         >
             <Avatar className="h-12 w-12">
                 {chat.matchedUser.photos?.[0] && (
-                    <AvatarImage src={chat.matchedUser.photos[0]} className="object-cover" />
+                    <AvatarImage src={chat.matchedUser.photos[0]} alt={chat.matchedUser.name} width={48} height={48} className="object-cover" />
                 )}
                 <AvatarFallback>{getInitials(chat.matchedUser.name)}</AvatarFallback>
             </Avatar>

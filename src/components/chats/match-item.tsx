@@ -18,7 +18,7 @@ export function MatchItem({ match }: { match: Match }) {
         <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer" onClick={() => navigateToChat(match.id)}>
             <Avatar className="h-16 w-16 border-2 border-primary">
                 {match.matchedUser.photos?.[0] && (
-                    <AvatarImage src={match.matchedUser.photos[0]} className="object-cover" />
+                    <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} width={64} height={64} className="object-cover" />
                 )}
                 <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
             </Avatar>

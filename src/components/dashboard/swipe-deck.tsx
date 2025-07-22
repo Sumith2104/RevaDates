@@ -338,9 +338,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
         </div>
 
 
-         {/* Preload the next 10 images */}
+         {/* Preload the next 3 images */}
         <div style={{ display: 'none' }}>
-          {users.slice(Math.max(0, activeIndex - 10), activeIndex).reverse().map(user => (
+          {users.slice(Math.max(0, activeIndex - 3), activeIndex).reverse().map(user => (
             user.photos && user.photos.length > 0 && (
               <Image
                 key={`preload-${user.id}`}
@@ -348,7 +348,6 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
                 alt={`Preload ${user.name}`}
                 width={600}
                 height={800}
-                priority
               />
             )
           ))}

@@ -127,7 +127,7 @@ export default function ChatPage() {
                     return prevMessages;
                 });
             }
-        }, 1000); // Poll every 1 second
+        }, 5000); // Poll every 5 seconds
 
         return () => clearInterval(interval);
     }, [chatId, currentUserId, handleMarkAsRead]);
@@ -222,7 +222,7 @@ export default function ChatPage() {
                 >
                     <Avatar>
                         {matchedUser.photos?.[0] && (
-                            <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
+                            <AvatarImage src={matchedUser.photos[0]} alt={matchedUser.name} width={40} height={40} className="object-cover" />
                         )}
                         <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                     </Avatar>
@@ -271,7 +271,7 @@ export default function ChatPage() {
                                 {showAvatar && (
                                     <Avatar className="h-8 w-8 self-end">
                                         {matchedUser.photos?.[0] && (
-                                            <AvatarImage src={matchedUser.photos[0]} className="object-cover" />
+                                            <AvatarImage src={matchedUser.photos[0]} alt={matchedUser.name} width={32} height={32} className="object-cover" />
                                         )}
                                         <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
                                     </Avatar>

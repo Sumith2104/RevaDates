@@ -83,7 +83,7 @@ export default function NotificationsPage() {
 
         fetchData(true); // Initial fetch
 
-        const interval = setInterval(() => fetchData(false), 1000); // Poll every second
+        const interval = setInterval(() => fetchData(false), 5000); // Poll every 5 seconds
 
         return () => clearInterval(interval); // Cleanup
     }, [currentUserId]);
@@ -149,7 +149,7 @@ export default function NotificationsPage() {
                                     <div className="relative">
                                         <Avatar className="h-16 w-16 border-2 border-primary">
                                             {notif.sender?.photos?.[0] && (
-                                                <AvatarImage src={notif.sender.photos[0]} alt={notif.sender.name || 'User avatar'} />
+                                                <AvatarImage src={notif.sender.photos[0]} alt={notif.sender.name || 'User avatar'} width={64} height={64} />
                                             )}
                                             <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
                                         </Avatar>
