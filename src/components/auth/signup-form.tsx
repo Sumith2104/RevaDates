@@ -186,7 +186,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                                 <SelectContent>
                                     <SelectItem value="Male">Man</SelectItem>
                                     <SelectItem value="Female">Woman</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -199,7 +198,6 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
                                 <SelectContent>
                                     <SelectItem value="men">Men</SelectItem>
                                     <SelectItem value="women">Women</SelectItem>
-                                    <SelectItem value="everyone">Everyone</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -345,5 +343,3 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   );
 });
 SignupForm.displayName = 'SignupForm';
-
-    
