@@ -161,11 +161,11 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
             .eq('id', swipedId)
             .single();
       
-        const { error: matchError } = await supabase.from('matches').insert({
+        const { data: matchData, error: matchError } = await supabase.from('matches').insert({
           user1_id: swiperId,
           user2_id: swipedId,
           created_at: now,
-        });
+        }).select('id').single();
 
         if (matchError && matchError.code !== '23505') {
           // Don't fail the whole operation, just log it. The match will be created if they both swipe.
@@ -194,7 +194,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         
         revalidatePath('/chats');
         revalidatePath('/notifications');
-        return { match: true };
+        return { match: true, matchId: matchData?.id };
     }
   }
 
@@ -651,11 +651,11 @@ export async function respondToLike(notificationId: string, recipientId: string,
         
         // If there is a mutual like, create the match record
         if (mutualLike) {
-            const { error: matchError } = await supabase.from('matches').insert({
+            const { data: matchData, error: matchError } = await supabase.from('matches').insert({
                 user1_id: recipientId,
                 user2_id: senderId,
                 created_at: now,
-            });
+            }).select('id').single();
 
             if (matchError && matchError.code !== '23505') { // 23505 is unique violation
                 return { error: 'Could not create the match record.' };
@@ -683,11 +683,10 @@ export async function respondToLike(notificationId: string, recipientId: string,
                 }
             }
 
-
             // Revalidate paths to update UI
             revalidatePath('/chats');
             revalidatePath('/notifications');
-            return { match: true };
+            return { match: true, matchId: matchData?.id };
         }
     }
 

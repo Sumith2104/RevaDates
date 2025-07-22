@@ -5,7 +5,7 @@ import * as React from 'react';
 import { AppShell } from '@/components/shared/app-shell';
 import { getNotifications, markNotificationsAsRead, respondToLike } from '@/lib/actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Heart, X } from 'lucide-react';
+import { Bell, Heart, X, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
@@ -15,6 +15,7 @@ import { toZonedTime } from 'date-fns-tz';
 import type { Notification } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -46,7 +47,10 @@ export default function NotificationsPage() {
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
+    const [matchedNotifications, setMatchedNotifications] = React.useState<Record<string, string>>({}); // { notificationId: matchId }
     const { toast } = useToast();
+    const router = useRouter();
+
 
     React.useEffect(() => {
         const userId = localStorage.getItem('currentUserId');
@@ -115,25 +119,19 @@ export default function NotificationsPage() {
     const handleResponse = async (notificationId: string, senderId: string, action: 'liked' | 'rejected') => {
         if (!currentUserId) return;
 
-        // Optimistically remove the notification from the UI
-        setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
         const result = await respondToLike(notificationId, currentUserId, senderId, action);
         
         if (result.error) {
             toast({ variant: 'destructive', title: 'Response Failed', description: result.error });
-            // Re-fetch to get the state back in sync
-            const result = await getNotifications(currentUserId);
-             if (!result.error) {
-                setNotifications(result.data as Notification[]);
-            }
-        }
-
-        if (result.match) {
+        } else if (result.match && result.matchId) {
+            setMatchedNotifications(prev => ({ ...prev, [notificationId]: result.matchId as string }));
             toast({
                 title: "It's a Match! 🎉",
                 description: `You can now start chatting.`,
             });
+        } else {
+            // It was a rejection or not a match, just remove it
+            setNotifications(prev => prev.filter(n => n.id !== notificationId));
         }
     };
 
@@ -193,12 +191,20 @@ export default function NotificationsPage() {
                                         </p>
                                         {notif.type === 'new_like' && (
                                             <div className="flex items-center gap-2 mt-3">
-                                                <Button size="sm" className="rounded-full h-8 px-4 bg-green-500 hover:bg-green-600 text-white" onClick={() => handleResponse(notif.id, notif.sender_id, 'liked')}>
-                                                    <Heart className="h-4 w-4 mr-1"/> Date
-                                                </Button>
-                                                <Button size="sm" variant="ghost" className="rounded-full h-8 px-4" onClick={() => handleResponse(notif.id, notif.sender_id, 'rejected')}>
-                                                   <X className="h-4 w-4 mr-1"/> Reject
-                                                </Button>
+                                                {matchedNotifications[notif.id] ? (
+                                                    <Button size="sm" className="rounded-full h-8 px-4 bg-primary hover:bg-primary/90" onClick={() => router.push(`/chats/${matchedNotifications[notif.id]}`)}>
+                                                        <MessageSquare className="h-4 w-4 mr-2" /> Go to Chat
+                                                    </Button>
+                                                ) : (
+                                                    <>
+                                                        <Button size="sm" className="rounded-full h-8 px-4 bg-green-500 hover:bg-green-600 text-white" onClick={() => handleResponse(notif.id, notif.sender_id, 'liked')}>
+                                                            <Heart className="h-4 w-4 mr-1"/> Date
+                                                        </Button>
+                                                        <Button size="sm" variant="ghost" className="rounded-full h-8 px-4" onClick={() => handleResponse(notif.id, notif.sender_id, 'rejected')}>
+                                                           <X className="h-4 w-4 mr-1"/> Reject
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </div>
                                         )}
                                     </div>
