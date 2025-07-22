@@ -127,7 +127,7 @@ export default function ChatPage() {
                     return prevMessages;
                 });
             }
-        }, 5000); // Poll every 5 seconds
+        }, 3000); // Poll every 3 seconds
 
         return () => clearInterval(interval);
     }, [chatId, currentUserId, handleMarkAsRead]);

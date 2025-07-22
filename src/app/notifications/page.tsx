@@ -83,7 +83,7 @@ export default function NotificationsPage() {
 
         fetchData(true); // Initial fetch
 
-        const interval = setInterval(() => fetchData(false), 5000); // Poll every 5 seconds
+        const interval = setInterval(() => fetchData(false), 3000); // Poll every 3 seconds
 
         return () => clearInterval(interval); // Cleanup
     }, [currentUserId]);

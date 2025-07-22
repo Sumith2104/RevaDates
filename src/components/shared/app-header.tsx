@@ -32,8 +32,8 @@ export function AppHeader() {
     // Initial fetch
     fetchUnreadCount();
 
-    // Poll every 5 seconds
-    const interval = setInterval(fetchUnreadCount, 5000);
+    // Poll every 3 seconds
+    const interval = setInterval(fetchUnreadCount, 3000);
       
     return () => {
       clearInterval(interval);
