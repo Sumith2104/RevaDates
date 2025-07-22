@@ -4,7 +4,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Analytics } from "@vercel/analytics/next"
 import * as React from 'react';
 
 const metadata: Metadata = {
@@ -41,7 +40,6 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {children}
         <Toaster />
-        <Analytics />
       </body>
     </html>
   );
