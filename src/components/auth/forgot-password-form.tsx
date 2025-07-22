@@ -149,7 +149,7 @@ export const ForgotPasswordForm = React.forwardRef<HTMLDivElement, ForgotPasswor
                                 onChange={(e) => handleOtpChange(e.target, index)}
                                 onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                ref={(el) => (inputRefs.current[index] = el)}
+                                ref={(el) => { inputRefs.current[index] = el }}
                                 className="w-12 h-12 text-center text-lg rounded-lg"
                                 disabled={isLoading}
                               />
