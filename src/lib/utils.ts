@@ -8,9 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function getInitials(name: string) {
   if (!name) return '';
   const names = name.split(' ');
-  const initials = names.map(n => n[0]).join('').toUpperCase();
-  if (initials.length > 2 && names.length > 1) {
-    return `${initials[0]}${initials[initials.length - 1]}`;
-  }
-  return initials.substring(0, 2);
+  const firstInitial = names[0]?.[0] || '';
+  const lastInitial = names.length > 1 ? names[names.length - 1]?.[0] : '';
+  return `${firstInitial}${lastInitial}`.toUpperCase();
 }

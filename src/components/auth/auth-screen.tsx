@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { updateUserLocation } from '@/lib/actions';
+import ScrollReveal from '@/components/shared/ScrollReveal';
 
 const TYPING_SPEED = 100;
 const phrases = [
@@ -313,15 +314,22 @@ export function AuthScreen() {
         className="w-full bg-black text-white py-20 px-6 border-t border-white/10"
       >
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">About RevaDates</h2>
-          <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
-            RevaDates is your safe space to connect authentically. Whether you're here for
-            sparks, deep conversations, or just fun vibes — you're free to express yourself
-            without judgment.
-            <br /><br />
-            We focus on raw, real connections powered by intuitive design and a privacy-first
-            approach. Join a community that's not afraid to be fully themselves.
-          </p>
+            <ScrollReveal
+                textClassName="text-3xl md:text-4xl font-bold mb-4"
+                baseRotation={-5}
+                baseOpacity={0.2}
+            >
+                About RevaDates
+            </ScrollReveal>
+             <ScrollReveal
+                textClassName="text-zinc-400 text-base md:text-lg leading-relaxed"
+                baseRotation={2}
+                baseOpacity={0.1}
+            >
+                {`RevaDates is your safe space to connect authentically. Whether you're here for sparks, deep conversations, or just fun vibes — you're free to express yourself without judgment.
+
+We focus on raw, real connections powered by intuitive design and a privacy-first approach. Join a community that's not afraid to be fully themselves.`}
+            </ScrollReveal>
         </div>
       </div>
     </div>

@@ -17,15 +17,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('SMTP connection error:', error);
-  } else {
-    console.log('SMTP server is ready to take our messages');
-  }
-});
-
 export const sendEmail = async (data: EmailPayload) => {
   const mailOptions = {
     from: process.env.SMTP_FROM || 'noreply@example.com',
