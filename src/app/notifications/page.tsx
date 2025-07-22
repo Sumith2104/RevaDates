@@ -66,6 +66,12 @@ export default function NotificationsPage() {
         async function fetchData(initialLoad = false) {
             if (initialLoad) setLoading(true);
 
+            // Ensure currentUserId is not null before proceeding
+            if (!currentUserId) {
+                if (initialLoad) setLoading(false);
+                return;
+            }
+
             const result = await getNotifications(currentUserId);
             
             if (result.error) {
