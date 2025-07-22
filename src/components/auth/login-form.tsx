@@ -79,7 +79,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
               <div className="grid gap-2 text-left">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                   <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword}>
+                   <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword} type="button">
                         Forgot your password?
                    </Button>
                 </div>
@@ -111,3 +111,5 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
   );
 });
 LoginForm.displayName = 'LoginForm';
+
+    

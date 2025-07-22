@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
+import { ForgotPasswordForm } from './forgot-password-form';
 import { Heart, MapPin, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -72,7 +73,7 @@ function LocationPermissionPrompt({ onComplete, onAllow }: { onComplete: () => v
 
 
 export function AuthScreen() {
-  const [view, setView] = React.useState<'start' | 'login' | 'signup' | 'location'>('start');
+  const [view, setView] = React.useState<'start' | 'login' | 'signup' | 'forgot-password' | 'location'>('start');
   const [typedPhrase, setTypedPhrase] = React.useState('');
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -287,9 +288,15 @@ export function AuthScreen() {
             <motion.div key="login" {...cardVariants} onClick={(e) => e.stopPropagation()}>
               <LoginForm
                 onSwitchToSignup={() => setView('signup')}
-                onSwitchToForgotPassword={() => {}}
+                onSwitchToForgotPassword={() => setView('forgot-password')}
                 onLoginSuccess={handleLoginSuccess}
               />
+            </motion.div>
+          )}
+           
+          {view === 'forgot-password' && (
+            <motion.div key="forgot-password" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+              <ForgotPasswordForm onSwitchToLogin={() => setView('login')} />
             </motion.div>
           )}
 
@@ -335,3 +342,5 @@ We focus on raw, real connections powered by intuitive design and a privacy-firs
     </div>
   );
 }
+
+    
