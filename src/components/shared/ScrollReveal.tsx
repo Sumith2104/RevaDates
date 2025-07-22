@@ -30,7 +30,7 @@ const ScrollReveal = ({
   rotationEnd?: string,
   wordAnimationEnd?: string
 }) => {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const splitText = useMemo(() => {
     const text = typeof children === 'string' ? children : '';
