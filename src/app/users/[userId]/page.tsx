@@ -2,13 +2,13 @@
 'use client';
 
 import * as React from 'react';
-import { AppShell } from '@/components/shared/app-shell';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PublicProfileView } from '@/components/profile/public-profile-view';
 import { Lock } from 'lucide-react';
 import { getIsMatch } from '@/lib/actions';
+import { AppShell } from '@/components/shared/app-shell';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -112,7 +112,7 @@ export default function UserProfilePage() {
 
   return (
     <AppShell>
-      <PublicProfileView user={profile} />
+      <PublicProfileView user={profile} currentUserId={currentUserId!} />
     </AppShell>
   );
 }
