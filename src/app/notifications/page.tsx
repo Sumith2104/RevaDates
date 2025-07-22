@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { AppShell } from '@/components/shared/app-shell';
 import { getNotifications, markNotificationsAsRead, respondToLike } from '@/lib/actions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Heart, X, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -16,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -108,6 +108,13 @@ export default function NotificationsPage() {
         }
     };
 
+    if (loading || userLoading) {
+        return (
+            <AppShell>
+                <PageLoader />
+            </AppShell>
+        );
+    }
 
     return (
         <AppShell>
@@ -116,32 +123,19 @@ export default function NotificationsPage() {
                 <div className="sticky top-0 left-0 right-0 h-10 bg-gradient-to-b from-black to-transparent pointer-events-none z-10" />
                 <div className="container mx-auto max-w-2xl p-4">
                     <h1 className="text-3xl font-bold mb-6">Notifications</h1>
-                    {(loading || userLoading) && (
-                        <div className="space-y-4">
-                            {[...Array(2)].map((_, i) => (
-                                <div key={i} className="flex items-center space-x-4">
-                                    <Skeleton className="h-12 w-12 rounded-full" />
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-[250px]" />
-                                        <Skeleton className="h-4 w-[200px]" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    {!(loading || userLoading) && error && (
+                    {error && (
                         <div className="text-center text-muted-foreground py-10">
                             <p>{error}</p>
                         </div>
                     )}
-                    {!(loading || userLoading) && !error && notifications.length === 0 && (
+                    {!error && notifications.length === 0 && (
                         <div className="text-center text-muted-foreground py-10">
                             <Bell className="mx-auto h-12 w-12 mb-4" />
                             <h2 className="text-xl font-semibold">No new notifications</h2>
                             <p>Likes, matches, and messages will appear here.</p>
                         </div>
                     )}
-                    {!(loading || userLoading) && !error && notifications.length > 0 && (
+                    {!error && notifications.length > 0 && (
                         <div className="space-y-4">
                             {notifications.map((notif) => (
                             <AnimatedNotificationItem key={notif.id}>

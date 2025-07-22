@@ -4,12 +4,12 @@
 import * as React from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PublicProfileView } from '@/components/profile/public-profile-view';
 import { Lock } from 'lucide-react';
 import { getIsMatch } from '@/lib/actions';
 import { AppShell } from '@/components/shared/app-shell';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -82,14 +82,7 @@ export default function UserProfilePage() {
   if (loading || userLoading) {
      return (
         <AppShell>
-            <div className="container mx-auto max-w-4xl p-4">
-                <Skeleton className="h-12 w-1/4 mb-4" />
-                <Skeleton className="h-64 w-full" />
-                <div className="space-y-4 mt-4">
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-24 w-full" />
-                </div>
-            </div>
+            <PageLoader />
         </AppShell>
      );
   }

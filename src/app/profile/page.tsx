@@ -6,8 +6,8 @@ import { AppShell } from '@/components/shared/app-shell';
 import { ProfileView } from '@/components/profile/profile-view';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -45,14 +45,7 @@ export default function ProfilePage() {
   if (loading || userLoading) {
      return (
         <AppShell>
-            <div className="container mx-auto max-w-4xl p-4">
-                <Skeleton className="h-12 w-1/4 mb-4" />
-                <Skeleton className="h-64 w-full" />
-                <div className="space-y-4 mt-4">
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-24 w-full" />
-                </div>
-            </div>
+            <PageLoader />
         </AppShell>
      );
   }

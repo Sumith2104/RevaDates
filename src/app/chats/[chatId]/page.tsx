@@ -6,7 +6,6 @@ import { AppShell } from '@/components/shared/app-shell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { getInitials, cn } from '@/lib/utils';
 import { getMatchDetails, getChatMessages, sendMessage, markMessagesAsRead, blockUser } from '@/lib/actions';
 import type { UserProfile, Message } from '@/lib/types';
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -187,16 +187,7 @@ export default function ChatPage() {
     if (loading || userLoading) {
         return (
             <div className="flex flex-col h-screen">
-                <header className="flex items-center gap-4 p-4 border-b">
-                    <Skeleton className="h-6 w-6" />
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <Skeleton className="h-6 w-32" />
-                </header>
-                <div className="flex-1 p-4 space-y-4">
-                    <Skeleton className="h-10 w-3/4" />
-                    <Skeleton className="h-10 w-3/4 ml-auto" />
-                    <Skeleton className="h-10 w-1/2" />
-                </div>
+                <PageLoader />
             </div>
         );
     }

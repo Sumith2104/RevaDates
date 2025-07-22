@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 // Fisher-Yates (aka Knuth) Shuffle
 function shuffle(array: any[]) {
@@ -204,11 +205,7 @@ export default function DashboardPage() {
       return (
           <AppShell>
             <AppHeader />
-            <div className="flex-1 flex flex-col pt-16">
-              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                  <p className="text-xl font-medium">Finding profiles for you...</p>
-              </div>
-            </div>
+            <PageLoader />
           </AppShell>
       )
   }
