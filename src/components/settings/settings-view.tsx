@@ -128,12 +128,10 @@ export function SettingsView() {
   
   const [ageRange, setAgeRange] = React.useState([18, 80]);
   const [matchNotification, setMatchNotification] = React.useState(true);
-  const [genderPreference, setGenderPreference] = React.useState('everyone');
 
   // Debounce the settings to avoid excessive database writes
   const debouncedAgeRange = useDebounce(ageRange, 500);
   const debouncedMatchNotification = useDebounce(matchNotification, 500);
-  const debouncedGenderPreference = useDebounce(genderPreference, 500);
 
   React.useEffect(() => {
     const userId = localStorage.getItem('currentUserId');
@@ -153,7 +151,7 @@ export function SettingsView() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('profiles')
-        .select('discovery_age_min, discovery_age_max, match_notification, discovery_gender_preference')
+        .select('discovery_age_min, discovery_age_max, match_notification')
         .eq('id', currentUserId)
         .single();
       
@@ -162,7 +160,6 @@ export function SettingsView() {
       } else if (data) {
         setAgeRange([data.discovery_age_min || 18, data.discovery_age_max || 80]);
         setMatchNotification(data.match_notification ?? true);
-        setGenderPreference(data.discovery_gender_preference || 'everyone');
       }
       setLoading(false);
     }
@@ -184,7 +181,6 @@ export function SettingsView() {
                 discovery_age_min: debouncedAgeRange[0],
                 discovery_age_max: debouncedAgeRange[1],
                 match_notification: debouncedMatchNotification,
-                discovery_gender_preference: debouncedGenderPreference,
             })
             .eq('id', currentUserId);
         
@@ -195,7 +191,7 @@ export function SettingsView() {
     };
     
     saveSettings();
-  }, [debouncedAgeRange, debouncedMatchNotification, debouncedGenderPreference, currentUserId, loading, toast]);
+  }, [debouncedAgeRange, debouncedMatchNotification, currentUserId, loading, toast]);
 
 
   const handleLogout = () => {
@@ -264,19 +260,6 @@ export function SettingsView() {
           </div>
         </CardHeader>
         <CardContent className="space-y-8 pt-6">
-          <div className="space-y-2">
-            <Label>Show me</Label>
-            <Select value={genderPreference} onValueChange={setGenderPreference}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Select who to see" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="men">Men</SelectItem>
-                    <SelectItem value="women">Women</SelectItem>
-                    <SelectItem value="everyone">Everyone</SelectItem>
-                </SelectContent>
-            </Select>
-          </div>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <Label htmlFor="age-range">Age Range</Label>
@@ -288,7 +271,7 @@ export function SettingsView() {
               max={80}
               step={1}
               value={ageRange}
-              onValueChange={setAgeRange}
+              onValue-change={setAgeRange}
             />
           </div>
         </CardContent>
