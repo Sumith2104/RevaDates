@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProfileView } from '@/components/profile/profile-view';
 import { Lock } from 'lucide-react';
 import { getIsMatch } from '@/lib/actions';
+import type { UserProfile } from '@/lib/types';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
-  const [isMatched, setIsMatched] = React.useState(false);
+  const [isViewable, setIsViewable] = React.useState(false);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -35,25 +36,30 @@ export default function UserProfilePage() {
     async function fetchData() {
       setLoading(true);
 
-      const matchStatus = await getIsMatch(currentUserId, userId);
-      setIsMatched(matchStatus);
-
-      if (matchStatus) {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-        
-        if (error || !data) {
-          // Handle profile not found
-        } else {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error || !data) {
+        setProfile(null);
+        setIsViewable(false);
+      } else {
+          // Check if profile is public
+          if (data.is_public) {
+              setIsViewable(true);
+          } else {
+              // If private, check for a match
+              const matchStatus = await getIsMatch(currentUserId, userId);
+              setIsViewable(matchStatus);
+          }
+          
           setProfile({
             ...data,
             dob: new Date(data.dob),
           });
-        }
       }
       
       setLoading(false);
@@ -77,7 +83,7 @@ export default function UserProfilePage() {
      );
   }
 
-  if (!isMatched) {
+  if (!isViewable) {
     return (
         <AppShell>
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
@@ -105,3 +111,4 @@ export default function UserProfilePage() {
     </AppShell>
   );
 }
+
