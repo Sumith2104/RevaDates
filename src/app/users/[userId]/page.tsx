@@ -18,7 +18,7 @@ export default function UserProfilePage() {
   const userId = params.userId as string;
 
   const { user: currentUserId, loading: userLoading } = useCurrentUser();
-  const [profile, setProfile] = React.useState<UserProfile | null>(null);
+  const [profile, setProfile] = React.useState<(UserProfile & { dob: Date }) | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [isViewable, setIsViewable] = React.useState(false);
 
@@ -63,7 +63,7 @@ export default function UserProfilePage() {
                 ...data,
                 dob: new Date(data.dob),
                 distance_meters: distance !== null ? distance * 1000 : null
-              } as UserProfile);
+              });
 
           } else {
               // Fallback if currentUserId is not available
@@ -72,7 +72,7 @@ export default function UserProfilePage() {
                 ...data,
                 dob: new Date(data.dob),
                 distance_meters: null
-              } as UserProfile);
+              });
           }
       }
       
