@@ -23,6 +23,7 @@ import {
 import { updateUserLocation } from '@/lib/actions';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 import { LoginOptions } from './login-options';
+import { createClient } from '@/lib/supabase/client';
 
 const TYPING_SPEED = 100;
 const phrases = [ "Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free" ];
@@ -75,6 +76,7 @@ export function AuthScreen() {
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const activePhrase = phrases[phraseIndex];
+  const [checkingAuth, setCheckingAuth] = React.useState(true);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -82,8 +84,24 @@ export function AuthScreen() {
   const scrollToAbout = () => {
     aboutRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  React.useEffect(() => {
+    const supabase = createClient();
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        localStorage.setItem('currentUserId', session.user.id);
+        router.push('/dashboard');
+      } else {
+        setCheckingAuth(false);
+      }
+    };
+    checkSession();
+  }, [router]);
+
 
   React.useEffect(() => {
+    if (checkingAuth) return;
     let timeoutId: NodeJS.Timeout;
 
     if (isDeleting) {
@@ -106,7 +124,7 @@ export function AuthScreen() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [typedPhrase, activePhrase, isDeleting]);
+  }, [typedPhrase, activePhrase, isDeleting, checkingAuth]);
   
   const handleLocationComplete = React.useCallback(() => {
       router.push('/dashboard');
@@ -125,8 +143,7 @@ export function AuthScreen() {
             resolve();
         },
         () => {
-            
-            
+            handleLocationComplete();
             resolve();
         },
         { timeout: 5000 } 
@@ -140,11 +157,9 @@ export function AuthScreen() {
         if (permission.state === 'granted') {
             await attemptToGetLocation(userId);
         } else {
-            
             setView('location');
         }
       } else {
-          
           setView('location');
       }
   }, [attemptToGetLocation]);
@@ -208,6 +223,14 @@ export function AuthScreen() {
     exit: { y: '100vh', opacity: 0 },
     transition: { type: 'spring', stiffness: 400, damping: 30 }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen w-full bg-black flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div
