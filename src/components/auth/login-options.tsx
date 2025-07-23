@@ -93,7 +93,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
     const getCallbackUrl = () => {
         let url;
         if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-          url = `https://revadates.vercel.app`;
+          url = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
         } else {
           url = 'http://localhost:9002';
         }
@@ -224,3 +224,5 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         </Dialog>
     );
 }
+
+    
