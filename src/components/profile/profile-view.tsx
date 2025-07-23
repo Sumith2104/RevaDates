@@ -119,7 +119,7 @@ function MatchesDialog({ userId }: { userId: string }) {
                               <div className="flex items-center gap-4">
                                   <Avatar>
                                       {match.matchedUser.photos?.[0] && (
-                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} width={48} height={48} className="object-cover" />
+                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} className="object-cover" />
                                       )}
                                       <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
                                   </Avatar>
@@ -307,7 +307,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
            <div className="flex items-center gap-4 pt-4">
                 <Avatar className="h-20 w-20">
                   {userPhotos[0] && (
-                    <AvatarImage src={userPhotos[0]} alt={user.name} width={80} height={80} className="object-cover" />
+                    <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
                   )}
                   <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
                     {getInitials(user.name)}
@@ -433,4 +433,3 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </>
   );
 }
-
