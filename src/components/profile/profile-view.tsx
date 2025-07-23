@@ -104,7 +104,7 @@ function MatchesDialog({ userId }: { userId: string }) {
                     My Matches
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
+            <DialogContent className="w-full max-w-[330px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
                 <DialogHeader>
                     <DialogTitle className="text-white">My Matches</DialogTitle>
                     <DialogDescription className="text-white/70">
