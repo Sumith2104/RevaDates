@@ -119,7 +119,7 @@ function MatchesDialog({ userId }: { userId: string }) {
                               <div className="flex items-center gap-4">
                                   <Avatar>
                                       {match.matchedUser.photos?.[0] && (
-                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} className="object-cover" />
+                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} />
                                       )}
                                       <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
                                   </Avatar>
@@ -253,40 +253,42 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const handleDeletePhoto = async () => {
     if (!deletingPhoto || !user.photos) return;
 
-    // 1. Extract file path from the URL for storage deletion
-    const filePath = deletingPhoto.split('/photos/').pop();
-    if (!filePath) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path.' });
-        return;
+    // Correctly extract the file path from the full URL
+    const urlParts = deletingPhoto.split('/');
+    const bucketIndex = urlParts.indexOf('photos');
+    if (bucketIndex === -1 || bucketIndex + 1 >= urlParts.length) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path for deletion.' });
+      setDeletingPhoto(null);
+      return;
     }
+    const filePath = urlParts.slice(bucketIndex + 1).join('/');
 
-    // 2. Delete the file from Supabase Storage
+    // Delete the file from Supabase Storage
     const { error: storageError } = await supabase.storage.from('photos').remove([filePath]);
+
     if (storageError) {
         toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo from storage: ${storageError.message}` });
         setDeletingPhoto(null);
         return;
     }
 
-    // 3. Update the photos array in the user's profile
+    // Update the photos array in the user's profile and local state
     const newPhotoList = user.photos.filter(p => p !== deletingPhoto);
     const result = await updateUserProfilePhotos(user.id, newPhotoList);
     
     if (!result.error) {
         toast({ title: 'Photo Removed' });
-        setUser(prev => ({ ...prev, photos: newPhotoList }));
-        router.refresh();
+        setUser(prev => ({ ...prev, photos: newPhotoList })); // Optimistic UI update
     } else {
         toast({
             variant: 'destructive',
             title: 'Could Not Remove Photo',
             description: result.error,
         });
-        // Note: If this fails, the file is deleted but the profile is not updated.
-        // A more robust solution might involve a retry mechanism or a cleanup job.
     }
     
     setDeletingPhoto(null);
+    router.refresh();
   }
 
   const age = differenceInYears(new Date(), user.dob);
@@ -307,7 +309,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
            <div className="flex items-center gap-4 pt-4">
                 <Avatar className="h-20 w-20">
                   {userPhotos[0] && (
-                    <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
+                    <AvatarImage src={userPhotos[0]} alt={user.name} />
                   )}
                   <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
                     {getInitials(user.name)}
