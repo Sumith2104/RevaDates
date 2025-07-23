@@ -29,6 +29,58 @@ function getFutureISTTimestamp(minutesToAdd: number) {
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
+// Reusable modern HTML email template
+function createModernEmailTemplate({ title, preheader, body, code }: { title: string, preheader: string, body: string, code?: string }) {
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>${title}</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            body { margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Inter', Arial, sans-serif; }
+            .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .card { background-color: #1a1a1a; border-radius: 12px; padding: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
+            .content p { color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; }
+            .code-box { background-color: #0a0a0a; border-radius: 8px; padding: 15px 20px; text-align: center; margin: 30px 0; }
+            .code-box p { font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin: 0; }
+            .footer { text-align: center; margin-top: 30px; }
+            .footer p { color: #737373; font-size: 12px; }
+        </style>
+    </head>
+    <body>
+        <span style="display: none; max-height: 0; overflow: hidden;">${preheader}</span>
+        <div class="container">
+            <div class="card">
+                <div class="header">
+                    <h1>RevaDates</h1>
+                </div>
+                <div class="content">
+                    <p>${body}</p>
+                </div>
+                ${code ? `
+                <div class="code-box">
+                    <p>${code}</p>
+                </div>
+                ` : ''}
+                <div class="content">
+                    <p>If you did not request this, you can safely ignore this email.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>&copy; ${new Date().getFullYear()} RevaDates. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+}
+
 export async function createUser(userData: Record<string, any>) {
   const supabase = createClient();
   const now = getISTTimestamp();
@@ -80,18 +132,17 @@ export async function sendOtpEmail(email: string) {
 
   try {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const emailHtml = createModernEmailTemplate({
+        title: 'Your RevaDates Verification Code',
+        preheader: `Your verification code is ${otp}`,
+        body: 'Welcome to RevaDates! To finish setting up your account, please use the following verification code:',
+        code: otp
+    });
+
     await sendEmail({
       to: validatedFields.data.email,
       subject: 'Your RevaDates Verification Code',
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #333;">
-          <h2>Welcome to RevaDates!</h2>
-          <p>Your 4-digit verification code is:</p>
-          <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${otp}</p>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you did not request this code, please ignore this email.</p>
-        </div>
-      `,
+      html: emailHtml,
     });
     return { error: null, otp };
   } catch (e) {
@@ -238,18 +289,16 @@ export async function sendPasswordResetOtp(email: string) {
     }
 
     try {
+        const emailHtml = createModernEmailTemplate({
+            title: 'Your RevaDates Password Reset Code',
+            preheader: `Your password reset code is ${otp}`,
+            body: 'We received a request to reset your password. Use the code below to set up a new password.',
+            code: otp
+        });
         await sendEmail({
             to: user.email,
             subject: 'Your RevaDates Password Reset Code',
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333;">
-                  <h2>Password Reset Request</h2>
-                  <p>Your 4-digit verification code is:</p>
-                  <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${otp}</p>
-                  <p>This code will expire in 10 minutes.</p>
-                  <p>If you did not request this, please ignore this email.</p>
-                </div>
-            `,
+            html: emailHtml,
         });
         return { success: true };
     } catch (e) {
@@ -567,7 +616,7 @@ export async function getChatsAndMatches(userId: string) {
     return { chats: formattedChats, matches: formattedMatches, error: null };
 }
 
-export async function updateUserProfile(userId: string, updates: { name?: string, bio?: string }) {
+export async function updateUserProfile(userId: string, updates: { name: string, bio: string }) {
     if (!userId) {
         return { error: 'User ID is required.' };
     }
@@ -842,3 +891,4 @@ export async function getIsMatch(userA: string, userB: string): Promise<boolean>
 
     return true;
 }
+
