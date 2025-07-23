@@ -90,8 +90,19 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         }
     }
     
-    const handleGoogleLogin = () => {
-         toast({ title: 'Google Login Coming Soon!', description: 'This feature is currently under development.' });
+    const handleGoogleLogin = async () => {
+        setIsLoading(true);
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+        });
+        if (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Google Sign-In Failed',
+                description: error.message,
+            });
+        }
+        setIsLoading(false);
     }
 
     React.useEffect(() => {
@@ -165,7 +176,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                                     </div>
                                     
                                     <div className="space-y-3">
-                                        <Button onClick={handleGoogleLogin} variant="outline" className="w-full rounded-full">
+                                        <Button onClick={handleGoogleLogin} variant="outline" className="w-full rounded-full" disabled={isLoading}>
+                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             <GoogleIcon /> Continue with Google
                                         </Button>
                                          <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isLoading}>
