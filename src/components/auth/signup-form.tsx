@@ -37,6 +37,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
 
     const currentFormData = new FormData(e.currentTarget);
     const email = currentFormData.get('email') as string;
+    const firstName = currentFormData.get('firstName') as string;
     
     // Store form data as a plain object
     const details: {[key: string]: any} = {};
@@ -45,7 +46,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     });
     setFormData(details);
     
-    const result = await sendOtpEmail(email);
+    const result = await sendOtpEmail(email, firstName);
 
     setIsLoading(false);
 

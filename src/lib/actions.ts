@@ -30,7 +30,9 @@ function getFutureISTTimestamp(minutesToAdd: number) {
 }
 
 // Reusable modern HTML email template
-function createModernEmailTemplate({ title, preheader, body, code }: { title: string, preheader: string, body: string, code?: string }) {
+function createModernEmailTemplate({ title, preheader, body, code, name }: { title: string, preheader: string, body: string, code?: string, name?: string }) {
+    const greeting = name ? `<p>Hi ${name},</p>` : '';
+    
     return `
     <!DOCTYPE html>
     <html lang="en">
@@ -61,6 +63,7 @@ function createModernEmailTemplate({ title, preheader, body, code }: { title: st
                     <h1>RevaDates</h1>
                 </div>
                 <div class="content">
+                    ${greeting}
                     <p>${body}</p>
                 </div>
                 ${code ? `
@@ -106,7 +109,7 @@ export async function createUser(userData: Record<string, any>) {
 }
 
 
-export async function sendOtpEmail(email: string) {
+export async function sendOtpEmail(email: string, firstName: string) {
   const validatedFields = EmailSchema.safeParse({ email });
 
   if (!validatedFields.success) {
@@ -136,7 +139,8 @@ export async function sendOtpEmail(email: string) {
         title: 'Your RevaDates Verification Code',
         preheader: `Your verification code is ${otp}`,
         body: 'Welcome to RevaDates! To finish setting up your account, please use the following verification code:',
-        code: otp
+        code: otp,
+        name: firstName,
     });
 
     await sendEmail({
@@ -264,7 +268,7 @@ export async function sendPasswordResetOtp(email: string) {
     
     const { data: user, error: userError } = await supabase
         .from('profiles')
-        .select('id, email')
+        .select('id, email, name')
         .eq('email', validatedFields.data.email)
         .single();
     
@@ -289,11 +293,13 @@ export async function sendPasswordResetOtp(email: string) {
     }
 
     try {
+        const firstName = user.name.split(' ')[0];
         const emailHtml = createModernEmailTemplate({
             title: 'Your RevaDates Password Reset Code',
             preheader: `Your password reset code is ${otp}`,
             body: 'We received a request to reset your password. Use the code below to set up a new password.',
-            code: otp
+            code: otp,
+            name: firstName
         });
         await sendEmail({
             to: user.email,
