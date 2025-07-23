@@ -10,6 +10,7 @@ export interface UserProfile {
   location?: string | null;
   distance?: string | null;
   distance_meters?: number | null;
+  picture?: string | null;
 }
 
 export interface Match {
