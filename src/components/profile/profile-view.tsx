@@ -21,6 +21,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
 import { getChatsAndMatches, updateUserProfile, updateUserProfilePhotos } from '@/lib/actions';
@@ -81,7 +82,8 @@ function MatchesDialog({ userId }: { userId: string }) {
                 ...(result.matches || []).map(m => ({ id: m.id, matchedUser: m.matchedUser })),
                 ...(result.chats || []).map(c => ({ id: c.id, matchedUser: c.matchedUser }))
             ];
-            setMatches(allMatches);
+            const uniqueMatches = Array.from(new Map(allMatches.map(item => [item.matchedUser.id, item])).values());
+            setMatches(uniqueMatches);
         }
         setIsLoading(false);
     }, [userId, toast]);
@@ -460,3 +462,4 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   );
 }
 
+    
