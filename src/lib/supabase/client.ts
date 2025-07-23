@@ -13,13 +13,12 @@ export function createClient() {
 
   
   const getCallbackUrl = () => {
-    let url =
-      process?.env?.NEXT_PUBLIC_SITE_URL ?? 
-      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? 
-      'http://localhost:9002/'; 
-    
-    
-    url = url.includes('http') ? url : `https://${url}`;
+    let url;
+    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+      url = `https://revadates.vercel.app`;
+    } else {
+      url = 'http://localhost:9002';
+    }
     
     url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
     return `${url}auth/callback`;
