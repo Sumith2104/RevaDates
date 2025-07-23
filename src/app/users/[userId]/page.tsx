@@ -23,7 +23,7 @@ export default function UserProfilePage() {
   const [isViewable, setIsViewable] = React.useState(false);
 
   React.useEffect(() => {
-    if (!userId || !currentUserId) {
+    if (!userId) {
       if (!userLoading) {
         setLoading(false);
       }
@@ -104,7 +104,7 @@ export default function UserProfilePage() {
     );
   }
 
-  if (!profile || !currentUserId) {
+  if (!profile) {
       return (
         <AppShell>
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -116,7 +116,7 @@ export default function UserProfilePage() {
 
   return (
     <AppShell>
-      <PublicProfileView user={profile} currentUserId={currentUserId} />
+      {currentUserId && <PublicProfileView user={profile} currentUserId={currentUserId} />}
     </AppShell>
   );
 }
