@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star, VenetianMask } from 'lucide-react';
+import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star, VenetianMask, Plus } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -333,14 +333,28 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             </Button>
           </div>
            <div className="flex items-center gap-4 pt-4">
-                <Avatar className="h-20 w-20">
-                  {userPhotos[0] && (
-                    <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
-                  )}
-                  <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative w-20 h-20">
+                    <Avatar className="h-20 w-20">
+                      {userPhotos[0] && (
+                        <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
+                      )}
+                      <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                     {isEditing && (
+                        <Button
+                            size="icon"
+                            variant="default"
+                            className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background"
+                            onClick={() => !uploading && fileInputRef.current?.click()}
+                            disabled={uploading}
+                        >
+                            {uploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4" />}
+                            <span className="sr-only">Add photo</span>
+                        </Button>
+                    )}
+                </div>
                 <div className="flex-grow">
                     {isEditing ? (
                         <Input name="name" value={user.name} onChange={handleInputChange} className="text-xl" placeholder="Your Name" />
@@ -461,7 +475,3 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </>
   );
 }
-
-    
-
-    
