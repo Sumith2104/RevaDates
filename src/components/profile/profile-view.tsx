@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
 import { getChatsAndMatches, updateUserProfile, updateUserProfilePhotos } from '@/lib/actions';
-import type { Match } from '@/lib/types';
+import type { Match, Chat } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -54,8 +54,18 @@ type User = {
     updated_at: string;
 };
 
+type CombinedMatch = {
+    id: string;
+    matchedUser: {
+        id: string;
+        name: string;
+        photos: string[] | null;
+    };
+}
+
+
 function MatchesDialog({ userId }: { userId: string }) {
-    const [matches, setMatches] = React.useState<Match[]>([]);
+    const [matches, setMatches] = React.useState<CombinedMatch[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const { toast } = useToast();
     const router = useRouter();
@@ -67,13 +77,21 @@ function MatchesDialog({ userId }: { userId: string }) {
             toast({ variant: 'destructive', title: 'Could Not Load Matches', description: result.error });
             setMatches([]);
         } else {
-            setMatches(result.matches as Match[]);
+            const allMatches: CombinedMatch[] = [
+                ...(result.matches || []).map(m => ({ id: m.id, matchedUser: m.matchedUser })),
+                ...(result.chats || []).map(c => ({ id: c.id, matchedUser: c.matchedUser }))
+            ];
+            setMatches(allMatches);
         }
         setIsLoading(false);
     }, [userId, toast]);
     
     const navigateToChat = (matchId: string) => {
-        router.push('/chats'); 
+        const dialogCloseButton = document.querySelector('[data-radix-dialog-close]') as HTMLElement | null;
+        if (dialogCloseButton) {
+            dialogCloseButton.click();
+        }
+        router.push(`/chats/${matchId}`); 
     };
 
     return (
@@ -130,6 +148,9 @@ function MatchesDialog({ userId }: { userId: string }) {
                       ))}
                   </div>
                 </ScrollArea>
+                <DialogClose asChild>
+                    <button className="sr-only" data-radix-dialog-close>Close</button>
+                </DialogClose>
             </DialogContent>
         </Dialog>
     )
@@ -438,3 +459,4 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </>
   );
 }
+
