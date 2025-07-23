@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoginForm } from './login-form';
+import { OtpLoginForm } from './otp-login-form';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { sendOtpEmail } from '@/lib/actions';
+import { sendLoginOtp } from '@/lib/actions';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
@@ -66,9 +66,28 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         setIsLoading(false);
     }
     
-    const handleOtpLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        toast({ title: 'OTP Login Coming Soon!', description: 'This feature is currently under development.' });
+    const handleOtpLogin = async () => {
+        if (!email) {
+            toast({ variant: 'destructive', title: 'Email Required', description: 'Please enter your email to receive a login code.' });
+            return;
+        }
+        setIsLoading(true);
+        const result = await sendLoginOtp(email);
+        setIsLoading(false);
+
+        if (result.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to Send Code',
+                description: result.error,
+            });
+        } else {
+            setStep('email-otp');
+            toast({
+                title: 'Login Code Sent',
+                description: 'A temporary login code has been sent to your email.',
+            });
+        }
     }
     
     const handleGoogleLogin = () => {
@@ -85,7 +104,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
     const title = {
         'options': 'Log in or sign up',
         'email-password': 'Log in',
-        'email-otp': 'Enter OTP'
+        'email-otp': 'Enter Your Code'
     }[step];
     
     const goBack = () => {
@@ -149,7 +168,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                                         <Button onClick={handleGoogleLogin} variant="outline" className="w-full rounded-full">
                                             <GoogleIcon /> Continue with Google
                                         </Button>
-                                         <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full">
+                                         <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isLoading}>
+                                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Continue with Email & OTP
                                         </Button>
                                     </div>
@@ -165,9 +185,10 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                             )}
                             
                             {step === 'email-otp' && (
-                                <div>
-                                    <p>OTP form will go here</p>
-                                </div>
+                                <OtpLoginForm 
+                                    email={email}
+                                    onLoginSuccess={onLoginSuccess}
+                                />
                             )}
                         </motion.div>
                     </AnimatePresence>
@@ -176,4 +197,3 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         </Dialog>
     );
 }
-

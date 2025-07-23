@@ -912,5 +912,89 @@ export async function getIsMatch(userA: string, userB: string): Promise<boolean>
 }
 
 
+export async function sendLoginOtp(email: string) {
+    const validatedFields = EmailSchema.safeParse({ email });
+    if (!validatedFields.success) {
+        return { error: 'Invalid email address.' };
+    }
 
+    const supabase = createClient();
     
+    const { data: user, error: userError } = await supabase
+        .from('profiles')
+        .select('id, email, name')
+        .eq('email', validatedFields.data.email)
+        .single();
+    
+    if (userError || !user) {
+        return { error: "No account found with that email address." };
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expires = getFutureISTTimestamp(10); // 10 minutes from now
+
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+            password_reset_token: otp, 
+            password_reset_token_expires_at: expires,
+            updated_at: getISTTimestamp(),
+        })
+        .eq('id', user.id);
+
+    if (updateError) {
+        return { error: 'Could not create a login code. Please try again.' };
+    }
+
+    try {
+        const firstName = user.name.split(' ')[0];
+        const emailHtml = createModernEmailTemplate({
+            title: 'Your RevaDates Login Code',
+            preheader: `Your login code is ${otp}`,
+            body: 'We received a request to log in to your account. Use the code below to sign in.',
+            code: otp,
+            name: firstName
+        });
+        await sendEmail({
+            to: user.email,
+            subject: 'Your RevaDates Login Code',
+            html: emailHtml,
+        });
+        return { success: true };
+    } catch (e) {
+        return { error: "Could not send the login code. Please try again later." };
+    }
+}
+
+
+export async function verifyLoginOtp(email: string, otp: string) {
+    const supabase = createClient();
+
+    const { data: user, error: tokenError } = await supabase
+        .from('profiles')
+        .select('id, password_reset_token_expires_at')
+        .eq('email', email)
+        .eq('password_reset_token', otp)
+        .single();
+
+    if (tokenError || !user || !user.password_reset_token_expires_at) {
+        return { error: 'Invalid or expired login code.', userId: null };
+    }
+
+    const expires = new Date(user.password_reset_token_expires_at);
+    if (expires < new Date()) {
+        return { error: 'Invalid or expired login code.', userId: null };
+    }
+
+    // Clear the token after successful verification
+    await supabase
+        .from('profiles')
+        .update({
+            password_reset_token: null,
+            password_reset_token_expires_at: null,
+            updated_at: getISTTimestamp(),
+        })
+        .eq('id', user.id);
+
+    return { success: true, userId: user.id };
+}
