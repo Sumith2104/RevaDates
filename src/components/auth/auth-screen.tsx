@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { updateUserLocation } from '@/lib/actions';
 import ScrollReveal from '@/components/shared/ScrollReveal';
+import { LoginOptions } from './login-options';
 
 const TYPING_SPEED = 100;
 const phrases = [ "Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free" ];
@@ -68,7 +69,8 @@ function LocationPermissionPrompt({ onComplete, onAllow }: { onComplete: () => v
 
 
 export function AuthScreen() {
-  const [view, setView] = React.useState<'start' | 'login' | 'signup' | 'forgot-password' | 'location'>('start');
+  const [view, setView] = React.useState<'start' | 'signup' | 'forgot-password' | 'location'>('start');
+  const [isLoginOpen, setIsLoginOpen] = React.useState(false);
   const [typedPhrase, setTypedPhrase] = React.useState('');
   const [phraseIndex, setPhraseIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -190,6 +192,7 @@ export function AuthScreen() {
 
   const handleLoginSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
+      setIsLoginOpen(false);
       await handleLocationLogic(userId);
   };
 
@@ -227,6 +230,8 @@ export function AuthScreen() {
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]" />
       </div>
+      
+      <LoginOptions isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} onLoginSuccess={handleLoginSuccess} />
 
       {/* Auth Content */}
       <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
@@ -262,7 +267,7 @@ export function AuthScreen() {
                     size="lg"
                     variant="outline"
                     className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
-                    onClick={() => setView('login')}
+                    onClick={() => setIsLoginOpen(true)}
                   >
                     Login
                   </Button>
@@ -277,26 +282,22 @@ export function AuthScreen() {
               </div>
             </motion.div>
           )}
-
-          {view === 'login' && (
-            <motion.div key="login" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <LoginForm
-                onSwitchToSignup={() => setView('signup')}
-                onSwitchToForgotPassword={() => setView('forgot-password')}
-                onLoginSuccess={handleLoginSuccess}
-              />
-            </motion.div>
-          )}
            
           {view === 'forgot-password' && (
             <motion.div key="forgot-password" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <ForgotPasswordForm onSwitchToLogin={() => setView('login')} />
+              <ForgotPasswordForm onSwitchToLogin={() => {
+                setView('start');
+                setIsLoginOpen(true);
+              }} />
             </motion.div>
           )}
 
           {view === 'signup' && (
             <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-              <SignupForm onSwitchToLogin={() => setView('login')} onSignupSuccess={handleSignupSuccess} />
+              <SignupForm onSwitchToLogin={() => {
+                  setView('start');
+                  setIsLoginOpen(true);
+              }} onSignupSuccess={handleSignupSuccess} />
             </motion.div>
           )}
 
@@ -336,7 +337,3 @@ We focus on raw, real connections powered by intuitive design and a privacy-firs
     </div>
   );
 }
-
-    
-
-    

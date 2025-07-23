@@ -13,16 +13,15 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
 interface LoginFormProps {
-    onSwitchToSignup: () => void;
     onSwitchToForgotPassword: () => void;
     onLoginSuccess: (userId: string) => void;
+    email: string;
 }
 
-export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }, ref) => {
+export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onSwitchToForgotPassword, onLoginSuccess, email }, ref) => {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
-  const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -56,60 +55,44 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
 
   return (
     <div ref={ref}>
-        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>Enter your email below to login to your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4" onSubmit={handleLogin}>
-              <div className="grid gap-2 text-left">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Your Email" 
-                  required 
-                  className="rounded-lg"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="grid gap-2 text-left">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                   <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword} type="button">
-                        Forgot your password?
-                   </Button>
-                </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="Your Password" 
-                  required 
-                  className="rounded-lg"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-              <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login
-              </Button>
-            </form>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Button variant="link" className="underline p-0 h-auto" onClick={onSwitchToSignup}>
-                  Sign up
-              </Button>
+        <form className="grid gap-4" onSubmit={handleLogin}>
+          <div className="grid gap-2 text-left">
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="Your Email" 
+              required 
+              className="rounded-lg"
+              value={email}
+              disabled
+            />
+          </div>
+          <div className="grid gap-2 text-left">
+            <div className="flex items-center">
+              <Label htmlFor="password">Password</Label>
+               <Button variant="link" className="ml-auto inline-block text-sm underline p-0 h-auto" onClick={onSwitchToForgotPassword} type="button">
+                    Forgot your password?
+               </Button>
             </div>
-          </CardContent>
-        </Card>
+            <Input 
+              id="password" 
+              type="password" 
+              placeholder="Your Password" 
+              required 
+              className="rounded-lg"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              autoFocus
+            />
+          </div>
+          <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Login
+          </Button>
+        </form>
     </div>
   );
 });
 LoginForm.displayName = 'LoginForm';
-
-    
