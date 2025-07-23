@@ -18,6 +18,10 @@ export function ChatItem({ chat }: { chat: Chat }) {
     const navigateToChat = (chatId: string) => {
         router.push(`/chats/${chatId}`);
     };
+    
+    React.useEffect(() => {
+        router.prefetch(`/chats/${chat.id}`);
+    }, [router, chat.id]);
 
     const lastMessageTime = chat.lastMessageTime
         ? formatDistanceToNow(toZonedTime(new Date(chat.lastMessageTime), timeZone), { addSuffix: true })

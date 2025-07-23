@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { getInitials, cn } from '@/lib/utils';
 import { getMatchDetails, getChatMessages, sendMessage, markMessagesAsRead, blockUser } from '@/lib/actions';
 import type { UserProfile, Message } from '@/lib/types';
-import { ArrowLeft, Send, Check, CheckCheck, MoreVertical, User, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Send, Check, CheckCheck, MoreVertical, User, ShieldAlert, Loader2 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { isToday, isYesterday, format } from 'date-fns';
@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { PageLoader } from '@/components/shared/page-loader';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -53,7 +52,7 @@ export default function ChatPage() {
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [newMessage, setNewMessage] = React.useState('');
-    const [loading, setLoading] = React.useState(true);
+    const [loadingMessages, setLoadingMessages] = React.useState(true);
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -74,25 +73,22 @@ export default function ChatPage() {
         if (!currentUserId || !chatId) return;
 
         async function fetchInitialData() {
-            setLoading(true);
-            const [matchDetails, messagesData] = await Promise.all([
-                getMatchDetails(chatId, currentUserId!),
-                getChatMessages(chatId)
-            ]);
-
-            if (matchDetails.error || !matchDetails.data) {
+            setLoadingMessages(true);
+            
+            const matchDetails = await getMatchDetails(chatId, currentUserId!);
+             if (matchDetails.error || !matchDetails.data) {
                 router.push('/chats');
                 return;
             }
             setMatchedUser(matchDetails.data as UserProfile);
 
+            const messagesData = await getChatMessages(chatId);
             if (messagesData.error || !messagesData.data) {
-                
             } else {
                 setMessages(messagesData.data as Message[]);
                 handleMarkAsRead();
             }
-            setLoading(false);
+            setLoadingMessages(false);
         }
         fetchInitialData();
     }, [chatId, currentUserId, router, handleMarkAsRead]);
@@ -183,23 +179,22 @@ export default function ChatPage() {
         }
         setIsBlockConfirmOpen(false);
     }
-
-    if (loading || userLoading) {
+    
+    if (userLoading || !matchedUser) {
         return (
-            <div className="flex flex-col h-screen">
-                <PageLoader />
+            <div className="flex flex-col h-screen bg-background">
+                 <header className="flex items-center gap-4 p-2 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-[69px]">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                </header>
+                <div className="flex flex-1 items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
             </div>
         );
     }
     
-    if (!matchedUser) {
-        return (
-             <div className="flex flex-col h-screen items-center justify-center">
-                <p>Could not load chat.</p>
-             </div>
-        )
-    }
-
     return (
         <div className="flex flex-col h-screen bg-background">
             
@@ -242,61 +237,69 @@ export default function ChatPage() {
             
             
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.map((message, index) => {
-                    const isCurrentUser = message.sender_id === currentUserId;
-                    const prevMessage = messages[index - 1];
-                    const showDateSeparator = !prevMessage || new Date(message.created_at).toDateString() !== new Date(prevMessage.created_at).toDateString();
-                    
-                    const isFirstInBlock = !prevMessage || prevMessage.sender_id !== message.sender_id;
-                    const showAvatar = !isCurrentUser && isFirstInBlock;
-                    const isOptimistic = !!message.tempId;
+                {loadingMessages ? (
+                     <div className="flex flex-1 items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                ) : (
+                    <>
+                        {messages.map((message, index) => {
+                            const isCurrentUser = message.sender_id === currentUserId;
+                            const prevMessage = messages[index - 1];
+                            const showDateSeparator = !prevMessage || new Date(message.created_at).toDateString() !== new Date(prevMessage.created_at).toDateString();
+                            
+                            const isFirstInBlock = !prevMessage || prevMessage.sender_id !== message.sender_id;
+                            const showAvatar = !isCurrentUser && isFirstInBlock;
+                            const isOptimistic = !!message.tempId;
 
-                    return (
-                        <React.Fragment key={message.id}>
-                            {showDateSeparator && (
-                                <div className="text-center text-xs text-muted-foreground my-4">
-                                    <span className="bg-muted px-2 py-1 rounded-full">{formatDateSeparator(message.created_at)}</span>
-                                </div>
-                            )}
-                            <div className={cn("flex w-full items-end gap-2", isCurrentUser && "justify-end")}>
-                                {showAvatar && (
-                                    <Avatar className="h-8 w-8 self-end">
-                                        {matchedUser.photos?.[0] && (
-                                            <AvatarImage src={matchedUser.photos[0]} alt={matchedUser.name} width={32} height={32} className="object-cover" />
+                            return (
+                                <React.Fragment key={message.id}>
+                                    {showDateSeparator && (
+                                        <div className="text-center text-xs text-muted-foreground my-4">
+                                            <span className="bg-muted px-2 py-1 rounded-full">{formatDateSeparator(message.created_at)}</span>
+                                        </div>
+                                    )}
+                                    <div className={cn("flex w-full items-end gap-2", isCurrentUser && "justify-end")}>
+                                        {showAvatar && (
+                                            <Avatar className="h-8 w-8 self-end">
+                                                {matchedUser.photos?.[0] && (
+                                                    <AvatarImage src={matchedUser.photos[0]} alt={matchedUser.name} width={32} height={32} className="object-cover" />
+                                                )}
+                                                <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
+                                            </Avatar>
                                         )}
-                                        <AvatarFallback>{getInitials(matchedUser.name)}</AvatarFallback>
-                                    </Avatar>
-                                )}
-                                {!showAvatar && !isCurrentUser && (
-                                    <div className="w-8" /> 
-                                )}
-                                <div className={cn(
-                                    "rounded-2xl px-3 py-2 max-w-[80%] flex items-end gap-2",
-                                    isCurrentUser 
-                                        ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                        : 'bg-muted rounded-bl-none',
-                                    isOptimistic && 'opacity-70'
-                                )}>
-                                    <p className="text-base break-words whitespace-pre-wrap">{message.content}</p>
-                                    <div className="flex items-center gap-1 self-end flex-shrink-0">
-                                        <span className={cn(
-                                          "text-xs opacity-70 whitespace-nowrap",
-                                          isCurrentUser ? "text-primary-foreground" : "text-muted-foreground"
+                                        {!showAvatar && !isCurrentUser && (
+                                            <div className="w-8" /> 
+                                        )}
+                                        <div className={cn(
+                                            "rounded-2xl px-3 py-2 max-w-[80%] flex items-end gap-2",
+                                            isCurrentUser 
+                                                ? 'bg-primary text-primary-foreground rounded-br-none' 
+                                                : 'bg-muted rounded-bl-none',
+                                            isOptimistic && 'opacity-70'
                                         )}>
-                                            {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
-                                        </span>
-                                        {isCurrentUser && !isOptimistic && (
-                                            message.is_read 
-                                                ? <CheckCheck className="h-4 w-4 text-blue-500" />
-                                                : <Check className="h-4 w-4" />
-                                        )}
+                                            <p className="text-base break-words whitespace-pre-wrap">{message.content}</p>
+                                            <div className="flex items-center gap-1 self-end flex-shrink-0">
+                                                <span className={cn(
+                                                  "text-xs opacity-70 whitespace-nowrap",
+                                                  isCurrentUser ? "text-primary-foreground" : "text-muted-foreground"
+                                                )}>
+                                                    {formatTZ(new Date(message.created_at), 'h:mm a', { timeZone })}
+                                                </span>
+                                                {isCurrentUser && !isOptimistic && (
+                                                    message.is_read 
+                                                        ? <CheckCheck className="h-4 w-4 text-blue-500" />
+                                                        : <Check className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </React.Fragment>
-                    );
-                })}
-                 <div ref={messagesEndRef} />
+                                </React.Fragment>
+                            );
+                        })}
+                         <div ref={messagesEndRef} />
+                    </>
+                )}
             </div>
 
             
@@ -308,8 +311,9 @@ export default function ChatPage() {
                         placeholder="Type a message..."
                         className="flex-1 border-2"
                         autoComplete="off"
+                        disabled={loadingMessages}
                     />
-                    <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+                    <Button type="submit" size="icon" disabled={!newMessage.trim() || loadingMessages}>
                         <Send className="h-5 w-5" />
                     </Button>
                 </form>
