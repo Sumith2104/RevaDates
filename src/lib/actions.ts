@@ -43,9 +43,9 @@ function createModernEmailTemplate({ title, preheader, body, code, name }: { tit
         <title>${title}</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-            body { margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', Arial, sans-serif; }
-            .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .card { background-color: #1a1a1a; border-radius: 12px; padding: 40px; }
+            body { margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+            .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+            .card { background-color: #1a1a1a; border-radius: 12px; padding: 40px; box-sizing: border-box; }
             .header { text-align: center; margin-bottom: 30px; }
             .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
             .content p { color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; }
@@ -55,6 +55,12 @@ function createModernEmailTemplate({ title, preheader, body, code, name }: { tit
             .copy-hint p { font-size: 12px; color: #737373; margin: 0; }
             .footer { text-align: center; margin-top: 30px; }
             .footer p { color: #737373; font-size: 12px; }
+
+            @media screen and (max-width: 600px) {
+                .container { padding: 10px; }
+                .card { padding: 20px; }
+                .code-box p { font-size: 24px; letter-spacing: 2px; }
+            }
         </style>
     </head>
     <body>
@@ -629,7 +635,7 @@ export async function getChatsAndMatches(userId: string) {
     return { chats: formattedChats, matches: formattedMatches, error: null };
 }
 
-export async function updateUserProfile(userId: string, updates: { name: string, bio: string }) {
+export async function updateUserProfile(userId: string, updates: { name: string; bio: string; }) {
     if (!userId) {
         return { error: 'User ID is required.' };
     }
