@@ -251,43 +251,47 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const handleDeletePhoto = async () => {
     if (!deletingPhoto || !user.photos) return;
 
-    const urlParts = deletingPhoto.split('/');
+    const currentPhotoUrl = deletingPhoto;
+    setDeletingPhoto(null); // Close the dialog immediately
+
+    // Optimistic UI update
+    const newPhotoList = user.photos.filter(p => p !== currentPhotoUrl);
+    setUser(prev => ({ ...prev, photos: newPhotoList }));
+
+    const urlParts = currentPhotoUrl.split('/');
     const bucketName = 'photos';
     const bucketIndex = urlParts.indexOf(bucketName);
     
     if (bucketIndex === -1 || bucketIndex + 1 >= urlParts.length) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path for deletion.' });
-      setDeletingPhoto(null);
+      setUser(prev => ({...prev, photos: user.photos})); // Revert UI
       return;
     }
     const filePath = urlParts.slice(bucketIndex + 1).join('/');
 
-    // Delete the file from Supabase Storage
+    // 1. Delete the file from Supabase Storage
     const { error: storageError } = await supabase.storage.from(bucketName).remove([filePath]);
 
     if (storageError) {
-        toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo from storage: ${storageError.message}` });
-        setDeletingPhoto(null);
+        toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo: ${storageError.message}` });
+        setUser(prev => ({...prev, photos: user.photos})); // Revert UI
         return;
     }
 
-    // Update the photos array in the user's profile and local state
-    const newPhotoList = user.photos.filter(p => p !== deletingPhoto);
+    // 2. Update the photos array in the user's profile
     const result = await updateUserProfilePhotos(user.id, newPhotoList);
     
     if (!result.error) {
         toast({ title: 'Photo Removed' });
-        setUser(prev => ({ ...prev, photos: newPhotoList })); // Optimistic UI update
+        router.refresh(); // Refresh from server to confirm state
     } else {
         toast({
             variant: 'destructive',
             title: 'Could Not Remove Photo',
             description: result.error,
         });
+        setUser(prev => ({...prev, photos: user.photos})); // Revert UI
     }
-    
-    setDeletingPhoto(null);
-    router.refresh();
   }
 
   const age = differenceInYears(new Date(), user.dob);
