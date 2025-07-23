@@ -33,7 +33,7 @@ export const LoginForm = React.forwardRef<HTMLDivElement, LoginFormProps>(({ onS
       .from('profiles')
       .select('id, name')
       .eq('email', email)
-      .eq('password', password) // In a real app, passwords should be hashed!
+      .eq('password', password) 
       .single();
 
     if (queryError || !data) {

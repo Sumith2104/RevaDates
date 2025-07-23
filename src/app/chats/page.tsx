@@ -80,9 +80,9 @@ export default function ChatsPage() {
     return (
         <AppShell>
             <div className="flex-1 flex flex-col">
-                {/* Outer container for the whole page content */}
+                
                 <div className="flex-1 flex flex-col p-4 space-y-6">
-                    {/* New Matches Section */}
+                    
                     <div>
                         <h1 className="text-3xl font-bold mb-4">New Matches</h1>
                         {matches.length === 0 ? (
@@ -99,7 +99,7 @@ export default function ChatsPage() {
                         )}
                     </div>
 
-                    {/* Messages Section */}
+                    
                     <div className="flex-1 flex flex-col min-h-0">
                         <div className="flex justify-between items-center mb-4">
                             <h1 className="text-3xl font-bold">Messages</h1>

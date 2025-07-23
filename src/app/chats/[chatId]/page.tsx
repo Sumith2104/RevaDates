@@ -87,7 +87,7 @@ export default function ChatPage() {
             setMatchedUser(matchDetails.data as UserProfile);
 
             if (messagesData.error || !messagesData.data) {
-                // Handle error
+                
             } else {
                 setMessages(messagesData.data as Message[]);
                 handleMarkAsRead();
@@ -97,7 +97,7 @@ export default function ChatPage() {
         fetchInitialData();
     }, [chatId, currentUserId, router, handleMarkAsRead]);
     
-    // Polling for new messages
+    
     React.useEffect(() => {
         if (!chatId || !currentUserId) return;
 
@@ -127,7 +127,7 @@ export default function ChatPage() {
                     return prevMessages;
                 });
             }
-        }, 3000); // Poll every 3 seconds
+        }, 3000); 
 
         return () => clearInterval(interval);
     }, [chatId, currentUserId, handleMarkAsRead]);
@@ -160,7 +160,7 @@ export default function ChatPage() {
              setNewMessage(content);
              setMessages(prev => prev.filter(m => m.id !== tempId));
         } else {
-            // Replace optimistic with real message from server response
+            
             setMessages(prev => prev.map(m => m.id === tempId ? result.data as Message : m));
         }
     };
@@ -202,7 +202,7 @@ export default function ChatPage() {
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
+            
             <header className="flex items-center gap-4 p-2 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-6 w-6" />
@@ -240,7 +240,7 @@ export default function ChatPage() {
                 </DropdownMenu>
             </header>
             
-            {/* Messages */}
+            
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.map((message, index) => {
                     const isCurrentUser = message.sender_id === currentUserId;
@@ -299,7 +299,7 @@ export default function ChatPage() {
                  <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
+            
             <footer className="p-4 border-t bg-card/50 backdrop-blur-sm sticky bottom-0 z-10">
                 <form className="flex items-center gap-2" onSubmit={handleSendMessage}>
                     <Input

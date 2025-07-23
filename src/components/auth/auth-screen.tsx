@@ -125,11 +125,11 @@ export function AuthScreen() {
             resolve();
         },
         () => {
-            // Failure to get location silently - this will be handled by the permission check
-            // which will then show the prompt.
+            
+            
             resolve();
         },
-        { timeout: 5000 } // Don't wait forever
+        { timeout: 5000 } 
       );
     });
   }, [toast, handleLocationComplete]);
@@ -140,11 +140,11 @@ export function AuthScreen() {
         if (permission.state === 'granted') {
             await attemptToGetLocation(userId);
         } else {
-            // If prompt or denied, we show our custom dialog.
+            
             setView('location');
         }
       } else {
-          // Fallback for older browsers
+          
           setView('location');
       }
   }, [attemptToGetLocation]);
@@ -197,7 +197,7 @@ export function AuthScreen() {
   };
 
   const handleSignupSuccess = async (userId: string) => {
-      // For sign up, we always ask for location the first time.
+      
       localStorage.setItem('currentUserId', userId);
       setView('location');
   };
@@ -214,7 +214,7 @@ export function AuthScreen() {
       className="min-h-screen w-full bg-black overflow-x-hidden"
       onClick={handleBackdropClick}
     >
-      {/* Header */}
+      
       <header className="fixed top-0 left-0 right-0 z-20">
         <div className="container mx-auto flex h-20 items-center justify-between px-4">
           <div className="flex items-center gap-2 font-bold text-lg">
@@ -226,14 +226,14 @@ export function AuthScreen() {
         </div>
       </header>
 
-      {/* Background Grid & Glow */}
+      
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]" />
       </div>
       
       <LoginOptions isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} onLoginSuccess={handleLoginSuccess} />
 
-      {/* Auth Content */}
+      
       <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
         <AnimatePresence mode="wait">
           {view === 'start' && (
@@ -310,7 +310,7 @@ export function AuthScreen() {
         </AnimatePresence>
       </div>
 
-      {/* Static About Section */}
+      
       <div
         ref={aboutRef}
         className="w-full bg-black text-white py-20 px-6 border-t border-white/10"

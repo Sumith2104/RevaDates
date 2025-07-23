@@ -47,13 +47,13 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
-    const [matchedNotifications, setMatchedNotifications] = React.useState<Record<string, string>>({}); // { notificationId: matchId }
+    const [matchedNotifications, setMatchedNotifications] = React.useState<Record<string, string>>({}); 
     const { toast } = useToast();
     const router = useRouter();
 
     React.useEffect(() => {
         async function fetchData(initialLoad = false) {
-            // This check ensures we never call actions with a null userId.
+            
             if (!currentUserId) {
                 if (initialLoad) setLoading(false);
                 return;
@@ -67,25 +67,25 @@ export default function NotificationsPage() {
             } else {
                 setNotifications(prev => {
                     const newNotifications = result.data as Notification[];
-                    // A simple check to see if notifications have actually changed to avoid needless re-renders
+                    
                     if (JSON.stringify(prev) !== JSON.stringify(newNotifications)) {
                         return newNotifications;
                     }
                     return prev;
                 });
                 
-                // Mark as read, but don't wait for it to avoid blocking UI updates
+                
                 markNotificationsAsRead(currentUserId);
             }
 
             if (initialLoad) setLoading(false);
         }
 
-        fetchData(true); // Initial fetch
+        fetchData(true); 
 
-        const interval = setInterval(() => fetchData(false), 5000); // Poll every 5 seconds
+        const interval = setInterval(() => fetchData(false), 5000); 
 
-        return () => clearInterval(interval); // Cleanup
+        return () => clearInterval(interval); 
     }, [currentUserId]);
 
 
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
                 description: `You can now start chatting.`,
             });
         } else {
-            // It was a rejection or not a match, just remove it from the view instantly
+            
             setNotifications(prev => prev.filter(n => n.id !== notificationId));
         }
     };
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
     return (
         <AppShell>
             <div className="relative flex-1 overflow-y-auto">
-                 {/* Top fade */}
+                 
                 <div className="sticky top-0 left-0 right-0 h-10 bg-gradient-to-b from-black to-transparent pointer-events-none z-10" />
                 <div className="container mx-auto max-w-2xl p-4">
                     <h1 className="text-3xl font-bold mb-6">Notifications</h1>
@@ -183,7 +183,7 @@ export default function NotificationsPage() {
                         </div>
                     )}
                 </div>
-                 {/* Bottom fade */}
+                 
                 <div className="sticky bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black to-transparent pointer-events-none z-10" />
             </div>
         </AppShell>

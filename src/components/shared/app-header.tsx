@@ -29,10 +29,10 @@ export function AppHeader() {
       }
     };
     
-    // Initial fetch
+    
     fetchUnreadCount();
 
-    // Poll every 5 seconds
+    
     const interval = setInterval(fetchUnreadCount, 5000);
       
     return () => {

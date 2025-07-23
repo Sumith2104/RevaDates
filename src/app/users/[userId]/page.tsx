@@ -49,7 +49,7 @@ export default function UserProfilePage() {
         setProfile(null);
         setIsViewable(false);
       } else {
-          // This block requires a valid currentUserId.
+          
           if (currentUserId) { 
               if (data.is_public) {
                   setIsViewable(true);
@@ -66,7 +66,7 @@ export default function UserProfilePage() {
               });
 
           } else {
-              // Fallback if currentUserId is not available
+              
               setIsViewable(data.is_public);
               setProfile({
                 ...data,

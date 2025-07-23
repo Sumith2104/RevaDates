@@ -21,7 +21,7 @@ const Slider = React.forwardRef<
     <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
       <SliderPrimitive.Range className="absolute h-full bg-primary" />
     </SliderPrimitive.Track>
-    {/* Handle multiple thumbs if `value` is an array */}
+    
     {(Array.isArray(props.value) ? props.value : (props.defaultValue || [])).map((_, i) => (
         <SliderPrimitive.Thumb
             key={i}

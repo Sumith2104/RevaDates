@@ -21,7 +21,7 @@ const viewport: Viewport = {
   userScalable: false,
 };
 
-// Re-assigning to a variable that can be used in the component
+
 const layoutMetadata = metadata;
 const layoutViewport = viewport;
 

@@ -128,11 +128,11 @@ export function SettingsView({ userId }: { userId: string }) {
   const [ageRange, setAgeRange] = React.useState([18, 80]);
   const [matchNotification, setMatchNotification] = React.useState(true);
 
-  // Debounce the settings to avoid excessive database writes
+  
   const debouncedAgeRange = useDebounce(ageRange, 500);
   const debouncedMatchNotification = useDebounce(matchNotification, 500);
 
-  // Effect to fetch initial settings
+  
   React.useEffect(() => {
     if (!userId) return;
 
@@ -157,7 +157,7 @@ export function SettingsView({ userId }: { userId: string }) {
     fetchSettings();
   }, [userId, toast]);
 
-  // Effect to auto-save settings on change
+  
   React.useEffect(() => {
     if (loading || !userId) return;
 

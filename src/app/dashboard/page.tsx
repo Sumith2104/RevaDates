@@ -25,18 +25,18 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
 import { createClient } from '@/lib/supabase/client';
 
-// Fisher-Yates (aka Knuth) Shuffle
+
 function shuffle(array: any[]) {
   let currentIndex = array.length,  randomIndex;
 
-  // While there remain elements to shuffle.
+  
   while (currentIndex > 0) {
 
-    // Pick a remaining element.
+    
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
 
-    // And swap it with the current element.
+    
     [array[currentIndex], array[randomIndex]] = [
       array[randomIndex], array[currentIndex]];
   }
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
     const supabase = createClient();
 
-    // Check if user has photos BEFORE fetching anyone else, unless skipped
+    
     if (!skipPhotoCheck) {
         const { data: currentUserPhotos, error: photoError } = await supabase
           .from('profiles')
@@ -75,8 +75,8 @@ export default function DashboardPage() {
 
         if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
             setShowPhotoPrompt(true);
-            setLoading(false); // Stop loading, show the prompt
-            return; // Exit early
+            setLoading(false); 
+            return; 
         }
     }
     
@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (currentUserId) {
-        fetchProfiles(false); // Initial fetch, check for photos
+        fetchProfiles(false); 
     }
   }, [currentUserId, fetchProfiles]);
 
@@ -134,7 +134,7 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
-    fetchProfiles(true); // Re-fetch profiles, but this time skip the photo check
+    fetchProfiles(true); 
   }
   
   if (showPhotoPrompt) {

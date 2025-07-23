@@ -228,7 +228,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (!user.photos) return;
     const currentPhotos = [...user.photos];
     const newPrimaryIndex = currentPhotos.findIndex(p => p === photoToMakePrimary);
-    if (newPrimaryIndex <= 0) return; // It's already primary or not found
+    if (newPrimaryIndex <= 0) return; 
 
     const newPrimaryPhoto = currentPhotos.splice(newPrimaryIndex, 1)[0];
     const newPhotoOrder = [newPrimaryPhoto, ...currentPhotos];
@@ -239,7 +239,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         toast({ title: 'Main Photo Updated', description: "Your primary photo has been changed." });
         router.refresh();
     } else {
-        setUser(prev => ({...prev, photos: user.photos})); // Revert on failure
+        setUser(prev => ({...prev, photos: user.photos})); 
         toast({
             variant: 'destructive',
             title: 'Update Failed',
@@ -252,9 +252,9 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (!deletingPhoto || !user.photos) return;
 
     const currentPhotoUrl = deletingPhoto;
-    setDeletingPhoto(null); // Close the dialog immediately
+    setDeletingPhoto(null); 
 
-    // Optimistic UI update
+    
     const newPhotoList = user.photos.filter(p => p !== currentPhotoUrl);
     setUser(prev => ({ ...prev, photos: newPhotoList }));
 
@@ -264,33 +264,33 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     
     if (bucketIndex === -1 || bucketIndex + 1 >= urlParts.length) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path for deletion.' });
-      setUser(prev => ({...prev, photos: user.photos})); // Revert UI
+      setUser(prev => ({...prev, photos: user.photos})); 
       return;
     }
     const filePath = urlParts.slice(bucketIndex + 1).join('/');
 
-    // 1. Delete the file from Supabase Storage
+    
     const { error: storageError } = await supabase.storage.from(bucketName).remove([filePath]);
 
     if (storageError) {
         toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo: ${storageError.message}` });
-        setUser(prev => ({...prev, photos: user.photos})); // Revert UI
+        setUser(prev => ({...prev, photos: user.photos})); 
         return;
     }
 
-    // 2. Update the photos array in the user's profile
+    
     const result = await updateUserProfilePhotos(user.id, newPhotoList);
     
     if (!result.error) {
         toast({ title: 'Photo Removed' });
-        router.refresh(); // Refresh from server to confirm state
+        router.refresh(); 
     } else {
         toast({
             variant: 'destructive',
             title: 'Could Not Remove Photo',
             description: result.error,
         });
-        setUser(prev => ({...prev, photos: user.photos})); // Revert UI
+        setUser(prev => ({...prev, photos: user.photos})); 
     }
   }
 

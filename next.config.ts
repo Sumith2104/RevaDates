@@ -5,7 +5,7 @@ import type {NextConfig} from 'next';
 const supabaseHostname = 'babzgrswhtfxqqolfjpi.supabase.co';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  
   images: {
     remotePatterns: [
       {
@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Add Supabase storage domain
+      
       {
         protocol: 'https',
         hostname: supabaseHostname,

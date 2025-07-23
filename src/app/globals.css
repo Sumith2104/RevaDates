@@ -68,14 +68,14 @@ body {
   }
   body {
     @apply bg-background text-foreground select-none;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
   }
   body::-webkit-scrollbar {
-    display: none; /* WebKit */
+    display: none; 
   }
   
-  /* Disable drag for non-interactive elements */
+  
   img, a, div:not([contenteditable="true"]) {
     -webkit-user-drag: none;
     user-select: none;
@@ -84,7 +84,7 @@ body {
     -ms-user-select: none;
   }
   
-  /* Re-enable text selection for form inputs */
+  
   input, textarea {
     user-select: text;
     -webkit-user-select: text;

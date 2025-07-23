@@ -39,7 +39,7 @@ function AnimatedCard({
   setTriggerSwipeDirection,
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
-  const y = useMotionValue(0); // Lock Y axis
+  const y = useMotionValue(0); 
   const rotateY = useTransform(x, [-200, 200], [-60, 60]);
 
   const likeOpacity = useTransform(x, [50, 120], [0, 1]);
@@ -61,7 +61,7 @@ function AnimatedCard({
         },
       });
     } else {
-      // Snap back
+      
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
       animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
     }
@@ -86,7 +86,7 @@ function AnimatedCard({
     <motion.div
       className="absolute inset-0 cursor-grab"
       style={{ x, y, rotateY }}
-      drag="x" // Lock drag to horizontal only
+      drag="x" 
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.5}
       whileTap={{ cursor: 'grabbing' }}
@@ -96,7 +96,7 @@ function AnimatedCard({
       animate={{ scale: 1, opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } }}
     >
       <div className="relative w-full h-full">
-        {/* LIKE Overlay */}
+        
         <motion.div
           style={{ opacity: likeOpacity }}
           className="absolute top-6 left-6 bg-white/90 text-green-600 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[-10deg] z-10 flex items-center gap-2"
@@ -104,7 +104,7 @@ function AnimatedCard({
           DATE <Heart className="h-5 w-5 fill-current" />
         </motion.div>
 
-        {/* PASS Overlay */}
+        
         <motion.div
           style={{ opacity: passOpacity }}
           className="absolute top-6 right-6 bg-white/90 text-red-600 border-2 border-red-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[10deg] z-10 flex items-center gap-2"
@@ -136,7 +136,7 @@ function CardContent({ user, currentUserId, onBlock }: { user: UserProfile, curr
                 title: 'User Blocked',
                 description: `You will no longer see ${user.name}'s profile.`,
             });
-            onBlock(); // Callback to parent to remove from deck
+            onBlock(); 
         }
         setIsBlockConfirmOpen(false);
     }
@@ -260,12 +260,11 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
     const swipedUser = users[activeIndex];
     const action = direction === 'right' ? 'liked' : 'rejected';
 
-    // Optimistically update parent state via callback
+    
     onSwipe(swipedUser);
     
-    // The parent component will manage the user list,
-    // so we don't need to call setUsers here to remove the card.
-    // The change in the 'users' prop will trigger a re-render.
+    
+    
 
     const result = await handleSwipeAction(currentUserId, swipedUser.id, action);
     if (result.error) {
@@ -274,9 +273,9 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
         title: "Swipe Error",
         description: result.error,
        });
-       // If there's an error, the parent should handle reverting the state.
-       // A robust implementation might involve a specific 'revertSwipe' callback.
-       // For now, onUndo is a reasonable way to handle this.
+       
+       
+       
        onUndo(); 
        return;
     }
@@ -300,7 +299,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
   
   const handleBlockFromCard = () => {
     if (activeUser) {
-        onSwipe(activeUser); // This removes the user from the parent's `users` state
+        onSwipe(activeUser); 
     }
   }
 
@@ -346,7 +345,7 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
         </div>
 
 
-         {/* Preload the next 3 images */}
+         
         <div style={{ display: 'none' }}>
           {users.slice(Math.max(0, activeIndex - 3), activeIndex).reverse().map(user => (
             user.photos && user.photos.length > 0 && (

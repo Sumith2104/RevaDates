@@ -14,14 +14,14 @@ const EmailSchema = z.object({
 
 const timeZone = 'Asia/Kolkata';
 
-// Helper function to get current IST time as ISO string for Supabase
+
 function getISTTimestamp() {
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
-// Helper function to get future IST time as ISO string for Supabase
+
 function getFutureISTTimestamp(minutesToAdd: number) {
     const now = new Date();
     const futureDate = addMinutes(now, minutesToAdd);
@@ -29,7 +29,7 @@ function getFutureISTTimestamp(minutesToAdd: number) {
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
-// Reusable modern HTML email template
+
 function createModernEmailTemplate({ title, preheader, body, code, name }: { title: string, preheader: string, body: string, code?: string, name?: string }) {
     const greeting = name ? `<p>Hi ${name},</p>` : '';
     
@@ -218,7 +218,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
       .eq('action', 'liked')
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') { // Ignore 'No rows found' error
+    if (checkError && checkError.code !== 'PGRST116') { 
       return { error: 'Could not check for a match.' };
     }
     
@@ -236,11 +236,11 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
         }).select('id').single();
 
         if (matchError && matchError.code !== '23505') {
-          // Don't fail the whole operation, just log it. The match will be created if they both swipe.
+          
         }
 
         const notificationTime = getISTTimestamp();
-        // Create notifications for both users if their settings allow it
+        
         if (swiperProfile?.match_notification) {
             await supabase.from('notifications').insert({
                 recipient_id: swiperId,
@@ -290,7 +290,7 @@ export async function sendPasswordResetOtp(email: string) {
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expires = getFutureISTTimestamp(10); // 10 minutes from now
+    const expires = getFutureISTTimestamp(10); 
 
     const { error: updateError } = await supabase
         .from('profiles')
@@ -359,7 +359,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, password:
     const { error: updateError } = await supabase
         .from('profiles')
         .update({
-            password: password, // Passwords should be hashed!
+            password: password, 
             password_reset_token: null,
             password_reset_token_expires_at: null,
             updated_at: getISTTimestamp(),
@@ -525,7 +525,7 @@ export async function getChatsAndMatches(userId: string) {
     if (!userId) return { chats: [], matches: [], error: 'User ID is required.' };
     const supabase = createClient();
 
-    // Get all matches for the user
+    
     const { data: allMatches, error: matchesError } = await supabase
         .from('matches')
         .select('id, user1_id, user2_id, created_at')
@@ -542,7 +542,7 @@ export async function getChatsAndMatches(userId: string) {
 
     const matchIds = allMatches.map(m => m.id);
 
-    // Get the latest message for each match
+    
     const { data: lastMessages, error: messagesError } = await supabase
         .from('messages')
         .select(`
@@ -559,7 +559,7 @@ export async function getChatsAndMatches(userId: string) {
         return { chats: [], matches: [], error: 'Could not fetch messages.' };
     }
     
-    // Create a map of the latest message for each chat
+    
     const lastMessageMap = new Map<string, { content: string; created_at: string }>();
     const seenMatchIds = new Set<string>();
     if (lastMessages) {
@@ -571,7 +571,7 @@ export async function getChatsAndMatches(userId: string) {
         }
     }
     
-    // Count unread messages for the current user per chat
+    
     const unreadCounts = new Map<string, number>();
     if (lastMessages) {
         for (const msg of lastMessages) {
@@ -682,7 +682,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
     const supabase = createClient();
     const now = getISTTimestamp();
     
-    // 1. Record the swipe from the recipient back to the original sender
+    
     const { error: swipeError } = await supabase.from('swipes').upsert(
         {
             swiper_id: recipientId,
@@ -697,19 +697,19 @@ export async function respondToLike(notificationId: string, recipientId: string,
         return { error: 'Could not record your response.' };
     }
 
-    // 2. Delete the notification that has been actioned
+    
     await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId);
     
-    // 3. If they liked back, check for a match and create one
+    
     if (action === 'liked') {
          const { data: mutualLike, error: checkError } = await supabase
             .from('swipes')
             .select('swiper_id')
-            .eq('swiper_id', senderId) // The original sender
-            .eq('swiped_id', recipientId) // The current user
+            .eq('swiper_id', senderId) 
+            .eq('swiped_id', recipientId) 
             .eq('action', 'liked')
             .single();
 
@@ -717,7 +717,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
             return { error: 'Could not check for a match.' };
         }
         
-        // If there is a mutual like, create the match record
+        
         if (mutualLike) {
             const { data: matchData, error: matchError } = await supabase.from('matches').insert({
                 user1_id: recipientId,
@@ -725,11 +725,11 @@ export async function respondToLike(notificationId: string, recipientId: string,
                 created_at: now,
             }).select('id').single();
 
-            if (matchError && matchError.code !== '23505') { // 23505 is unique violation
+            if (matchError && matchError.code !== '23505') { 
                 return { error: 'Could not create the match record.' };
             }
             
-            // Fetch profiles for notification messages
+            
             const { data: profiles, error: profilesError } = await supabase
                 .from('profiles')
                 .select('id, name, match_notification')
@@ -739,7 +739,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
                 const recipientProfile = profiles.find(p => p.id === recipientId);
                 const senderProfile = profiles.find(p => p.id === senderId);
 
-                // Notify the original sender about the new match
+                
                 if (senderProfile?.match_notification) {
                      await supabase.from('notifications').insert({
                         recipient_id: senderId,
@@ -751,7 +751,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
                 }
             }
 
-            // Revalidate paths to update UI
+            
             revalidatePath('/chats');
             revalidatePath('/notifications');
             return { match: true, matchId: matchData?.id };
@@ -801,7 +801,7 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
         return { data: null, error: 'Could not send the message.' };
     }
 
-    // Add the tempId to the returned data so the client can find it.
+    
     const returnedData = data ? { ...data, tempId: tempId } : null;
 
     revalidatePath(`/chats/${matchId}`);
@@ -931,7 +931,7 @@ export async function sendLoginOtp(email: string) {
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expires = getFutureISTTimestamp(10); // 10 minutes from now
+    const expires = getFutureISTTimestamp(10); 
 
     const { error: updateError } = await supabase
         .from('profiles')
@@ -986,7 +986,7 @@ export async function verifyLoginOtp(email: string, otp: string) {
         return { error: 'Invalid or expired login code.', userId: null };
     }
 
-    // Clear the token after successful verification
+    
     await supabase
         .from('profiles')
         .update({
@@ -1005,7 +1005,7 @@ export async function getPotentialProfiles(currentUserId: string) {
   }
   const supabase = createClient();
 
-  // First, get the current user's profile to determine preferences
+  
   const { data: currentUserProfile, error: currentUserError } = await supabase
     .from('profiles')
     .select('discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users')
@@ -1023,7 +1023,7 @@ export async function getPotentialProfiles(currentUserId: string) {
       blocked_users: blockedUsers,
   } = currentUserProfile;
 
-  // Get IDs of users the current user has already swiped on
+  
   const { data: swipedUsersData, error: swipedError } = await supabase
     .from('swipes')
     .select('swiped_id')
@@ -1034,7 +1034,7 @@ export async function getPotentialProfiles(currentUserId: string) {
   }
   const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
 
-  // Get IDs of users the current user has already matched with
+  
   const { data: matchedUsersData, error: matchedError } = await supabase
     .from('matches')
     .select('user1_id, user2_id')
@@ -1045,7 +1045,7 @@ export async function getPotentialProfiles(currentUserId: string) {
   }
   const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
   
-  // Combine all users to exclude
+  
   const excludedIds = new Set([
     currentUserId, 
     ...swipedUserIds,
@@ -1054,17 +1054,17 @@ export async function getPotentialProfiles(currentUserId: string) {
   ]);
   const allExcludedIds = Array.from(excludedIds);
   
-  // Build the query to fetch potential profiles
+  
   let query = supabase
     .from('profiles')
-    .select('*, age:dob') // Select dob to calculate age later
+    .select('*, age:dob') 
     .order('created_at', { ascending: false });
 
   if (allExcludedIds.length > 0) {
     query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
   }
 
-  // Apply gender preference filter
+  
   if (genderPreference === 'men') {
       query = query.eq('gender', 'Male');
   } else if (genderPreference === 'women') {
@@ -1077,7 +1077,7 @@ export async function getPotentialProfiles(currentUserId: string) {
     return { data: null, error: "Could not fetch new profiles." };
   }
 
-  // Filter by age and calculate distance in the application code
+  
   const profilesWithAgeAndDistance = await Promise.all(
     allProfiles
     .map(profile => ({
