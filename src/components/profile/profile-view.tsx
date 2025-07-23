@@ -304,9 +304,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               <span className="sr-only">{isEditing ? 'Save Profile' : 'Edit Profile'}</span>
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
+           <div className="flex items-center gap-4 pt-4">
                 <Avatar className="h-20 w-20">
                   {userPhotos[0] ? (
                     <AvatarImage src={userPhotos[0]} alt={user.name} width={80} height={80} className="object-cover" />
@@ -328,6 +326,8 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                      </div>
                 </div>
             </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
             <div>
               <Label htmlFor="bio">About Me</Label>
               {isEditing ? (
