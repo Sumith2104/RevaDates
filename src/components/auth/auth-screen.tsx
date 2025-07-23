@@ -8,7 +8,7 @@ import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { Heart, MapPin, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -79,6 +79,7 @@ export function AuthScreen() {
   const [checkingAuth, setCheckingAuth] = React.useState(true);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const aboutRef = React.useRef<HTMLDivElement | null>(null);
   const scrollToAbout = () => {
@@ -98,6 +99,19 @@ export function AuthScreen() {
     };
     checkSession();
   }, [router]);
+
+  React.useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: error,
+        });
+        // Remove error from URL without reloading
+        router.replace('/', {scroll: false});
+    }
+  }, [searchParams, toast, router]);
 
 
   React.useEffect(() => {

@@ -91,14 +91,13 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
     }
     
     const getCallbackUrl = () => {
-        let url;
-        if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-          url = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-        } else {
-          url = 'http://localhost:9002';
+        if (typeof window === 'undefined') {
+            return '';
         }
-        
+        let url = window.location.origin;
+        // Ensure there's no trailing slash
         url = url.charAt(url.length - 1) === '/' ? url.slice(0, -1) : url;
+        // Append the callback route
         return `${url}/auth/callback?next=/dashboard`;
     };
 
@@ -224,7 +223,3 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         </Dialog>
     );
 }
-
-    
-
-    
