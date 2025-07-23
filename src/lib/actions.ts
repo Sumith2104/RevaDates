@@ -43,14 +43,16 @@ function createModernEmailTemplate({ title, preheader, body, code, name }: { tit
         <title>${title}</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-            body { margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Inter', Arial, sans-serif; }
+            body { margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', Arial, sans-serif; }
             .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; }
             .card { background-color: #1a1a1a; border-radius: 12px; padding: 40px; }
             .header { text-align: center; margin-bottom: 30px; }
             .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
             .content p { color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; }
-            .code-box { background-color: #0a0a0a; border-radius: 8px; padding: 15px 20px; text-align: center; margin: 30px 0; }
+            .code-box { background-color: #27272a; border-radius: 8px; padding: 15px 20px; text-align: center; margin-top: 30px; }
             .code-box p { font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin: 0; }
+            .copy-hint { text-align: center; margin-top: 8px; }
+            .copy-hint p { font-size: 12px; color: #737373; margin: 0; }
             .footer { text-align: center; margin-top: 30px; }
             .footer p { color: #737373; font-size: 12px; }
         </style>
@@ -67,11 +69,16 @@ function createModernEmailTemplate({ title, preheader, body, code, name }: { tit
                     <p>${body}</p>
                 </div>
                 ${code ? `
-                <div class="code-box">
-                    <p>${code}</p>
+                <div>
+                    <div class="code-box">
+                        <p>${code}</p>
+                    </div>
+                    <div class="copy-hint">
+                        <p>Tap to copy</p>
+                    </div>
                 </div>
                 ` : ''}
-                <div class="content">
+                <div class="content" style="margin-top: 30px;">
                     <p>If you did not request this, you can safely ignore this email.</p>
                 </div>
             </div>
@@ -898,3 +905,6 @@ export async function getIsMatch(userA: string, userB: string): Promise<boolean>
     return true;
 }
 
+
+
+    
