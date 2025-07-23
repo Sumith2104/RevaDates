@@ -1,3 +1,4 @@
+
 import nodemailer from 'nodemailer';
 
 type EmailPayload = {
@@ -18,8 +19,9 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (data: EmailPayload) => {
+  const fromEmail = process.env.SMTP_FROM || 'noreply@example.com';
   const mailOptions = {
-    from: process.env.SMTP_FROM || 'noreply@example.com',
+    from: `RevaDates <${fromEmail}>`,
     ...data,
   };
 
