@@ -28,7 +28,6 @@ export default function ChatsPage() {
         }
 
         async function fetchData(initialLoad = false) {
-            // This check ensures we never call the action with a null userId.
             if (!userId) {
                 if(initialLoad) setLoading(false);
                 return;
@@ -49,13 +48,13 @@ export default function ChatsPage() {
             if(initialLoad) setLoading(false);
         }
 
-        fetchData(true); // Initial fetch with loading state
+        fetchData(true);
 
         const interval = setInterval(() => {
-            fetchData(false); // Subsequent fetches without loading state
-        }, 3000); // Refresh every 3 seconds
+            fetchData(false);
+        }, 3000);
 
-        return () => clearInterval(interval); // Cleanup on component unmount
+        return () => clearInterval(interval);
 
     }, [userId]);
     
@@ -80,47 +79,51 @@ export default function ChatsPage() {
 
     return (
         <AppShell>
-            <div className="container mx-auto max-w-2xl p-4 flex-1 flex flex-col">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold mb-4">New Matches</h1>
-                     {matches.length === 0 && (
-                        <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg">
-                            <Heart className="mx-auto h-8 w-8 mb-2" />
-                            <p className="text-sm">No new matches yet. Keep swiping!</p>
-                        </div>
-                    )}
-                    {matches.length > 0 && (
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                            {matches.map(match => <MatchItem key={match.id} match={match} />)}
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-3xl font-bold">Messages</h1>
+            <div className="flex-1 flex flex-col">
+                {/* Outer container for the whole page content */}
+                <div className="flex-1 flex flex-col p-4 space-y-6">
+                    {/* New Matches Section */}
+                    <div>
+                        <h1 className="text-3xl font-bold mb-4">New Matches</h1>
+                        {matches.length === 0 ? (
+                            <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg">
+                                <Heart className="mx-auto h-8 w-8 mb-2" />
+                                <p className="text-sm">No new matches yet. Keep swiping!</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                                <div className="flex gap-4 pb-4">
+                                    {matches.map(match => <MatchItem key={match.id} match={match} />)}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                     <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input
-                            placeholder="Search chats..."
-                            className="pl-10 w-full"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    {filteredChats.length === 0 && (
-                         <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg flex-1 flex flex-col justify-center items-center">
-                            <MessageSquare className="mx-auto h-8 w-8 mb-2" />
-                            <p className="text-sm">{searchTerm ? "No chats found." : "Start a conversation with a new match!"}</p>
-                        </div>
-                    )}
-                    {filteredChats.length > 0 && (
-                        <div className="space-y-2">
-                            {filteredChats.map(chat => <ChatItem key={chat.id} chat={chat} />)}
-                        </div>
-                    )}
 
+                    {/* Messages Section */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <div className="flex justify-between items-center mb-4">
+                            <h1 className="text-3xl font-bold">Messages</h1>
+                        </div>
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                placeholder="Search chats..."
+                                className="pl-10 w-full"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        {filteredChats.length === 0 ? (
+                            <div className="text-center text-muted-foreground py-6 bg-muted/30 rounded-lg flex-1 flex flex-col justify-center items-center">
+                                <MessageSquare className="mx-auto h-8 w-8 mb-2" />
+                                <p className="text-sm">{searchTerm ? "No chats found." : "Start a conversation with a new match!"}</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-y-auto space-y-2 flex-1">
+                                {filteredChats.map(chat => <ChatItem key={chat.id} chat={chat} />)}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </AppShell>
