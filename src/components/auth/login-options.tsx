@@ -94,6 +94,9 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         setIsLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
+            options: {
+                redirectTo: '/auth/callback'
+            }
         });
         if (error) {
             toast({
