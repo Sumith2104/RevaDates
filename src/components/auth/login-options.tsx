@@ -98,8 +98,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
           url = 'http://localhost:9002';
         }
         
-        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
-        return `${url}auth/callback`;
+        url = url.charAt(url.length - 1) === '/' ? url.slice(0, -1) : url;
+        return `${url}/auth/callback?next=/dashboard`;
     };
 
     const handleGoogleLogin = async () => {
@@ -224,5 +224,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         </Dialog>
     );
 }
+
+    
 
     
