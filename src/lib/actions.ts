@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { sendEmail } from './email';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { addMinutes } from 'date-fns';
+import { addMinutes, differenceInYears } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
 
 const EmailSchema = z.object({
@@ -997,4 +997,102 @@ export async function verifyLoginOtp(email: string, otp: string) {
         .eq('id', user.id);
 
     return { success: true, userId: user.id };
+}
+
+export async function getPotentialProfiles(currentUserId: string) {
+  if (!currentUserId) {
+    return { data: null, error: 'User ID is required.' };
+  }
+  const supabase = createClient();
+
+  // First, get the current user's profile to determine preferences
+  const { data: currentUserProfile, error: currentUserError } = await supabase
+    .from('profiles')
+    .select('discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users')
+    .eq('id', currentUserId)
+    .single();
+
+  if (currentUserError || !currentUserProfile) {
+    return { data: null, error: "Could not load your profile settings." };
+  }
+
+  const { 
+      discovery_age_min: minAge, 
+      discovery_age_max: maxAge,
+      discovery_gender_preference: genderPreference, 
+      blocked_users: blockedUsers,
+  } = currentUserProfile;
+
+  // Get IDs of users the current user has already swiped on
+  const { data: swipedUsersData, error: swipedError } = await supabase
+    .from('swipes')
+    .select('swiped_id')
+    .eq('swiper_id', currentUserId);
+
+  if (swipedError) {
+    return { data: null, error: "Could not fetch your swipe history." };
+  }
+  const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+
+  // Get IDs of users the current user has already matched with
+  const { data: matchedUsersData, error: matchedError } = await supabase
+    .from('matches')
+    .select('user1_id, user2_id')
+    .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+    
+  if (matchedError) {
+    return { data: null, error: "Could not fetch your match history." };
+  }
+  const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
+  
+  // Combine all users to exclude
+  const excludedIds = new Set([
+    currentUserId, 
+    ...swipedUserIds,
+    ...matchedUserIds, 
+    ...(blockedUsers || [])
+  ]);
+  const allExcludedIds = Array.from(excludedIds);
+  
+  // Build the query to fetch potential profiles
+  let query = supabase
+    .from('profiles')
+    .select('*, age:dob') // Select dob to calculate age later
+    .order('created_at', { ascending: false });
+
+  if (allExcludedIds.length > 0) {
+    query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+  }
+
+  // Apply gender preference filter
+  if (genderPreference === 'men') {
+      query = query.eq('gender', 'Male');
+  } else if (genderPreference === 'women') {
+      query = query.eq('gender', 'Female');
+  }
+  
+  const { data: allProfiles, error: profilesError } = await query;
+
+  if (profilesError) {
+    return { data: null, error: "Could not fetch new profiles." };
+  }
+
+  // Filter by age and calculate distance in the application code
+  const profilesWithAgeAndDistance = await Promise.all(
+    allProfiles
+    .map(profile => ({
+      ...profile,
+      age: differenceInYears(new Date(), new Date(profile.dob)),
+    }))
+    .filter(profile => profile.age >= minAge && profile.age <= maxAge)
+    .map(async (profile) => {
+        const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
+        return {
+          ...profile,
+          distance_meters: distance !== null ? distance * 1000 : null,
+        };
+    })
+  );
+
+  return { data: profilesWithAgeAndDistance, error: null };
 }

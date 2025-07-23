@@ -4,9 +4,7 @@
 import * as React from 'react';
 import { AppShell } from '@/components/shared/app-shell';
 import { SwipeDeck } from '@/components/dashboard/swipe-deck';
-import { createClient } from '@/lib/supabase/client';
 import type { UserProfile } from '@/lib/types';
-import { differenceInYears } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -19,12 +17,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from '@/components/shared/app-header';
-import { handleUndoSwipeAction, getDistanceBetweenUsers } from '@/lib/actions';
+import { handleUndoSwipeAction, getPotentialProfiles } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
+import { createClient } from '@/lib/supabase/client';
 
 // Fisher-Yates (aka Knuth) Shuffle
 function shuffle(array: any[]) {
@@ -60,116 +59,37 @@ export default function DashboardPage() {
 
     const supabase = createClient();
 
-    // First, get the current user's profile including settings, location, and blocked users
-    const { data: currentUserProfile, error: currentUserError } = await supabase
-      .from('profiles')
-      .select('discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users, photos')
-      .eq('id', currentUserId)
-      .single();
-
-    if (currentUserError) {
-        toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
-        setLoading(false);
-        return;
-    }
-    
     // Check if user has photos BEFORE fetching anyone else, unless skipped
-    if (!skipPhotoCheck && (!currentUserProfile.photos || currentUserProfile.photos.length === 0)) {
-        setShowPhotoPrompt(true);
-        setLoading(false); // Stop loading, show the prompt
-        return; // Exit early
+    if (!skipPhotoCheck) {
+        const { data: currentUserPhotos, error: photoError } = await supabase
+          .from('profiles')
+          .select('photos')
+          .eq('id', currentUserId)
+          .single();
+        
+        if (photoError) {
+             toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
+             setLoading(false);
+             return;
+        }
+
+        if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
+            setShowPhotoPrompt(true);
+            setLoading(false); // Stop loading, show the prompt
+            return; // Exit early
+        }
     }
     
-    const { 
-        discovery_age_min: minAge, 
-        discovery_age_max: maxAge,
-        discovery_gender_preference: genderPreference, 
-        blocked_users: blockedUsers,
-    } = currentUserProfile;
+    const result = await getPotentialProfiles(currentUserId);
 
-    // Get IDs of users the current user has already swiped on
-    const { data: swipedUsersData, error: swipedError } = await supabase
-      .from('swipes')
-      .select('swiped_id')
-      .eq('swiper_id', currentUserId);
-
-    if (swipedError) {
-      toast({ variant: 'destructive', title: "Database Error", description: "Could not fetch your swipe history." });
-      setAllUsers([]);
-      setLoading(false);
-      return;
-    }
-    const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
-
-    // Get IDs of users the current user has already matched with
-    const { data: matchedUsersData, error: matchedError } = await supabase
-      .from('matches')
-      .select('user1_id, user2_id')
-      .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
-
-    const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
-    
-    // Combine all users to exclude: current user, swiped users, matched users, and blocked users
-    const excludedIds = new Set([
-      currentUserId, 
-      ...swipedUserIds,
-      ...matchedUserIds, 
-      ...(blockedUsers || [])
-    ]);
-    const allExcludedIds = Array.from(excludedIds);
-    
-    // Fetch all potential profiles (excluding the ones determined above), ordered by most recent
-    let query = supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (allExcludedIds.length > 0) {
-      query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+    if (result.error) {
+        toast({ variant: 'destructive', title: "Database Error", description: result.error });
+        setAllUsers([]);
+    } else {
+        setAllUsers(shuffle(result.data as UserProfile[]));
     }
 
-    // Apply gender preference filter
-    if (genderPreference === 'men') {
-        query = query.eq('gender', 'Male');
-    } else if (genderPreference === 'women') {
-        query = query.eq('gender', 'Female');
-    }
-    
-    const { data: allProfiles, error: profilesError } = await query;
-
-    if (profilesError) {
-      toast({ variant: 'destructive', title: "Database Error", description: "Could not fetch new profiles to show." });
-      setAllUsers([]);
-      setLoading(false);
-      return;
-    }
-
-    // Filter profiles in the application code and calculate distances
-    const profilesWithAge = allProfiles
-      .map(profile => ({
-          ...profile,
-          age: differenceInYears(new Date(), new Date(profile.dob)),
-      }))
-      .filter(profile => {
-          const isAgeMatch = profile.age >= minAge && profile.age <= maxAge;
-          return isAgeMatch;
-      });
-
-    // Pre-load all distances
-    const profilesWithDistance = await Promise.all(
-      profilesWithAge.map(async (profile) => {
-        const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
-        return {
-          ...profile,
-          distance_meters: distance !== null ? distance * 1000 : null,
-        };
-      })
-    );
-
-    if (profilesWithDistance) {
-      setAllUsers(shuffle(profilesWithDistance));
-    }
-     setLoading(false);
+    setLoading(false);
   }, [currentUserId, toast]);
 
   React.useEffect(() => {
