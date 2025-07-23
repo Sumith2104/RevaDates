@@ -253,14 +253,28 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const handleDeletePhoto = async () => {
     if (!deletingPhoto || !user.photos) return;
 
+    // 1. Extract file path from the URL for storage deletion
+    const filePath = deletingPhoto.split('/photos/').pop();
+    if (!filePath) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path.' });
+        return;
+    }
+
+    // 2. Delete the file from Supabase Storage
+    const { error: storageError } = await supabase.storage.from('photos').remove([filePath]);
+    if (storageError) {
+        toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo from storage: ${storageError.message}` });
+        setDeletingPhoto(null);
+        return;
+    }
+
+    // 3. Update the photos array in the user's profile
     const newPhotoList = user.photos.filter(p => p !== deletingPhoto);
-    
-    // Note: We are not deleting the file from Supabase storage itself,
-    // just removing the reference from the user's profile.
     const result = await updateUserProfilePhotos(user.id, newPhotoList);
+    
     if (!result.error) {
         toast({ title: 'Photo Removed' });
-        setUser(prev => ({...prev, photos: newPhotoList}));
+        setUser(prev => ({ ...prev, photos: newPhotoList }));
         router.refresh();
     } else {
         toast({
@@ -268,7 +282,10 @@ export function ProfileView({ user: initialUser }: { user: User }) {
             title: 'Could Not Remove Photo',
             description: result.error,
         });
+        // Note: If this fails, the file is deleted but the profile is not updated.
+        // A more robust solution might involve a retry mechanism or a cleanup job.
     }
+    
     setDeletingPhoto(null);
   }
 
