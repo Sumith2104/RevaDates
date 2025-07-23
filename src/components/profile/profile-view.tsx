@@ -335,7 +335,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
            <div className="flex items-center gap-4 pt-4">
                 <Avatar className="h-20 w-20">
                   {userPhotos[0] && (
-                    <AvatarImage src={userPhotos[0]} alt={user.name} />
+                    <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
                   )}
                   <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
                     {getInitials(user.name)}
@@ -461,5 +461,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     </>
   );
 }
+
+    
 
     
