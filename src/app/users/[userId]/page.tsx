@@ -49,29 +49,30 @@ export default function UserProfilePage() {
         setProfile(null);
         setIsViewable(false);
       } else {
-          if (data.is_public) {
-              setIsViewable(true);
+          // This block requires a valid currentUserId.
+          if (currentUserId) { 
+              if (data.is_public) {
+                  setIsViewable(true);
+              } else {
+                  const matchStatus = await getIsMatch(currentUserId, userId);
+                  setIsViewable(matchStatus);
+              }
+              
+              const distance = await getDistanceBetweenUsers(currentUserId, data.id);
+              setProfile({
+                ...data,
+                dob: new Date(data.dob),
+                distance_meters: distance !== null ? distance * 1000 : null
+              } as UserProfile);
+
           } else {
-              // This check is already here, which is good.
-              const matchStatus = await getIsMatch(currentUserId, userId);
-              setIsViewable(matchStatus);
-          }
-          
-          // Add a guard to ensure currentUserId is not null before proceeding
-          if (currentUserId) {
-            const distance = await getDistanceBetweenUsers(currentUserId, data.id);
-            setProfile({
-              ...data,
-              dob: new Date(data.dob),
-              distance_meters: distance !== null ? distance * 1000 : null
-            } as UserProfile);
-          } else {
-            // Handle the unlikely case where currentUserId becomes null
-             setProfile({
-              ...data,
-              dob: new Date(data.dob),
-              distance_meters: null
-            } as UserProfile);
+              // Fallback if currentUserId is not available
+              setIsViewable(data.is_public);
+              setProfile({
+                ...data,
+                dob: new Date(data.dob),
+                distance_meters: null
+              } as UserProfile);
           }
       }
       
