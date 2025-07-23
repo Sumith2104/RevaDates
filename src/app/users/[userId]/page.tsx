@@ -52,21 +52,27 @@ export default function UserProfilePage() {
           if (data.is_public) {
               setIsViewable(true);
           } else {
-              if (currentUserId) {
-                const matchStatus = await getIsMatch(currentUserId, userId);
-                setIsViewable(matchStatus);
-              } else {
-                setIsViewable(false);
-              }
+              // This check is already here, which is good.
+              const matchStatus = await getIsMatch(currentUserId, userId);
+              setIsViewable(matchStatus);
           }
           
-          const distance = await getDistanceBetweenUsers(currentUserId, data.id);
-
-          setProfile({
-            ...data,
-            dob: new Date(data.dob),
-            distance_meters: distance !== null ? distance * 1000 : null
-          } as UserProfile);
+          // Add a guard to ensure currentUserId is not null before proceeding
+          if (currentUserId) {
+            const distance = await getDistanceBetweenUsers(currentUserId, data.id);
+            setProfile({
+              ...data,
+              dob: new Date(data.dob),
+              distance_meters: distance !== null ? distance * 1000 : null
+            } as UserProfile);
+          } else {
+            // Handle the unlikely case where currentUserId becomes null
+             setProfile({
+              ...data,
+              dob: new Date(data.dob),
+              distance_meters: null
+            } as UserProfile);
+          }
       }
       
       setLoading(false);
