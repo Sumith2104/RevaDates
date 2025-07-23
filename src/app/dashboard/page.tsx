@@ -53,9 +53,22 @@ export default function DashboardPage() {
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
   const { toast } = useToast();
   
-  const fetchProfiles = React.useCallback(async (skipPhotoCheck = false) => {
+  const fetchProfiles = React.useCallback(async (skipCache = false, skipPhotoCheck = false) => {
     if (!currentUserId) return;
     setLoading(true);
+
+    if (!skipCache) {
+      try {
+        const cachedProfiles = localStorage.getItem(`cachedProfiles_${currentUserId}`);
+        if (cachedProfiles) {
+          setAllUsers(JSON.parse(cachedProfiles));
+          setLoading(false);
+        }
+      } catch (error) {
+        console.warn("Could not read cached profiles", error);
+      }
+    }
+
 
     const supabase = createClient();
 
@@ -86,7 +99,13 @@ export default function DashboardPage() {
         toast({ variant: 'destructive', title: "Database Error", description: result.error });
         setAllUsers([]);
     } else {
-        setAllUsers(shuffle(result.data as UserProfile[]));
+        const freshUsers = shuffle(result.data as UserProfile[]);
+        setAllUsers(freshUsers);
+        try {
+          localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(freshUsers));
+        } catch (error) {
+          console.warn("Could not save profiles to cache", error);
+        }
     }
 
     setLoading(false);
@@ -94,7 +113,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (currentUserId) {
-        fetchProfiles(false); 
+        fetchProfiles(false, false); 
     }
   }, [currentUserId, fetchProfiles]);
 
@@ -121,7 +140,7 @@ export default function DashboardPage() {
     }
   };
   
-  if (loading || userLoading) {
+  if ((loading && allUsers.length === 0) || userLoading) {
       return (
           <AppShell>
             <AppHeader />
@@ -134,7 +153,7 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
-    fetchProfiles(true); 
+    fetchProfiles(true, true); 
   }
   
   if (showPhotoPrompt) {
@@ -166,17 +185,17 @@ export default function DashboardPage() {
       <AppShell>
         <AppHeader />
         <div className="flex-1 flex flex-col pt-16">
-          {noMoreProfiles ? (
+          {noMoreProfiles && !loading ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                   <p className="text-xl font-medium">No new profiles found.</p>
                   <p className="mt-2">Try increasing your age range in Settings, or check back later!</p>
-                  <Button onClick={() => fetchProfiles(true)} variant="outline" className="mt-4">
+                  <Button onClick={() => fetchProfiles(true, true)} variant="outline" className="mt-4">
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Refresh
                   </Button>
               </div>
           ) : (
-            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true, true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
           )}
         </div>
       </AppShell>
