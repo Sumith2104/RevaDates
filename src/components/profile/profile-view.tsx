@@ -156,8 +156,6 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     const result = await updateUserProfile(user.id, {
       name: user.name,
       bio: user.bio,
-      email: user.email,
-      phone: user.phone,
     });
     setSaving(false);
 
@@ -253,9 +251,10 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const handleDeletePhoto = async () => {
     if (!deletingPhoto || !user.photos) return;
 
-    // Correctly extract the file path from the full URL
     const urlParts = deletingPhoto.split('/');
-    const bucketIndex = urlParts.indexOf('photos');
+    const bucketName = 'photos';
+    const bucketIndex = urlParts.indexOf(bucketName);
+    
     if (bucketIndex === -1 || bucketIndex + 1 >= urlParts.length) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path for deletion.' });
       setDeletingPhoto(null);
@@ -264,7 +263,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     const filePath = urlParts.slice(bucketIndex + 1).join('/');
 
     // Delete the file from Supabase Storage
-    const { error: storageError } = await supabase.storage.from('photos').remove([filePath]);
+    const { error: storageError } = await supabase.storage.from(bucketName).remove([filePath]);
 
     if (storageError) {
         toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo from storage: ${storageError.message}` });
@@ -334,18 +333,18 @@ export function ProfileView({ user: initialUser }: { user: User }) {
               {isEditing ? (
                 <Textarea id="bio" name="bio" value={user.bio || ''} onChange={handleInputChange} rows={6} placeholder="Tell us about yourself..." />
               ) : (
-                <p className="text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{user.bio || 'Tell us about yourself...'}</p>
               )}
             </div>
             {isEditing && (
               <>
                 <div>
                   <Label>Email</Label>
-                  <Input name="email" type="email" value={user.email || ''} onChange={handleInputChange} placeholder="Your Email" />
+                  <Input name="email" type="email" value={user.email || ''} disabled placeholder="Your Email" />
                 </div>
                 <div>
                   <Label>Phone</Label>
-                  <Input name="phone" type="tel" value={user.phone || ''} onChange={handleInputChange} placeholder="Your Phone" />
+                  <Input name="phone" type="tel" value={user.phone || ''} disabled placeholder="Your Phone" />
                 </div>
               </>
             )}

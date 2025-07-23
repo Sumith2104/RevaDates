@@ -567,7 +567,7 @@ export async function getChatsAndMatches(userId: string) {
     return { chats: formattedChats, matches: formattedMatches, error: null };
 }
 
-export async function updateUserProfile(userId: string, updates: Record<string, any>) {
+export async function updateUserProfile(userId: string, updates: { name?: string, bio?: string }) {
     if (!userId) {
         return { error: 'User ID is required.' };
     }
