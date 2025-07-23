@@ -80,7 +80,7 @@ function createModernEmailTemplate({ title, preheader, body, code, name }: { tit
                         <p>${code}</p>
                     </div>
                     <div class="copy-hint">
-                        <p>Tap to copy</p>
+                        <p>You can manually copy the code above</p>
                     </div>
                 </div>
                 ` : ''}
