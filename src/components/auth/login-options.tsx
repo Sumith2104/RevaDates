@@ -90,12 +90,24 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         }
     }
     
+    const getCallbackUrl = () => {
+        let url;
+        if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+          url = `https://revadates.vercel.app`;
+        } else {
+          url = 'http://localhost:9002';
+        }
+        
+        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+        return `${url}auth/callback`;
+    };
+
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: '/auth/callback'
+                redirectTo: getCallbackUrl()
             }
         });
         if (error) {

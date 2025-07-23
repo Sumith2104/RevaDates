@@ -11,26 +11,8 @@ export function createClient() {
     throw new Error('Supabase URL and Anon Key are required. Please check your .env file.');
   }
 
-  
-  const getCallbackUrl = () => {
-    let url;
-    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      url = `https://revadates.vercel.app`;
-    } else {
-      url = 'http://localhost:9002';
-    }
-    
-    url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
-    return `${url}auth/callback`;
-  };
-
   return createBrowserClient(
     supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        callbackUrl: getCallbackUrl()
-      }
-    }
+    supabaseAnonKey
   );
 }
