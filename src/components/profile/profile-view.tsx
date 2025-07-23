@@ -342,18 +342,16 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
-                     {isEditing && (
-                        <Button
-                            size="icon"
-                            variant="default"
-                            className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background"
-                            onClick={() => !uploading && fileInputRef.current?.click()}
-                            disabled={uploading}
-                        >
-                            {uploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4" />}
-                            <span className="sr-only">Add photo</span>
-                        </Button>
-                    )}
+                    <Button
+                        size="icon"
+                        variant="default"
+                        className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background"
+                        onClick={() => !uploading && fileInputRef.current?.click()}
+                        disabled={uploading}
+                    >
+                        {uploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4" />}
+                        <span className="sr-only">Add photo</span>
+                    </Button>
                 </div>
                 <div className="flex-grow">
                     {isEditing ? (
