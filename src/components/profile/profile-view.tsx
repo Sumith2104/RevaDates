@@ -118,7 +118,9 @@ function MatchesDialog({ userId }: { userId: string }) {
                           >
                               <div className="flex items-center gap-4">
                                   <Avatar>
-                                      <AvatarImage src={match.matchedUser.photos?.[0]} alt={match.matchedUser.name} width={48} height={48} className="object-cover" />
+                                      {match.matchedUser.photos?.[0] && (
+                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} width={48} height={48} className="object-cover" />
+                                      )}
                                       <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
                                   </Avatar>
                                   <span className="font-medium">{match.matchedUser.name}</span>
