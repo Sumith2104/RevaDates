@@ -13,7 +13,9 @@ export function AppHeader() {
 
   React.useEffect(() => {
     const currentUserId = localStorage.getItem('currentUserId');
-    setUserId(currentUserId);
+    if (currentUserId) {
+        setUserId(currentUserId);
+    }
   }, []);
   
   React.useEffect(() => {
