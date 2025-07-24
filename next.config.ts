@@ -21,10 +21,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'revadates.vercel.app',
-      },
     ],
   },
 };
