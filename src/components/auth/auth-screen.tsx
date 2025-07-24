@@ -24,6 +24,7 @@ import { updateUserLocation } from '@/lib/actions';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 import { LoginOptions } from './login-options';
 import { createClient } from '@/lib/supabase/client';
+import { PageLoader } from '../shared/page-loader';
 
 const TYPING_SPEED = 100;
 const phrases = [ "Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free" ];
@@ -77,6 +78,7 @@ export function AuthScreen() {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const activePhrase = phrases[phraseIndex];
   const [checkingAuth, setCheckingAuth] = React.useState(true);
+  const [postLogin, setPostLogin] = React.useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -115,7 +117,7 @@ export function AuthScreen() {
 
 
   React.useEffect(() => {
-    if (checkingAuth) return;
+    if (checkingAuth || postLogin) return;
     let timeoutId: NodeJS.Timeout;
 
     if (isDeleting) {
@@ -138,7 +140,7 @@ export function AuthScreen() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [typedPhrase, activePhrase, isDeleting, checkingAuth]);
+  }, [typedPhrase, activePhrase, isDeleting, checkingAuth, postLogin]);
   
   const handleLocationComplete = React.useCallback(() => {
       router.push('/dashboard');
@@ -222,12 +224,13 @@ export function AuthScreen() {
   const handleLoginSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
       setIsLoginOpen(false);
+      setPostLogin(true); 
       await handleLocationLogic(userId);
   };
 
   const handleSignupSuccess = async (userId: string) => {
-      
       localStorage.setItem('currentUserId', userId);
+      setPostLogin(true);
       setView('location');
   };
 
@@ -238,10 +241,10 @@ export function AuthScreen() {
     transition: { type: 'spring', stiffness: 400, damping: 30 }
   };
 
-  if (checkingAuth) {
+  if (checkingAuth || postLogin) {
     return (
-      <div className="min-h-screen w-full bg-black flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen w-full bg-black">
+        <PageLoader />
       </div>
     );
   }
