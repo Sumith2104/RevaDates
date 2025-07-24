@@ -22,7 +22,9 @@ export function AppHeader() {
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
               {unreadNotifications > 0 && (
-                <span className="absolute top-1 right-1 flex h-2 w-2 items-center justify-center rounded-full bg-white border-background" />
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                </span>
               )}
               <span className="sr-only">Notifications</span>
             </Link>
