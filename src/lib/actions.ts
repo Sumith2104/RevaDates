@@ -1060,7 +1060,7 @@ export async function getPotentialProfiles(currentUserId: string) {
   
   let query = supabase
     .from('profiles')
-    .select('*, age:dob') 
+    .select('*, dob') 
     .order('created_at', { ascending: false });
 
   if (allExcludedIds.length > 0) {
@@ -1087,7 +1087,7 @@ export async function getPotentialProfiles(currentUserId: string) {
       ...profile,
       age: differenceInYears(new Date(), new Date(profile.dob)),
     }))
-    .filter(profile => profile.age >= minAge && profile.age <= maxAge)
+    .filter(profile => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80))
     .map(async (profile) => {
         const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
         return {
