@@ -60,10 +60,15 @@ export default function DashboardPage() {
     if (!skipCache) {
       try {
         const cachedProfiles = localStorage.getItem(`cachedProfiles_${currentUserId}`);
+        const cachedHistory = localStorage.getItem(`swipedHistory_${currentUserId}`);
         if (cachedProfiles) {
           setAllUsers(JSON.parse(cachedProfiles));
+          if(cachedHistory) {
+            setSwipedHistory(JSON.parse(cachedHistory));
+          }
           setLoading(false);
-          // Still check for photo prompt in the background
+          // If we load from cache, we don't proceed to fetch from the server unless skipCache is true.
+          return; 
         }
       } catch (error) {
         console.warn("Could not read cached profiles", error);
@@ -87,7 +92,6 @@ export default function DashboardPage() {
 
     if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
         setShowPhotoPrompt(true);
-        // We still need to load profiles even if the prompt is shown
     }
     
     const result = await getPotentialProfiles(currentUserId);
@@ -100,6 +104,8 @@ export default function DashboardPage() {
         setAllUsers(freshUsers);
         try {
           localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(freshUsers));
+          localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify([]));
+          setSwipedHistory([]);
         } catch (error) {
           console.warn("Could not save profiles to cache", error);
         }
@@ -116,11 +122,13 @@ export default function DashboardPage() {
 
   const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
     const newUsers = allUsers.filter(u => u.id !== swipedUser.id)
+    const newHistory = [swipedUser, ...swipedHistory];
     setAllUsers(newUsers);
-    setSwipedHistory(prev => [swipedUser, ...prev]);
+    setSwipedHistory(newHistory);
 
     try {
         localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
+        localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify(newHistory));
     } catch (error) {
         console.warn("Could not update cached profiles after swipe", error);
     }
@@ -139,12 +147,14 @@ export default function DashboardPage() {
         description: result.error,
       });
     } else {
-      setSwipedHistory(prev => prev.slice(1));
+      const newHistory = swipedHistory.slice(1);
       const newUsers = [lastSwipedUser, ...allUsers];
       setAllUsers(newUsers);
+      setSwipedHistory(newHistory);
 
       try {
         localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
+        localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify(newHistory));
       } catch (error) {
         console.warn("Could not update cached profiles after undo", error);
       }
