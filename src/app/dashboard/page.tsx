@@ -63,6 +63,7 @@ export default function DashboardPage() {
         if (cachedProfiles) {
           setAllUsers(JSON.parse(cachedProfiles));
           setLoading(false);
+          // Still check for photo prompt in the background
         }
       } catch (error) {
         console.warn("Could not read cached profiles", error);
@@ -114,8 +115,15 @@ export default function DashboardPage() {
   }, [currentUserId, fetchProfiles]);
 
   const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
-    setAllUsers(allUsers.filter(u => u.id !== swipedUser.id));
+    const newUsers = allUsers.filter(u => u.id !== swipedUser.id)
+    setAllUsers(newUsers);
     setSwipedHistory(prev => [swipedUser, ...prev]);
+
+    try {
+        localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
+    } catch (error) {
+        console.warn("Could not update cached profiles after swipe", error);
+    }
   };
   
   const handleUndo = async () => {
@@ -132,7 +140,14 @@ export default function DashboardPage() {
       });
     } else {
       setSwipedHistory(prev => prev.slice(1));
-      setAllUsers(prev => [lastSwipedUser, ...prev]);
+      const newUsers = [lastSwipedUser, ...allUsers];
+      setAllUsers(newUsers);
+
+      try {
+        localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
+      } catch (error) {
+        console.warn("Could not update cached profiles after undo", error);
+      }
     }
   };
   
