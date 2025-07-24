@@ -3,21 +3,25 @@
 
 import Link from 'next/link';
 import * as React from 'react';
-import { Heart, User, Bell, RefreshCcw } from 'lucide-react';
+import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 
-
 export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [userId, setUserId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const currentUserId = localStorage.getItem('currentUserId');
+    setUserId(currentUserId);
+  }, []);
   
   React.useEffect(() => {
-    const userId = localStorage.getItem('currentUserId');
     if (!userId) return;
     
     const supabase = createClient();
 
-    const fetchUnreadCount = async () => {
+    const fetchInitialCount = async () => {
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -29,17 +33,28 @@ export function AppHeader() {
       }
     };
     
-    
-    fetchUnreadCount();
+    fetchInitialCount();
 
-    
-    const interval = setInterval(fetchUnreadCount, 5000);
+    const channel = supabase.channel(`notifications:user_id=eq.${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}`,
+        },
+        () => {
+          fetchInitialCount();
+        }
+      )
+      .subscribe();
       
     return () => {
-      clearInterval(interval);
+      supabase.removeChannel(channel);
     };
 
-  }, []);
+  }, [userId]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm">
@@ -53,7 +68,10 @@ export function AppHeader() {
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
               {unreadCount > 0 && (
-                 <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
+                 <span className="absolute top-2 right-2 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                 </span>
               )}
               <span className="sr-only">Notifications</span>
             </Link>

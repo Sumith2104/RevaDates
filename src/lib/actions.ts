@@ -236,8 +236,8 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
           created_at: now,
         }).select('id').single();
 
-        if (matchError && matchError.code !== '23505') {
-          
+        if (matchError && matchError.code !== '23505') { 
+          // Match already exists, which is fine, we can proceed.
         }
 
         const notificationTime = getISTTimestamp();
