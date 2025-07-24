@@ -74,7 +74,7 @@ export default function NotificationsPage() {
                     return prev;
                 });
                 
-                
+                // Mark notifications as read when they are fetched
                 markNotificationsAsRead(currentUserId);
             }
 
