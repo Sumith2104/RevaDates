@@ -67,7 +67,7 @@ export default function DashboardPage() {
             setSwipedHistory(JSON.parse(cachedHistory));
           }
           setLoading(false);
-          // If we load from cache, we don't proceed to fetch from the server unless skipCache is true.
+          
           return; 
         }
       } catch (error) {
@@ -164,14 +164,7 @@ export default function DashboardPage() {
   };
   
   if ((loading && allUsers.length === 0) || userLoading) {
-      return (
-          <AppShell>
-            <AppHeader />
-            <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-                <PageLoader />
-            </div>
-          </AppShell>
-      )
+      return <PageLoader />;
   }
   
   const handlePromptLater = () => {

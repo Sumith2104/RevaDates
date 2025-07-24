@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { PageLoader } from '@/components/shared/page-loader';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -181,18 +182,7 @@ export default function ChatPage() {
     }
     
     if (userLoading || !matchedUser) {
-        return (
-            <div className="flex flex-col h-screen bg-background">
-                 <header className="flex items-center gap-4 p-2 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-[69px]">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-6 w-6" />
-                    </Button>
-                </header>
-                <div className="flex flex-1 items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-            </div>
-        );
+        return <PageLoader />;
     }
     
     return (

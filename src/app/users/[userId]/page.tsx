@@ -83,13 +83,7 @@ export default function UserProfilePage() {
   }, [userId, currentUserId, router, userLoading]);
 
   if (loading || userLoading) {
-     return (
-        <AppShell>
-            <div className="flex-1 flex flex-col">
-                <PageLoader />
-            </div>
-        </AppShell>
-     );
+     return <PageLoader />;
   }
 
   if (!isViewable) {

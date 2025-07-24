@@ -93,7 +93,7 @@ export function AuthScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         localStorage.setItem('currentUserId', session.user.id);
-        setPostLogin(true); // User is already logged in, show loader and redirect
+        setPostLogin(true);
       } else {
         setCheckingAuth(false);
       }
@@ -115,7 +115,7 @@ export function AuthScreen() {
             title: 'Authentication Error',
             description: error,
         });
-        // Remove error from URL without reloading
+        
         router.replace('/', {scroll: false});
     }
   }, [searchParams, toast, router]);
@@ -230,12 +230,11 @@ export function AuthScreen() {
       localStorage.setItem('currentUserId', userId);
       setIsLoginOpen(false);
       setPostLogin(true);
-      await handleLocationLogic(userId);
   };
 
   const handleSignupSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
-      setPostLogin(true);
+      await handleLocationLogic(userId);
   };
 
   const cardVariants = {
@@ -246,11 +245,7 @@ export function AuthScreen() {
   };
 
   if (checkingAuth || postLogin) {
-    return (
-      <div className="min-h-screen w-full bg-black">
-        <PageLoader />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

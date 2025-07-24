@@ -10,13 +10,7 @@ export default function SettingsPage() {
   const { user, loading } = useCurrentUser();
 
   if (loading || !user) {
-    return (
-      <AppShell>
-        <div className="flex-1 flex flex-col">
-            <PageLoader />
-        </div>
-      </AppShell>
-    );
+    return <PageLoader />;
   }
 
   return (

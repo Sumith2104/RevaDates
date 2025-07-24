@@ -68,13 +68,7 @@ export default function ChatsPage() {
     }, [chats, searchTerm]);
 
     if (loading || userLoading) {
-        return (
-            <AppShell>
-                <div className="flex-1 flex flex-col">
-                    <PageLoader />
-                </div>
-            </AppShell>
-        );
+        return <PageLoader />;
     }
 
     return (
