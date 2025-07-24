@@ -93,6 +93,7 @@ export function AuthScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         localStorage.setItem('currentUserId', session.user.id);
+        sessionStorage.setItem('justLoggedIn', 'true');
         setPostLogin(true);
       } else {
         setCheckingAuth(false);
@@ -228,12 +229,14 @@ export function AuthScreen() {
 
   const handleLoginSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
+      sessionStorage.setItem('justLoggedIn', 'true');
       setIsLoginOpen(false);
       setPostLogin(true);
   };
 
   const handleSignupSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
+      sessionStorage.setItem('justLoggedIn', 'true');
       await handleLocationLogic(userId);
   };
 

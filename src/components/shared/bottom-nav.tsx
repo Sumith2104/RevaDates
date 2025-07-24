@@ -9,14 +9,28 @@ import * as React from 'react';
 import { useNotifications } from '@/context/notifications-context';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { createClient } from '@/lib/supabase/client';
+import { getUnreadCounts } from '@/lib/actions';
 
 export function BottomNav() {
   const pathname = usePathname();
   const { user: currentUserId } = useCurrentUser();
-  const { unreadChats, setUnreadChats } = useNotifications();
+  const { unreadChats, setUnreadChats, setUnreadNotifications } = useNotifications();
 
   React.useEffect(() => {
     if (!currentUserId) return;
+
+    const oneTimeRefresh = async () => {
+      const justLoggedIn = sessionStorage.getItem('justLoggedIn');
+      if (justLoggedIn) {
+        sessionStorage.removeItem('justLoggedIn');
+        const counts = await getUnreadCounts(currentUserId);
+        if (counts && !counts.error) {
+          setUnreadChats(counts.unreadChatCount);
+          setUnreadNotifications(counts.unreadNotificationCount);
+        }
+      }
+    };
+    oneTimeRefresh();
 
     const client = createClient();
     const channel = client
@@ -30,11 +44,11 @@ export function BottomNav() {
           filter: `recipient_id=eq.${currentUserId}`,
         },
         (payload) => {
-          
-          
-          if (pathname !== '/chats') {
-            setUnreadChats(prev => prev + 1);
+          if (pathname.startsWith('/chats/')) {
+            return;
           }
+          
+          setUnreadChats((prev) => prev + 1);
         }
       )
       .subscribe();
@@ -42,7 +56,7 @@ export function BottomNav() {
     return () => {
       client.removeChannel(channel);
     };
-  }, [currentUserId, setUnreadChats, pathname]);
+  }, [currentUserId, setUnreadChats, pathname, setUnreadNotifications]);
 
 
   const navItems = [

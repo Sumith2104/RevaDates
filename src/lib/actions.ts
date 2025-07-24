@@ -538,7 +538,6 @@ export async function getChatsAndMatches(userId: string) {
     if (matchesError) {
         return { chats: [], matches: [], error: 'Could not fetch your matches.', unreadChatCount: 0, unreadNotificationCount: 0 };
     }
-
     
     const { count: unreadNotificationCount } = await supabase
         .from('notifications')
@@ -589,7 +588,16 @@ export async function getChatsAndMatches(userId: string) {
         }
     }
 
-    const totalUnreadChatCount = Array.from(unreadCounts.values()).reduce((sum, count) => sum + count, 0);
+    let totalUnreadChatCount = 0;
+    if (allMessages) {
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
+      totalUnreadChatCount = count || 0;
+    }
+
 
     const chats = allMatches.filter(m => lastMessageMap.has(m.id));
     const newMatches = allMatches.filter(m => !lastMessageMap.has(m.id));
@@ -1114,7 +1122,31 @@ export async function getPotentialProfiles(currentUserId: string) {
 }
 
 
+export async function getUnreadCounts(userId: string) {
+    if (!userId) return { error: 'User ID is required.', unreadChatCount: 0, unreadNotificationCount: 0 };
+    const supabase = createClient();
+    
+    try {
+        const { count: unreadChatCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', userId)
+            .eq('is_read', false);
+
+        const { count: unreadNotificationCount } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', userId)
+            .eq('is_read', false);
+            
+        return { error: null, unreadChatCount: unreadChatCount || 0, unreadNotificationCount: unreadNotificationCount || 0 };
+
+    } catch (e) {
+        return { error: 'Failed to fetch counts.', unreadChatCount: 0, unreadNotificationCount: 0 };
+    }
+}
     
 
     
+
 
