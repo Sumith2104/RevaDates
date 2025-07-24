@@ -7,10 +7,40 @@ import { Heart, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 import { useNotifications } from '@/context/notifications-context';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { createClient } from '@/lib/supabase/client';
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { unreadChats } = useNotifications();
+  const { user: currentUserId } = useCurrentUser();
+  const { unreadChats, setUnreadChats } = useNotifications();
+
+  React.useEffect(() => {
+    if (!currentUserId) return;
+
+    const client = createClient();
+    const channel = client
+      .channel('realtime-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${currentUserId}`,
+        },
+        (payload) => {
+          // Increment the count for instant feedback
+          setUnreadChats(unreadChats + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [currentUserId, unreadChats, setUnreadChats]);
+
 
   const navItems = [
     { href: '/dashboard', icon: Heart, label: 'Discover', getUnreadCount: () => 0 },
