@@ -6,6 +6,7 @@ import * as React from 'react';
 import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
@@ -70,10 +71,12 @@ export function AppHeader() {
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
               {unreadCount > 0 && (
-                 <span className="absolute top-2 right-2 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                 </span>
+                 <Badge
+                    variant="destructive"
+                    className="absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full p-0"
+                  >
+                    {unreadCount}
+                  </Badge>
               )}
               <span className="sr-only">Notifications</span>
             </Link>
