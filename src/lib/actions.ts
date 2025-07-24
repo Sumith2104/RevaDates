@@ -431,6 +431,7 @@ export async function markNotificationsAsRead(userId: string) {
         .eq('is_read', false);
     
     if (error) {
+        console.error("markNotificationsAsRead error:", error);
         return { error: 'Could not update notifications.' };
     }
     revalidatePath('/notifications');
@@ -1099,3 +1100,6 @@ export async function getPotentialProfiles(currentUserId: string) {
 
   return { data: profilesWithAgeAndDistance, error: null };
 }
+
+
+    

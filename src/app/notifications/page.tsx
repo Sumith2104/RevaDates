@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { AppShell } from '@/components/shared/app-shell';
-import { getNotifications, markNotificationsAsRead, respondToLike } from '@/lib/actions';
+import { getNotifications, markNotificationsAsRead } from '@/lib/actions';
 import { Bell, Heart, X, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -75,7 +75,7 @@ export default function NotificationsPage() {
                 });
                 
                 // Mark notifications as read when they are fetched
-                markNotificationsAsRead(currentUserId);
+                await markNotificationsAsRead(currentUserId);
             }
 
             if (initialLoad) setLoading(false);
@@ -183,3 +183,5 @@ export default function NotificationsPage() {
         </AppShell>
     );
 }
+
+    
