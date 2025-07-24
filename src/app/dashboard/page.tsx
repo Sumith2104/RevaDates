@@ -119,6 +119,22 @@ export default function DashboardPage() {
         fetchProfiles(false); 
     }
   }, [currentUserId, fetchProfiles]);
+  
+  React.useEffect(() => {
+    const handleFocus = () => {
+      const settingsChanged = localStorage.getItem('profileSettingsChanged');
+      if (settingsChanged === 'true') {
+        localStorage.removeItem('profileSettingsChanged');
+        fetchProfiles(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchProfiles]);
+
 
   const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
     const newUsers = allUsers.filter(u => u.id !== swipedUser.id)

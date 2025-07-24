@@ -177,6 +177,8 @@ export function SettingsView({ userId }: { userId: string }) {
         setSaving(false);
         if (error) {
             toast({ variant: 'destructive', title: 'Could Not Save Settings', description: error.message });
+        } else {
+            localStorage.setItem('profileSettingsChanged', 'true');
         }
     };
     
@@ -185,7 +187,8 @@ export function SettingsView({ userId }: { userId: string }) {
 
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUserId');
+    localStorage.clear();
+    sessionStorage.clear();
     router.push('/');
   };
   
