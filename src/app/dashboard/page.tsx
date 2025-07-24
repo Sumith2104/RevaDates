@@ -116,24 +116,15 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (currentUserId) {
-        fetchProfiles(false); 
+        const settingsChanged = localStorage.getItem('profileSettingsChanged');
+        if (settingsChanged === 'true') {
+            localStorage.removeItem('profileSettingsChanged');
+            fetchProfiles(true);
+        } else {
+            fetchProfiles(false);
+        }
     }
   }, [currentUserId, fetchProfiles]);
-  
-  React.useEffect(() => {
-    const handleFocus = () => {
-      const settingsChanged = localStorage.getItem('profileSettingsChanged');
-      if (settingsChanged === 'true') {
-        localStorage.removeItem('profileSettingsChanged');
-        fetchProfiles(true);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [fetchProfiles]);
 
 
   const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
