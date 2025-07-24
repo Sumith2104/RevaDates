@@ -71,12 +71,7 @@ export function AppHeader() {
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
               {unreadCount > 0 && (
-                 <Badge
-                    variant="destructive"
-                    className="absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full p-0"
-                  >
-                    {unreadCount}
-                  </Badge>
+                 <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-white" />
               )}
               <span className="sr-only">Notifications</span>
             </Link>
@@ -92,5 +87,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-    
