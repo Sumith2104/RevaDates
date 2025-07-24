@@ -23,12 +23,14 @@ export async function GET(request: Request) {
     if (!error && session?.user) {
       const user = session.user;
       
+      // Check if a profile for this user already exists
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single();
         
+      // If no profile exists, create one
       if (!profile) {
         const now = getISTTimestamp();
         const { error: insertError } = await supabase.from('profiles').insert({
@@ -42,14 +44,17 @@ export async function GET(request: Request) {
 
         if (insertError) {
           console.error("Error creating profile for Google user:", insertError);
+          // Redirect with an error message if profile creation fails
           return NextResponse.redirect(`${origin}/?error=Could not create your profile. Please try again.`);
         }
       }
       
+      // Redirect to the dashboard (or the 'next' URL) after ensuring a profile exists
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
+  // Redirect to an error page if something went wrong
   console.error("Error in auth callback:", "No code or session error");
   return NextResponse.redirect(`${origin}/?error=Authentication failed. Please try again.`);
 }
