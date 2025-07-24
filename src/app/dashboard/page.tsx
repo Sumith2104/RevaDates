@@ -78,19 +78,19 @@ export default function DashboardPage() {
 
     const supabase = createClient();
     
-    const { data: currentUserPhotos, error: photoError } = await supabase
+    const { data: currentUserProfile, error: profileError } = await supabase
       .from('profiles')
       .select('photos')
       .eq('id', currentUserId)
       .single();
     
-    if (photoError) {
+    if (profileError) {
          toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
          setLoading(false);
          return;
     }
 
-    if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
+    if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
         setShowPhotoPrompt(true);
     }
     
@@ -127,8 +127,10 @@ export default function DashboardPage() {
     setSwipedHistory(newHistory);
 
     try {
-        localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
-        localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify(newHistory));
+        if(currentUserId){
+            localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
+            localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify(newHistory));
+        }
     } catch (error) {
         console.warn("Could not update cached profiles after swipe", error);
     }

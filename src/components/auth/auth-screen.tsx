@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { Heart, MapPin, Loader2 } from 'lucide-react';
@@ -95,13 +94,18 @@ export function AuthScreen() {
       if (session) {
         localStorage.setItem('currentUserId', session.user.id);
         setPostLogin(true); // User is already logged in, show loader and redirect
-        router.push('/dashboard');
       } else {
         setCheckingAuth(false);
       }
     };
     checkSession();
-  }, [router]);
+  }, []);
+
+  React.useEffect(() => {
+    if (postLogin) {
+      router.push('/dashboard');
+    }
+  }, [postLogin, router]);
 
   React.useEffect(() => {
     const error = searchParams.get('error');
@@ -144,8 +148,8 @@ export function AuthScreen() {
   }, [typedPhrase, activePhrase, isDeleting, checkingAuth, postLogin]);
   
   const handleLocationComplete = React.useCallback(() => {
-      router.push('/dashboard');
-  }, [router]);
+      setPostLogin(true);
+  }, []);
   
   const attemptToGetLocation = React.useCallback(async (userId: string) => {
     return new Promise<void>((resolve) => {
@@ -225,13 +229,11 @@ export function AuthScreen() {
   const handleLoginSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
       setIsLoginOpen(false);
-      setPostLogin(true); 
       await handleLocationLogic(userId);
   };
 
   const handleSignupSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
-      setPostLogin(true);
       setView('location');
   };
 
