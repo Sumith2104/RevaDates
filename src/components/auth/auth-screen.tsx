@@ -229,6 +229,7 @@ export function AuthScreen() {
   const handleLoginSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
       setIsLoginOpen(false);
+      setPostLogin(true);
       await handleLocationLogic(userId);
   };
 
