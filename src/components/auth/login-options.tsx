@@ -28,13 +28,14 @@ interface LoginOptionsProps {
 export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOptionsProps) {
     const [step, setStep] = React.useState<'options' | 'email-password' | 'email-otp'>('options');
     const [email, setEmail] = React.useState('');
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isPasswordLoading, setIsPasswordLoading] = React.useState(false);
+    const [isOtpLoading, setIsOtpLoading] = React.useState(false);
     const { toast } = useToast();
     const supabase = createClient();
 
     const handleEmailContinue = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        setIsPasswordLoading(true);
 
         const { data, error } = await supabase
             .from('profiles')
@@ -52,7 +53,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
             setStep('email-password');
         }
 
-        setIsLoading(false);
+        setIsPasswordLoading(false);
     }
     
     const handleOtpLogin = async () => {
@@ -60,9 +61,9 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
             toast({ variant: 'destructive', title: 'Email Required', description: 'Please enter your email to receive a login code.' });
             return;
         }
-        setIsLoading(true);
+        setIsOtpLoading(true);
         const result = await sendLoginOtp(email);
-        setIsLoading(false);
+        setIsOtpLoading(false);
 
         if (result.error) {
             toast({
@@ -97,6 +98,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
             setStep('options');
         }
     }
+    
+    const isLoading = isPasswordLoading || isOtpLoading;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -134,8 +137,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                                                 className="rounded-lg"
                                             />
                                         </div>
-                                        <Button type="submit" className="w-full mt-4 rounded-full" disabled={isLoading || !email}>
-                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Button type="submit" className="w-full mt-4 rounded-full" disabled={isPasswordLoading || !email}>
+                                            {isPasswordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Continue with Email & Password
                                         </Button>
                                     </form>
@@ -150,8 +153,8 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                                     </div>
                                     
                                     <div className="space-y-3">
-                                         <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isLoading || !email}>
-                                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                         <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isOtpLoading || !email}>
+                                             {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Continue with Email & OTP
                                         </Button>
                                     </div>
