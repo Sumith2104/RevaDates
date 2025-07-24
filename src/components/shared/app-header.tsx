@@ -5,61 +5,10 @@ import Link from 'next/link';
 import * as React from 'react';
 import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
+import { useNotifications } from '@/context/notifications-context';
 
 export function AppHeader() {
-  const [unreadCount, setUnreadCount] = React.useState(0);
-  const [userId, setUserId] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const currentUserId = localStorage.getItem('currentUserId');
-    if (currentUserId) {
-        setUserId(currentUserId);
-    }
-  }, []);
-  
-  React.useEffect(() => {
-    if (!userId) return;
-    
-    const supabase = createClient();
-
-    const fetchInitialCount = async () => {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipient_id', userId)
-        .eq('is_read', false);
-      
-      if (!error) {
-        console.log('Unread fetched:', count);
-        setUnreadCount(count || 0);
-      }
-    };
-    
-    fetchInitialCount();
-
-    const channel = supabase.channel(`notifications:user_id=eq.${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `recipient_id=eq.${userId}`,
-        },
-        () => {
-          fetchInitialCount();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-
-  }, [userId]);
-
-  console.log('Unread count is:', unreadCount);
+  const { unreadNotifications } = useNotifications();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm">
@@ -72,8 +21,8 @@ export function AppHeader() {
           <Button asChild variant="ghost" size="icon" className="relative">
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-white border-2 border-background" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-1 right-1 flex h-2 w-2 items-center justify-center rounded-full bg-white border-background" />
               )}
               <span className="sr-only">Notifications</span>
             </Link>

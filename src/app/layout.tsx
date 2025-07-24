@@ -6,6 +6,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import * as React from 'react';
 import { Inter } from 'next/font/google';
+import { NotificationsProvider } from '@/context/notifications-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -38,7 +39,9 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <NotificationsProvider>
+          {children}
+        </NotificationsProvider>
         <Toaster />
       </body>
     </html>

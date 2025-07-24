@@ -525,7 +525,7 @@ export async function unblockUser(blockerId: string, unblockedId: string) {
 }
 
 export async function getChatsAndMatches(userId: string) {
-    if (!userId) return { chats: [], matches: [], error: 'User ID is required.' };
+    if (!userId) return { chats: [], matches: [], error: 'User ID is required.', unreadChatCount: 0, unreadNotificationCount: 0 };
     const supabase = createClient();
 
     
@@ -536,11 +536,18 @@ export async function getChatsAndMatches(userId: string) {
         .order('created_at', { ascending: false });
 
     if (matchesError) {
-        return { chats: [], matches: [], error: 'Could not fetch your matches.' };
+        return { chats: [], matches: [], error: 'Could not fetch your matches.', unreadChatCount: 0, unreadNotificationCount: 0 };
     }
 
+    
+    const { count: unreadNotificationCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
+
     if (!allMatches || allMatches.length === 0) {
-        return { chats: [], matches: [], error: null };
+        return { chats: [], matches: [], error: null, unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
     }
 
     const matchIds = allMatches.map(m => m.id);
@@ -559,7 +566,7 @@ export async function getChatsAndMatches(userId: string) {
         .order('created_at', { ascending: false });
 
     if (messagesError) {
-        return { chats: [], matches: [], error: 'Could not fetch messages.' };
+        return { chats: [], matches: [], error: 'Could not fetch messages.', unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
     }
     
     
@@ -576,10 +583,12 @@ export async function getChatsAndMatches(userId: string) {
     
     
     const unreadCounts = new Map<string, number>();
+    let totalUnreadChatCount = 0;
     if (lastMessages) {
         for (const msg of lastMessages) {
             if (msg.recipient_id === userId && !msg.is_read) {
                 unreadCounts.set(msg.match_id, (unreadCounts.get(msg.match_id) || 0) + 1);
+                totalUnreadChatCount++;
             }
         }
     }
@@ -595,7 +604,7 @@ export async function getChatsAndMatches(userId: string) {
         .in('id', allMatchedUserIds);
 
     if (profilesError) {
-        return { chats: [], matches: [], error: 'Could not fetch profiles.' };
+        return { chats: [], matches: [], error: 'Could not fetch profiles.', unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
     }
 
     const profilesById = new Map(profiles.map(p => [p.id, p]));
@@ -635,7 +644,13 @@ export async function getChatsAndMatches(userId: string) {
         };
     });
 
-    return { chats: formattedChats, matches: formattedMatches, error: null };
+    return { 
+        chats: formattedChats, 
+        matches: formattedMatches, 
+        error: null,
+        unreadChatCount: totalUnreadChatCount,
+        unreadNotificationCount: unreadNotificationCount || 0,
+    };
 }
 
 export async function updateUserProfile(userId: string, updates: { name: string; bio: string; }) {

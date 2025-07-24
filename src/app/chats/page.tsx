@@ -12,9 +12,11 @@ import { ChatItem } from '@/components/chats/chat-item';
 import { Input } from '@/components/ui/input';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
+import { useNotifications } from '@/context/notifications-context';
 
 export default function ChatsPage() {
     const { user: userId, loading: userLoading } = useCurrentUser();
+    const { setUnreadChats, setUnreadNotifications } = useNotifications();
     const [matches, setMatches] = React.useState<Match[]>([]);
     const [chats, setChats] = React.useState<Chat[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -44,6 +46,8 @@ export default function ChatsPage() {
             } else {
                 setMatches(result.matches as Match[]);
                 setChats(result.chats as Chat[]);
+                setUnreadChats(result.unreadChatCount);
+                setUnreadNotifications(result.unreadNotificationCount);
             }
             if(initialLoad) setLoading(false);
         }
@@ -52,11 +56,11 @@ export default function ChatsPage() {
 
         const interval = setInterval(() => {
             fetchData(false);
-        }, 3000);
+        }, 5000);
 
         return () => clearInterval(interval);
 
-    }, [userId]);
+    }, [userId, setUnreadChats, setUnreadNotifications]);
     
     const filteredChats = React.useMemo(() => {
         if (!searchTerm) {
