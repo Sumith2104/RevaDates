@@ -94,6 +94,7 @@ export function AuthScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         localStorage.setItem('currentUserId', session.user.id);
+        setPostLogin(true); // User is already logged in, show loader and redirect
         router.push('/dashboard');
       } else {
         setCheckingAuth(false);

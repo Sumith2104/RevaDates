@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
   const { toast } = useToast();
   
-  const fetchProfiles = React.useCallback(async (skipCache = false, skipPhotoCheck = false) => {
+  const fetchProfiles = React.useCallback(async (skipCache = false) => {
     if (!currentUserId) return;
     setLoading(true);
 
@@ -71,26 +71,22 @@ export default function DashboardPage() {
 
 
     const supabase = createClient();
-
     
-    if (!skipPhotoCheck) {
-        const { data: currentUserPhotos, error: photoError } = await supabase
-          .from('profiles')
-          .select('photos')
-          .eq('id', currentUserId)
-          .single();
-        
-        if (photoError) {
-             toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
-             setLoading(false);
-             return;
-        }
+    const { data: currentUserPhotos, error: photoError } = await supabase
+      .from('profiles')
+      .select('photos')
+      .eq('id', currentUserId)
+      .single();
+    
+    if (photoError) {
+         toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
+         setLoading(false);
+         return;
+    }
 
-        if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
-            setShowPhotoPrompt(true);
-            setLoading(false); 
-            return; 
-        }
+    if (!currentUserPhotos.photos || currentUserPhotos.photos.length === 0) {
+        setShowPhotoPrompt(true);
+        // We still need to load profiles even if the prompt is shown
     }
     
     const result = await getPotentialProfiles(currentUserId);
@@ -113,7 +109,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (currentUserId) {
-        fetchProfiles(false, false); 
+        fetchProfiles(false); 
     }
   }, [currentUserId, fetchProfiles]);
 
@@ -153,29 +149,6 @@ export default function DashboardPage() {
   
   const handlePromptLater = () => {
     setShowPhotoPrompt(false);
-    fetchProfiles(true, true); 
-  }
-  
-  if (showPhotoPrompt) {
-     return (
-        <AppShell>
-            <AppHeader />
-             <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
-                <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
-                    <AlertDialogHeader className="text-center sm:text-center">
-                        <AlertDialogTitle className="text-white text-lg font-semibold">Upload a Profile Photo</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                            Profiles with photos get more matches. Add a photo to show your best self!
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-6 flex flex-row sm:flex-row w-full gap-2">
-                        <AlertDialogAction onClick={() => router.push('/profile')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
-                        <AlertDialogCancel onClick={handlePromptLater} className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </AppShell>
-     )
   }
   
   const noMoreProfiles = !allUsers || allUsers.length === 0;
@@ -184,18 +157,32 @@ export default function DashboardPage() {
     <>
       <AppShell>
         <AppHeader />
+        <AlertDialog open={showPhotoPrompt} onOpenChange={setShowPhotoPrompt}>
+            <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+                <AlertDialogHeader className="text-center sm:text-center">
+                    <AlertDialogTitle className="text-white text-lg font-semibold">Upload a Profile Photo</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-white/70 mt-2">
+                        Profiles with photos get more matches. Add a photo to show your best self!
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-6 flex flex-row sm:flex-row w-full gap-2">
+                    <AlertDialogAction onClick={() => router.push('/profile')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md">Upload Photo</AlertDialogAction>
+                    <AlertDialogCancel onClick={handlePromptLater} className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Later</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         <div className="flex-1 flex flex-col pt-16">
           {noMoreProfiles && !loading ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                   <p className="text-xl font-medium">No new profiles found.</p>
                   <p className="mt-2">Try increasing your age range in Settings, or check back later!</p>
-                  <Button onClick={() => fetchProfiles(true, true)} variant="outline" className="mt-4">
+                  <Button onClick={() => fetchProfiles(true)} variant="outline" className="mt-4">
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Refresh
                   </Button>
               </div>
           ) : (
-            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true, true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
           )}
         </div>
       </AppShell>
