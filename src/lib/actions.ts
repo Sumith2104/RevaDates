@@ -204,6 +204,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 type: 'new_like',
                 message: `${swiperProfile.name} liked your profile!`,
                 created_at: now,
+                is_read: false,
             },
             { onConflict: 'recipient_id,sender_id,type', ignoreDuplicates: false }
         );
@@ -248,6 +249,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 type: 'new_match',
                 message: `You matched with ${swipedProfile?.name}!`,
                 created_at: notificationTime,
+                is_read: false,
             });
         }
         if (swipedProfile?.match_notification) {
@@ -257,6 +259,7 @@ export async function handleSwipeAction(swiperId: string, swipedId: string, acti
                 type: 'new_match',
                 message: `You matched with ${swiperProfile?.name}!`,
                 created_at: notificationTime,
+                is_read: false,
             });
         }
         
@@ -431,7 +434,6 @@ export async function markNotificationsAsRead(userId: string) {
         return { error: 'Could not update notifications.' };
     }
     revalidatePath('/notifications');
-    revalidatePath('/components/shared/app-header');
     return { success: true };
 }
 
@@ -747,6 +749,7 @@ export async function respondToLike(notificationId: string, recipientId: string,
                         type: 'new_match',
                         message: `You matched with ${recipientProfile?.name}!`,
                         created_at: now,
+                        is_read: false
                     });
                 }
             }
