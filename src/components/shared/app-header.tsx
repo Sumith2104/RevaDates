@@ -6,7 +6,6 @@ import * as React from 'react';
 import { Heart, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
-import { Badge } from '@/components/ui/badge';
 
 export function AppHeader() {
   const [unreadCount, setUnreadCount] = React.useState(0);
@@ -32,6 +31,7 @@ export function AppHeader() {
         .eq('is_read', false);
       
       if (!error) {
+        console.log('Unread fetched:', count);
         setUnreadCount(count || 0);
       }
     };
@@ -59,6 +59,8 @@ export function AppHeader() {
 
   }, [userId]);
 
+  console.log('Unread count is:', unreadCount);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -71,7 +73,7 @@ export function AppHeader() {
             <Link href="/notifications">
               <Bell className="h-6 w-6" />
               {unreadCount > 0 && (
-                 <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-white" />
+                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-white border-2 border-background" />
               )}
               <span className="sr-only">Notifications</span>
             </Link>
