@@ -31,7 +31,7 @@ export function BottomNav() {
         },
         (payload) => {
           // Increment the count for instant feedback
-          setUnreadChats(unreadChats + 1);
+          setUnreadChats(prev => prev + 1);
         }
       )
       .subscribe();
@@ -39,7 +39,7 @@ export function BottomNav() {
     return () => {
       client.removeChannel(channel);
     };
-  }, [currentUserId, unreadChats, setUnreadChats]);
+  }, [currentUserId, setUnreadChats]);
 
 
   const navItems = [
@@ -68,7 +68,7 @@ export function BottomNav() {
                   )}
                 />
                 {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground translate-x-1/2 -translate-y-1/2">
+                  <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-xs font-bold translate-x-1/2 -translate-y-1/2">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
