@@ -9,19 +9,29 @@ import { Badge } from '@/components/ui/badge';
 import { getInitials, cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { useInView } from 'framer-motion';
 
 const timeZone = 'Asia/Kolkata';
 
 export function ChatItem({ chat }: { chat: Chat }) {
     const router = useRouter();
+    const ref = React.useRef(null);
+    const isInView = useInView(ref, { once: true });
 
     const navigateToChat = (chatId: string) => {
+        try {
+            sessionStorage.setItem(`chat-user-${chatId}`, JSON.stringify(chat.matchedUser));
+        } catch (error) {
+            console.warn("Could not save chat user to sessionStorage", error);
+        }
         router.push(`/chats/${chatId}`);
     };
     
     React.useEffect(() => {
-        router.prefetch(`/chats/${chat.id}`);
-    }, [router, chat.id]);
+        if (isInView) {
+            router.prefetch(`/chats/${chat.id}`);
+        }
+    }, [isInView, router, chat.id]);
 
     const lastMessageTime = chat.lastMessageTime
         ? formatDistanceToNow(toZonedTime(new Date(chat.lastMessageTime), timeZone), { addSuffix: true })
@@ -29,6 +39,7 @@ export function ChatItem({ chat }: { chat: Chat }) {
 
     return (
         <div
+            ref={ref}
             className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
             onClick={() => navigateToChat(chat.id)}
         >

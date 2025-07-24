@@ -73,18 +73,32 @@ export default function ChatPage() {
     React.useEffect(() => {
         if (!currentUserId || !chatId) return;
 
+        // Attempt to load user from sessionStorage first for instant UI
+        try {
+            const cachedUser = sessionStorage.getItem(`chat-user-${chatId}`);
+            if (cachedUser) {
+                setMatchedUser(JSON.parse(cachedUser));
+            }
+        } catch (error) {
+            console.warn("Could not read cached user from sessionStorage", error);
+        }
+
         async function fetchInitialData() {
             setLoadingMessages(true);
             
-            const matchDetails = await getMatchDetails(chatId, currentUserId!);
-             if (matchDetails.error || !matchDetails.data) {
-                router.push('/chats');
-                return;
+            // Fetch fresh details in the background, or if cache fails
+            if (!matchedUser) {
+                const matchDetails = await getMatchDetails(chatId, currentUserId!);
+                if (matchDetails.error || !matchDetails.data) {
+                    router.push('/chats');
+                    return;
+                }
+                setMatchedUser(matchDetails.data as UserProfile);
             }
-            setMatchedUser(matchDetails.data as UserProfile);
 
             const messagesData = await getChatMessages(chatId);
             if (messagesData.error || !messagesData.data) {
+                // Handle error
             } else {
                 setMessages(messagesData.data as Message[]);
                 handleMarkAsRead();
@@ -301,9 +315,9 @@ export default function ChatPage() {
                         placeholder="Type a message..."
                         className="flex-1 border-2"
                         autoComplete="off"
-                        disabled={loadingMessages}
+                        disabled={loadingMessages && messages.length === 0}
                     />
-                    <Button type="submit" size="icon" disabled={!newMessage.trim() || loadingMessages}>
+                    <Button type="submit" size="icon" disabled={!newMessage.trim() || (loadingMessages && messages.length === 0)}>
                         <Send className="h-5 w-5" />
                     </Button>
                 </form>
