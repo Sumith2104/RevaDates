@@ -20,7 +20,7 @@ export function BottomNav() {
 
     const client = createClient();
     const channel = client
-      .channel('realtime-messages')
+      .channel('realtime-messages-increment')
       .on(
         'postgres_changes',
         {
@@ -30,8 +30,11 @@ export function BottomNav() {
           filter: `recipient_id=eq.${currentUserId}`,
         },
         (payload) => {
-          // Increment the count for instant feedback
-          setUnreadChats(prev => prev + 1);
+          
+          
+          if (pathname !== '/chats') {
+            setUnreadChats(prev => prev + 1);
+          }
         }
       )
       .subscribe();
@@ -39,7 +42,7 @@ export function BottomNav() {
     return () => {
       client.removeChannel(channel);
     };
-  }, [currentUserId, setUnreadChats]);
+  }, [currentUserId, setUnreadChats, pathname]);
 
 
   const navItems = [

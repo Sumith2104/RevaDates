@@ -553,7 +553,7 @@ export async function getChatsAndMatches(userId: string) {
     const matchIds = allMatches.map(m => m.id);
 
     
-    const { data: lastMessages, error: messagesError } = await supabase
+    const { data: allMessages, error: messagesError } = await supabase
         .from('messages')
         .select(`
             match_id,
@@ -571,28 +571,25 @@ export async function getChatsAndMatches(userId: string) {
     
     
     const lastMessageMap = new Map<string, { content: string; created_at: string }>();
-    const seenMatchIds = new Set<string>();
-    if (lastMessages) {
-        for (const msg of lastMessages) {
-            if (!seenMatchIds.has(msg.match_id)) {
+    if (allMessages) {
+        for (const msg of allMessages) {
+            if (!lastMessageMap.has(msg.match_id)) {
                 lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
-                seenMatchIds.add(msg.match_id);
             }
         }
     }
     
     
     const unreadCounts = new Map<string, number>();
-    let totalUnreadChatCount = 0;
-    if (lastMessages) {
-        for (const msg of lastMessages) {
+    if (allMessages) {
+        for (const msg of allMessages) {
             if (msg.recipient_id === userId && !msg.is_read) {
                 unreadCounts.set(msg.match_id, (unreadCounts.get(msg.match_id) || 0) + 1);
-                totalUnreadChatCount++;
             }
         }
     }
 
+    const totalUnreadChatCount = Array.from(unreadCounts.values()).reduce((sum, count) => sum + count, 0);
 
     const chats = allMatches.filter(m => lastMessageMap.has(m.id));
     const newMatches = allMatches.filter(m => !lastMessageMap.has(m.id));
@@ -1120,3 +1117,4 @@ export async function getPotentialProfiles(currentUserId: string) {
     
 
     
+
