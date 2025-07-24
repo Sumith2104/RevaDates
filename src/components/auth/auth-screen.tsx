@@ -234,7 +234,7 @@ export function AuthScreen() {
 
   const handleSignupSuccess = async (userId: string) => {
       localStorage.setItem('currentUserId', userId);
-      setView('location');
+      setPostLogin(true);
   };
 
   const cardVariants = {
