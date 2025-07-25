@@ -5,9 +5,9 @@ import * as React from 'react';
 
 type NotificationsContextType = {
   unreadChats: number;
-  setUnreadChats: (count: number) => void;
+  setUnreadChats: React.Dispatch<React.SetStateAction<number>>;
   unreadNotifications: number;
-  setUnreadNotifications: (count: number) => void;
+  setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
 };
 
 const NotificationsContext = React.createContext<NotificationsContextType | undefined>(undefined);
