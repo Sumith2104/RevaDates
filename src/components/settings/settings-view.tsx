@@ -240,9 +240,9 @@ export function SettingsView({ userId }: { userId: string }) {
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Settings</h1>
       
-      <Card>
+      <Card className="bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -270,18 +270,18 @@ export function SettingsView({ userId }: { userId: string }) {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-            <CardTitle>Security & Privacy</CardTitle>
+            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Security & Privacy</CardTitle>
         </CardHeader>
         <CardContent>
             <BlockedUsersDialog userId={userId} />
         </CardContent>
       </Card>
       
-      <Card className="mt-6">
+      <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Notifications</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -298,12 +298,12 @@ export function SettingsView({ userId }: { userId: string }) {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-            <CardTitle>Account</CardTitle>
+            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Account</CardTitle>
         </CardHeader>
         <CardContent>
-            <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleLogout}>
+            <Button className="w-full justify-start gap-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg transition-all duration-300 hover:scale-[1.02]" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 Logout
             </Button>

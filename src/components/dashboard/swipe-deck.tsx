@@ -40,30 +40,38 @@ function AnimatedCard({
 }: AnimatedCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0); 
-  const rotateY = useTransform(x, [-200, 200], [-60, 60]);
+  const rotate = useTransform(x, [-200, 200], [-25, 25]);
+  const scale = useTransform(x, [-200, 0, 200], [0.95, 1, 0.95]);
 
   const likeOpacity = useTransform(x, [50, 120], [0, 1]);
   const passOpacity = useTransform(x, [-120, -50], [1, 0]);
 
   const isSwiping = React.useRef(false);
 
-  const handleDragEnd = (_: any, info: { offset: { x: number } }) => {
+  const handleDragEnd = (_: any, info: { offset: { x: number }, velocity: { x: number } }) => {
     if (isSwiping.current || triggerSwipeDirection) return;
 
-    if (Math.abs(info.offset.x) > 100) {
+    const swipeThreshold = 100;
+    const velocityThreshold = 500;
+
+    if (Math.abs(info.offset.x) > swipeThreshold || Math.abs(info.velocity.x) > velocityThreshold) {
       const direction = info.offset.x > 0 ? 'right' : 'left';
       isSwiping.current = true;
-      animate(x, direction === 'right' ? 500 : -500, {
-        duration: 0.5,
-        ease: 'easeInOut',
+      animate(x, direction === 'right' ? 600 : -600, {
+        duration: 0.4,
+        ease: [0.32, 0.72, 0, 1],
         onComplete: () => {
           onSwipe(direction);
         },
       });
+      animate(y, -50, {
+        duration: 0.4,
+        ease: [0.32, 0.72, 0, 1],
+      });
     } else {
       
-      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
-      animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
+      animate(x, 0, { type: 'spring', stiffness: 400, damping: 35 });
+      animate(y, 0, { type: 'spring', stiffness: 400, damping: 35 });
     }
   };
 
@@ -71,45 +79,64 @@ function AnimatedCard({
     if (!triggerSwipeDirection) return;
 
     isSwiping.current = true;
-    animate(x, triggerSwipeDirection === 'right' ? 500 : -500, {
-      duration: 0.5,
-      ease: 'easeInOut',
+    animate(x, triggerSwipeDirection === 'right' ? 600 : -600, {
+      duration: 0.4,
+      ease: [0.32, 0.72, 0, 1],
       onComplete: () => {
         onSwipe(triggerSwipeDirection);
         setTriggerSwipeDirection(null);
         isSwiping.current = false;
       },
     });
-  }, [triggerSwipeDirection, onSwipe, setTriggerSwipeDirection, x]);
+    animate(y, -50, {
+      duration: 0.4,
+      ease: [0.32, 0.72, 0, 1],
+    });
+  }, [triggerSwipeDirection, onSwipe, setTriggerSwipeDirection, x, y]);
 
   return (
     <motion.div
       className="absolute inset-0 cursor-grab"
-      style={{ x, y, rotateY }}
+      style={{ x, y, rotate, scale }}
       drag="x" 
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.5}
-      whileTap={{ cursor: 'grabbing' }}
+      dragElastic={0.7}
+      whileTap={{ cursor: 'grabbing', scale: 0.98 }}
       onDragEnd={handleDragEnd}
       onTap={onTap}
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } }}
+      initial={{ scale: 0.8, opacity: 0, y: 50 }}
+      animate={{ 
+        scale: 1, 
+        opacity: 1, 
+        y: 0,
+        transition: { 
+          type: 'spring',
+          stiffness: 300,
+          damping: 25,
+          mass: 0.8
+        } 
+      }}
+      exit={{ 
+        scale: 0.8, 
+        opacity: 0,
+        transition: { duration: 0.2 }
+      }}
     >
       <div className="relative w-full h-full">
         
         <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute top-6 left-6 bg-white/90 text-green-600 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[-10deg] z-10 flex items-center gap-2"
+          className="absolute top-8 right-8 px-6 py-3 rounded-2xl font-bold text-2xl bg-gradient-to-r from-green-400 to-emerald-500 text-white border-2 border-white/20 rotate-12 backdrop-blur-sm shadow-xl pointer-events-none z-10 flex items-center gap-2"
         >
-          DATE <Heart className="h-5 w-5 fill-current" />
+          LIKE <Heart className="h-6 w-6 fill-white" />
         </motion.div>
 
         
         <motion.div
           style={{ opacity: passOpacity }}
-          className="absolute top-6 right-6 bg-white/90 text-red-600 border-2 border-red-500 px-4 py-2 rounded-lg font-bold text-xl shadow pointer-events-none rotate-[10deg] z-10 flex items-center gap-2"
+          className="absolute top-8 left-8 px-6 py-3 rounded-2xl font-bold text-2xl bg-gradient-to-r from-red-400 to-pink-500 text-white border-2 border-white/20 -rotate-12 backdrop-blur-sm shadow-xl pointer-events-none z-10 flex items-center gap-2"
         >
-          PASS <X className="h-5 w-5" />
+          NOPE <X className="h-6 w-6" />
         </motion.div>
 
         {children}
@@ -327,19 +354,39 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
         </div>
         <div className="flex flex-col items-center justify-center gap-4">
             <div className="flex items-center justify-center gap-6">
-              <Button onClick={() => triggerSwipe('left')} variant="outline" size="icon" className="h-16 w-16 rounded-full text-destructive hover:bg-destructive/10" disabled={!activeUser || !!triggerSwipeDirection}>
-                <X className="h-8 w-8" />
+              <Button 
+                onClick={() => triggerSwipe('left')} 
+                size="icon" 
+                className="h-20 w-20 rounded-full bg-gradient-to-br from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 shadow-lg shadow-red-500/30 hover:shadow-2xl hover:shadow-red-500/50 transition-all duration-300 hover:scale-110 border-2 border-white/20 disabled:opacity-50 disabled:scale-100"
+                disabled={!activeUser || !!triggerSwipeDirection}
+              >
+                <X className="h-10 w-10 text-white" />
               </Button>
 
-              <Button onClick={onUndo} variant="outline" size="icon" className="h-12 w-12 rounded-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50" disabled={!canUndo || !!triggerSwipeDirection}>
-                <Undo2 className="h-6 w-6" />
+              <Button 
+                onClick={onUndo} 
+                size="icon" 
+                className="h-16 w-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 shadow-lg shadow-yellow-500/30 hover:shadow-xl hover:shadow-yellow-500/50 transition-all duration-300 hover:scale-110 border-2 border-white/20 disabled:opacity-30 disabled:scale-100"
+                disabled={!canUndo || !!triggerSwipeDirection}
+              >
+                <Undo2 className="h-8 w-8 text-white" />
               </Button>
               
-              <Button onClick={() => triggerSwipe('right')} variant="outline" size="icon" className="h-16 w-16 rounded-full border-green-500 text-green-500 hover:bg-green-500/10" disabled={!activeUser || !!triggerSwipeDirection}>
-                <Heart className="h-8 w-8 fill-current text-green-500" />
+              <Button 
+                onClick={() => triggerSwipe('right')} 
+                size="icon" 
+                className="h-20 w-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/50 transition-all duration-300 hover:scale-110 border-2 border-white/20 disabled:opacity-50 disabled:scale-100"
+                disabled={!activeUser || !!triggerSwipeDirection}
+              >
+                <Heart className="h-10 w-10 fill-white text-white" />
               </Button>
             </div>
-            <Button onClick={onRefresh} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-muted-foreground/50 text-muted-foreground hover:bg-muted/10" disabled={!!triggerSwipeDirection}>
+            <Button 
+              onClick={onRefresh} 
+              size="icon" 
+              className="h-14 w-14 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-105"
+              disabled={!!triggerSwipeDirection}
+            >
                 <RefreshCcw className="h-7 w-7" />
             </Button>
         </div>

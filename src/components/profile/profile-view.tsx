@@ -323,10 +323,10 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 space-y-6">
-      <Card>
+      <Card className="bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
           <div className="flex justify-between items-start">
-            <CardTitle className="text-3xl">My Profile</CardTitle>
+            <CardTitle className="text-3xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Profile</CardTitle>
             <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)} disabled={saving}>
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : isEditing ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
               <span className="sr-only">{isEditing ? 'Save Profile' : 'Edit Profile'}</span>
@@ -344,8 +344,7 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                     </Avatar>
                     <Button
                         size="icon"
-                        variant="default"
-                        className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background"
+                        className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
                     >
@@ -398,9 +397,9 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-          <CardTitle>My Gallery</CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Gallery</CardTitle>
         </CardHeader>
         <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -422,11 +421,10 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                     </div>
                 )}
                 {index === 0 && (
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded">
+                    <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-bold rounded shadow-lg">
                         MAIN
                     </div>
                 )}
-                </div>
             ))}
             {isEditing && userPhotos.length < 8 && (
                 <div 
@@ -446,9 +444,9 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-white/5 backdrop-blur-md border-white/10">
           <CardHeader>
-              <CardTitle>Connections</CardTitle>
+              <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Connections</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
               <MatchesDialog userId={user.id} />

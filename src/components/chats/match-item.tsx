@@ -15,14 +15,16 @@ export function MatchItem({ match }: { match: Match }) {
     };
 
     return (
-        <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer" onClick={() => navigateToChat(match.id)}>
-            <Avatar className="h-16 w-16 border-2 border-primary">
-                {match.matchedUser.photos?.[0] && (
-                    <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} width={64} height={64} className="object-cover" />
-                )}
-                <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
-            </Avatar>
-            <p className="text-sm font-medium truncate w-16 text-center">{match.matchedUser.name.split(' ')[0]}</p>
+        <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group" onClick={() => navigateToChat(match.id)}>
+            <div className="relative p-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 group-hover:shadow-lg group-hover:shadow-purple-500/50 transition-all duration-300">
+                <Avatar className="h-16 w-16 ring-2 ring-black">
+                    {match.matchedUser.photos?.[0] && (
+                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} width={64} height={64} className="object-cover" />
+                    )}
+                    <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
+                </Avatar>
+            </div>
+            <p className="text-sm font-medium truncate w-20 text-center">{match.matchedUser.name.split(' ')[0]}</p>
         </div>
     );
 }
