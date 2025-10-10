@@ -106,4 +106,61 @@ body {
     white-space: nowrap;
     border-width: 0;
   }
+
+  /* Gradient Text Utilities */
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent;
+  }
+
+  .gradient-text-primary {
+    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  }
+
+  /* Glass Morphism */
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-strong {
+    @apply bg-white/10 backdrop-blur-2xl border border-white/20;
+  }
+
+  /* Gradient Backgrounds */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-purple-500 to-pink-500;
+  }
+
+  .bg-gradient-accent {
+    @apply bg-gradient-to-br from-blue-500 to-purple-500;
+  }
+
+  .bg-gradient-success {
+    @apply bg-gradient-to-br from-green-400 to-emerald-500;
+  }
+
+  .bg-gradient-danger {
+    @apply bg-gradient-to-br from-red-400 to-pink-500;
+  }
+
+  /* Hover Effects */
+  .card-hover {
+    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl;
+  }
+
+  .button-hover {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
+  }
+
+  /* Animated Background Orbs */
+  .bg-orb-purple {
+    @apply absolute w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse;
+  }
+
+  .bg-orb-pink {
+    @apply absolute w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse;
+  }
+
+  .bg-orb-blue {
+    @apply absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse;
+  }
 }
