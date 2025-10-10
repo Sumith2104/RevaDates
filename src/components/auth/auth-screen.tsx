@@ -253,9 +253,18 @@ export function AuthScreen() {
 
   return (
     <div
-      className="min-h-screen w-full bg-black overflow-x-hidden"
+      className="min-h-screen w-full bg-black overflow-x-hidden relative"
       onClick={handleBackdropClick}
     >
+      {/* Animated gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" 
+             style={{ animationDelay: '0s', animationDuration: '4s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" 
+             style={{ animationDelay: '1s', animationDuration: '5s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-blue-500/10 rounded-full blur-3xl animate-pulse" 
+             style={{ animationDelay: '2s', animationDuration: '6s' }} />
+      </div>
       
       <header className="fixed top-0 left-0 right-0 z-20">
         <div className="container mx-auto flex h-20 items-center justify-between px-4">
@@ -291,24 +300,25 @@ export function AuthScreen() {
                 Get started
               </h2>
               <div className="mb-8 max-w-2xl h-8 flex items-center justify-center mt-2">
-                <p className="text-lg text-neutral-300">
-                  {typedPhrase}
-                  <span className="animate-pulse">|</span>
+                <p className="text-lg">
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                    {typedPhrase}
+                  </span>
+                  <span className="inline-block w-0.5 h-5 bg-gradient-to-b from-purple-400 to-pink-400 animate-pulse ml-1 align-middle"></span>
                 </p>
               </div>
               <div className="flex flex-col items-center gap-4 mt-4">
                 <div className="flex flex-row gap-4">
                   <Button
                     size="lg"
-                    className="font-semibold rounded-full text-white bg-white/10 backdrop-blur-md hover:bg-white/20"
+                    className="font-semibold rounded-full text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 hover:scale-105 border-none"
                     onClick={() => setView('signup')}
                   >
                     Sign up
                   </Button>
                   <Button
                     size="lg"
-                    variant="outline"
-                    className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
+                    className="font-semibold rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105"
                     onClick={() => setIsLoginOpen(true)}
                   >
                     Login
