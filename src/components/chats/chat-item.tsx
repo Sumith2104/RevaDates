@@ -40,7 +40,7 @@ export function ChatItem({ chat }: { chat: Chat }) {
     return (
         <div
             ref={ref}
-            className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+            className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/10 cursor-pointer transition-all duration-300 hover:scale-[1.02] border border-transparent hover:border-white/10"
             onClick={() => navigateToChat(chat.id)}
         >
             <Avatar className="h-12 w-12">
@@ -59,7 +59,7 @@ export function ChatItem({ chat }: { chat: Chat }) {
                         {chat.lastMessage}
                     </p>
                     {chat.unreadCount > 0 && (
-                        <Badge className="bg-white text-black text-xs px-2 py-0.5 rounded-full flex items-center justify-center min-w-[1rem] h-[1rem]">
+                        <Badge className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full flex items-center justify-center min-w-[1.25rem] h-[1.25rem] shadow-lg shadow-purple-500/50 animate-pulse">
                           {chat.unreadCount > 4 ? '4+' : chat.unreadCount}
                         </Badge>
                     )}

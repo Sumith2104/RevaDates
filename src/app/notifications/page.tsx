@@ -118,16 +118,16 @@ export default function NotificationsPage() {
                  
                 <div className="sticky top-0 left-0 right-0 h-10 bg-gradient-to-b from-black to-transparent pointer-events-none z-10" />
                 <div className="container mx-auto max-w-2xl p-4">
-                    <h1 className="text-3xl font-bold mb-6">Notifications</h1>
+                    <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Notifications</h1>
                     {error && (
                         <div className="text-center text-muted-foreground py-10">
                             <p>{error}</p>
                         </div>
                     )}
                     {!error && notifications.length === 0 && (
-                        <div className="text-center text-muted-foreground py-10">
-                            <Bell className="mx-auto h-12 w-12 mb-4" />
-                            <h2 className="text-xl font-semibold">No new notifications</h2>
+                        <div className="text-center text-white/60 py-12 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl">
+                            <Bell className="mx-auto h-14 w-14 mb-4 text-purple-400" />
+                            <h2 className="text-xl font-semibold text-white">No new notifications</h2>
                             <p>Likes, matches, and messages will appear here.</p>
                         </div>
                     )}
@@ -135,15 +135,17 @@ export default function NotificationsPage() {
                         <div className="space-y-4">
                             {notifications.map((notif) => (
                             <AnimatedNotificationItem key={notif.id}>
-                                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
                                     <div className="relative">
-                                        <Avatar className="h-16 w-16 border-2 border-primary">
-                                            {notif.sender?.photos?.[0] && (
-                                                <AvatarImage src={notif.sender.photos[0]} alt={notif.sender.name || 'User avatar'} width={64} height={64} />
-                                            )}
-                                            <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="absolute -bottom-1 -right-1 bg-pink-500 rounded-full p-1 border-2 border-background">
+                                        <div className="p-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                                            <Avatar className="h-16 w-16 ring-2 ring-black">
+                                                {notif.sender?.photos?.[0] && (
+                                                    <AvatarImage src={notif.sender.photos[0]} alt={notif.sender.name || 'User avatar'} width={64} height={64} />
+                                                )}
+                                                <AvatarFallback>{getInitials(notif.sender?.name || '')}</AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-pink-500 to-red-500 rounded-full p-1.5 border-2 border-black shadow-lg">
                                             <Heart className="h-3 w-3 text-white fill-white" />
                                         </div>
                                     </div>
@@ -155,15 +157,15 @@ export default function NotificationsPage() {
                                         {notif.type === 'new_like' && (
                                             <div className="flex items-center gap-2 mt-3">
                                                 {matchedNotifications[notif.id] ? (
-                                                    <Button size="sm" className="rounded-full h-8 px-4 bg-primary hover:bg-primary/90" onClick={() => router.push(`/chats/${matchedNotifications[notif.id]}`)}>
+                                                    <Button size="sm" className="rounded-full h-9 px-5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-none" onClick={() => router.push(`/chats/${matchedNotifications[notif.id]}`)}>
                                                         <MessageSquare className="h-4 w-4 mr-2" /> Go to Chat
                                                     </Button>
                                                 ) : (
                                                     <>
-                                                        <Button size="sm" className="rounded-full h-8 px-4 bg-green-500 hover:bg-green-600 text-white" onClick={() => handleResponse(notif.id, notif.sender_id, 'liked')}>
-                                                            <Heart className="h-4 w-4 mr-1"/> Date
+                                                        <Button size="sm" className="rounded-full h-9 px-5 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-none" onClick={() => handleResponse(notif.id, notif.sender_id, 'liked')}>
+                                                            <Heart className="h-4 w-4 mr-1 fill-white"/> Date
                                                         </Button>
-                                                        <Button size="sm" variant="ghost" className="rounded-full h-8 px-4" onClick={() => handleResponse(notif.id, notif.sender_id, 'rejected')}>
+                                                        <Button size="sm" className="rounded-full h-9 px-5 bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300 hover:scale-105" onClick={() => handleResponse(notif.id, notif.sender_id, 'rejected')}>
                                                            <X className="h-4 w-4 mr-1"/> Reject
                                                         </Button>
                                                     </>
