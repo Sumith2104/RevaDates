@@ -2,11 +2,11 @@
 'use client';
 
 import * as React from 'react';
-import { createClient } from '@/lib/supabase/client';
+
 import { useRouter, useParams } from 'next/navigation';
 import { PublicProfileView } from '@/components/profile/public-profile-view';
 import { Lock } from 'lucide-react';
-import { getIsMatch, getDistanceBetweenUsers } from '@/lib/actions';
+import { getIsMatch, getDistanceBetweenUsers, getUserProfile } from '@/lib/actions';
 import { AppShell } from '@/components/shared/app-shell';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
@@ -38,44 +38,39 @@ export default function UserProfilePage() {
     async function fetchData() {
       setLoading(true);
 
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
+      const { data, error } = await getUserProfile(userId);
+
       if (error || !data) {
         setProfile(null);
         setIsViewable(false);
       } else {
-          
-          if (currentUserId) { 
-              if (data.is_public) {
-                  setIsViewable(true);
-              } else {
-                  const matchStatus = await getIsMatch(currentUserId, userId);
-                  setIsViewable(matchStatus);
-              }
-              
-              const distance = await getDistanceBetweenUsers(currentUserId, data.id);
-              setProfile({
-                ...data,
-                dob: new Date(data.dob),
-                distance_meters: distance !== null ? distance * 1000 : null
-              });
 
+        if (currentUserId) {
+          if (data.is_public) {
+            setIsViewable(true);
           } else {
-              
-              setIsViewable(data.is_public);
-              setProfile({
-                ...data,
-                dob: new Date(data.dob),
-                distance_meters: null
-              });
+            const matchStatus = await getIsMatch(currentUserId, userId);
+            setIsViewable(matchStatus);
           }
+
+          const distance = await getDistanceBetweenUsers(currentUserId, data.id);
+          setProfile({
+            ...data,
+            dob: new Date(data.dob),
+            distance_meters: distance !== null ? distance * 1000 : null
+          });
+
+        } else {
+
+          setIsViewable(data.is_public);
+          setProfile({
+            ...data,
+            dob: new Date(data.dob),
+            distance_meters: null
+          });
+        }
       }
-      
+
       setLoading(false);
     }
 
@@ -83,29 +78,29 @@ export default function UserProfilePage() {
   }, [userId, currentUserId, router, userLoading]);
 
   if (loading || userLoading) {
-     return <PageLoader />;
+    return <PageLoader />;
   }
 
   if (!isViewable) {
     return (
-        <AppShell>
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                <Lock className="h-16 w-16 mb-4" />
-                <p className="text-xl font-medium">This profile is private.</p>
-                <p className="mt-2">You must match with this user to view their full profile.</p>
-            </div>
-        </AppShell>
+      <AppShell>
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+          <Lock className="h-16 w-16 mb-4" />
+          <p className="text-xl font-medium">This profile is private.</p>
+          <p className="mt-2">You must match with this user to view their full profile.</p>
+        </div>
+      </AppShell>
     );
   }
 
   if (!profile) {
-      return (
-        <AppShell>
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                <p className="text-xl font-medium">Could not load profile.</p>
-            </div>
-        </AppShell>
-      )
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+          <p className="text-xl font-medium">Could not load profile.</p>
+        </div>
+      </AppShell>
+    )
   }
 
   return (

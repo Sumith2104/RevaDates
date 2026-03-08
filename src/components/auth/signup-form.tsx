@@ -12,12 +12,12 @@ import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { sendOtpEmail, createUser } from '@/lib/actions';
-import { createClient } from '@/lib/supabase/client';
+
 import { motion } from 'framer-motion';
 
 interface SignupFormProps {
-    onSwitchToLogin: () => void;
-    onSignupSuccess: (userId: string) => void;
+  onSwitchToLogin: () => void;
+  onSignupSuccess: (userId: string) => void;
 }
 
 export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ onSwitchToLogin, onSignupSuccess }, ref) => {
@@ -28,7 +28,7 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
+
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
   const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -38,14 +38,14 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     const currentFormData = new FormData(e.currentTarget);
     const email = currentFormData.get('email') as string;
     const firstName = currentFormData.get('firstName') as string;
-    
+
     // Store form data as a plain object
-    const details: {[key: string]: any} = {};
+    const details: { [key: string]: any } = {};
     currentFormData.forEach((value, key) => {
-        details[key] = value;
+      details[key] = value;
     });
     setFormData(details);
-    
+
     const result = await sendOtpEmail(email, firstName);
 
     setIsLoading(false);
@@ -60,72 +60,72 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
       setGeneratedOtp(result.otp);
       setStep('otp');
       toast({
-          title: "Verification Code Sent",
-          description: `A code has been sent to ${email}.`,
+        title: "Verification Code Sent",
+        description: `A code has been sent to ${email}.`,
       });
     }
   };
-  
+
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     if (enteredOtp.join("") !== generatedOtp) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid Code',
-          description: 'The verification code you entered is incorrect. Please try again.',
-        });
-        setIsLoading(false);
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Code',
+        description: 'The verification code you entered is incorrect. Please try again.',
+      });
+      setIsLoading(false);
+      return;
     }
-    
+
     if (!formData) {
-        toast({
-          variant: 'destructive',
-          title: 'Signup Error',
-          description: 'An unexpected error occurred. Please go back and try again.',
-        });
-        setIsLoading(false);
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Signup Error',
+        description: 'An unexpected error occurred. Please go back and try again.',
+      });
+      setIsLoading(false);
+      return;
     }
 
     setIsLoading(false);
     setStep('onboarding');
   };
-  
+
   const handleOnboardingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     const onboardingData = new FormData(e.currentTarget);
     const genderPreference = onboardingData.get('genderPreference') as string;
-    
+
     const fullUserData = {
-        ...formData,
-        gender: genderPreference === 'men' ? 'Female' : 'Male',
-        genderPreference: genderPreference,
+      ...formData,
+      gender: genderPreference === 'men' ? 'Female' : 'Male',
+      genderPreference: genderPreference,
     };
-    
+
     const result = await createUser(fullUserData);
 
     if (result.error || !result.data) {
-        setIsLoading(false);
-        toast({
-          variant: 'destructive',
-          title: 'Signup Failed',
-          description: result.error || "We couldn't create your account. Please try again.",
-        });
+      setIsLoading(false);
+      toast({
+        variant: 'destructive',
+        title: 'Signup Failed',
+        description: result.error || "We couldn't create your account. Please try again.",
+      });
     } else {
-        localStorage.setItem('currentUserId', result.data.id);
-        
-        setIsLoading(false);
-        toast({
-          title: 'Account Created!',
-          description: 'Welcome to RevaDates!',
-        });
-        
-        onSignupSuccess(result.data.id);
+      localStorage.setItem('currentUserId', result.data.id);
+
+      setIsLoading(false);
+      toast({
+        title: 'Account Created!',
+        description: 'Welcome to RevaDates!',
+      });
+
+      onSignupSuccess(result.data.id);
     }
   }
 
@@ -148,14 +148,14 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
       inputRefs.current[index - 1]?.focus();
     }
   };
-  
+
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const paste = e.clipboardData.getData('text');
     if (paste.length === 4 && /^\d+$/.test(paste)) {
-        e.preventDefault();
-        const newOtp = paste.split('');
-        setEnteredOtp(newOtp);
-        inputRefs.current[3]?.focus();
+      e.preventDefault();
+      const newOtp = paste.split('');
+      setEnteredOtp(newOtp);
+      inputRefs.current[3]?.focus();
     }
   };
 
@@ -169,37 +169,37 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
     { value: '11', label: 'November' }, { value: '12', 'label': 'December' },
   ];
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  
+
   if (step === 'onboarding') {
     return (
-        <div ref={ref}>
-            <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
-                <form onSubmit={handleOnboardingSubmit}>
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Tell us about you</CardTitle>
-                        <CardDescription>This helps us find you better matches.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="genderPreference">I am interested in...</Label>
-                            <Select name="genderPreference" required disabled={isLoading}>
-                                <SelectTrigger className="rounded-lg">
-                                    <SelectValue placeholder="Select your preference" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="men">Men</SelectItem>
-                                    <SelectItem value="women">Women</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Finish Signup
-                        </Button>
-                    </CardContent>
-                </form>
-            </Card>
-        </div>
+      <div ref={ref}>
+        <Card className="mx-auto max-w-sm w-full shadow-2xl bg-white/10 backdrop-blur-lg rounded-lg border-0">
+          <form onSubmit={handleOnboardingSubmit}>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Tell us about you</CardTitle>
+              <CardDescription>This helps us find you better matches.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2 text-left">
+                <Label htmlFor="genderPreference">I am interested in...</Label>
+                <Select name="genderPreference" required disabled={isLoading}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue placeholder="Select your preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="men">Men</SelectItem>
+                    <SelectItem value="women">Women</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Finish Signup
+              </Button>
+            </CardContent>
+          </form>
+        </Card>
+      </div>
     );
   }
 
@@ -215,35 +215,35 @@ export const SignupForm = React.forwardRef<HTMLDivElement, SignupFormProps>(({ o
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="otp">Verification Code</Label>
-                 <div className="flex justify-center gap-2" onPaste={handlePaste}>
-                    {enteredOtp.map((data, index) => {
-                        return (
-                            <Input
-                                key={index}
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                name="otp"
-                                maxLength={1}
-                                value={data}
-                                onChange={(e) => handleOtpChange(e.target, index)}
-                                onFocus={(e) => e.target.select()}
-                                onKeyDown={(e) => handleKeyDown(e, index)}
-                                ref={(el) => { inputRefs.current[index] = el; }}
-                                className="w-12 h-12 text-center text-lg rounded-lg"
-                                disabled={isLoading}
-                            />
-                        );
-                    })}
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                  {enteredOtp.map((data, index) => {
+                    return (
+                      <Input
+                        key={index}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        name="otp"
+                        maxLength={1}
+                        value={data}
+                        onChange={(e) => handleOtpChange(e.target, index)}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => handleKeyDown(e, index)}
+                        ref={(el) => { inputRefs.current[index] = el; }}
+                        className="w-12 h-12 text-center text-lg rounded-lg"
+                        disabled={isLoading}
+                      />
+                    );
+                  })}
                 </div>
               </div>
               <Button type="submit" className="w-full rounded-full" disabled={isLoading || enteredOtp.join("").length !== 4}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Verify
               </Button>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-                <Button variant="link" type="button" onClick={() => { setStep('details'); }}>Go Back</Button>
+              <Button variant="link" type="button" onClick={() => { setStep('details'); }}>Go Back</Button>
             </CardFooter>
           </form>
         </Card>

@@ -1,0 +1,107 @@
+﻿
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+actions_part1.ts(4,27): error TS2307: Cannot find module './email' or its corresponding type declarations.
+actions_part2.ts(3,17): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part2.ts(5,15): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(11,45): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(14,23): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(19,49): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(21,53): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(24,37): error TS2304: Cannot find name 'uuidv4'.
+actions_part2.ts(25,27): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(28,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(31,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(33,21): error TS2304: Cannot find name 'revalidatePath'.
+actions_part2.ts(34,21): error TS2304: Cannot find name 'revalidatePath'.
+actions_part2.ts(39,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part2.ts(47,29): error TS2304: Cannot find name 'EmailSchema'.
+actions_part2.ts(49,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(53,21): error TS2304: Cannot find name 'getFutureISTTimestamp'.
+actions_part2.ts(54,11): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(54,151): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part2.ts(58,27): error TS2304: Cannot find name 'createModernEmailTemplate'.
+actions_part2.ts(65,15): error TS2304: Cannot find name 'sendEmail'.
+actions_part2.ts(72,29): error TS2304: Cannot find name 'z'.
+actions_part2.ts(73,12): error TS2304: Cannot find name 'z'.
+actions_part2.ts(74,10): error TS2304: Cannot find name 'z'.
+actions_part2.ts(75,15): error TS2304: Cannot find name 'z'.
+actions_part2.ts(81,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(85,11): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(85,167): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part2.ts(91,11): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(98,35): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(117,17): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part2.ts(118,11): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(119,5): error TS2304: Cannot find name 'revalidatePath'.
+actions_part2.ts(126,35): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(130,19): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(132,15): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(133,15): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(134,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part2.ts(143,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(148,35): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(155,31): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(159,11): error TS2304: Cannot find name 'pool'.
+actions_part2.ts(159,120): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part2.ts(160,5): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(5,36): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(8,36): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(18,38): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(45,40): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(84,15): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(84,124): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part3.ts(85,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(86,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(96,15): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(96,114): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part3.ts(97,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(106,17): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part3.ts(108,15): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(109,15): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(112,39): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(114,33): error TS2304: Cannot find name 'uuidv4'.
+actions_part3.ts(115,23): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(117,44): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(122,27): error TS2304: Cannot find name 'pool'.
+actions_part3.ts(124,17): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(125,17): error TS2304: Cannot find name 'revalidatePath'.
+actions_part3.ts(129,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part4.ts(4,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(13,17): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part4.ts(14,16): error TS2304: Cannot find name 'uuidv4'.
+actions_part4.ts(16,15): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(17,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(20,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part4.ts(21,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part4.ts(31,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(35,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(47,15): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(48,9): error TS2304: Cannot find name 'revalidatePath'.
+actions_part4.ts(62,15): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(62,108): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part4.ts(72,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(87,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(95,29): error TS2304: Cannot find name 'EmailSchema'.
+actions_part4.ts(98,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(102,25): error TS2304: Cannot find name 'getFutureISTTimestamp'.
+actions_part4.ts(103,15): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(103,155): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part4.ts(106,27): error TS2304: Cannot find name 'createModernEmailTemplate'.
+actions_part4.ts(113,15): error TS2304: Cannot find name 'sendEmail'.
+actions_part4.ts(122,35): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(126,15): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(126,147): error TS2304: Cannot find name 'getISTTimestamp'.
+actions_part4.ts(136,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(141,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(144,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(166,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(169,61): error TS2304: Cannot find name 'differenceInYears'.
+actions_part4.ts(186,36): error TS2304: Cannot find name 'pool'.
+actions_part4.ts(187,36): error TS2304: Cannot find name 'pool'.
+src/app/profile/page.tsx(24,61): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/components/profile/profile-view.tsx(82,39): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/profile/profile-view.tsx(83,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/components/settings/settings-view.tsx(169,94): error TS2339: Property 'message' does not exist on type 'string'.

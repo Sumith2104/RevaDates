@@ -1,26 +1,24 @@
-
 'use server';
 
 import { z } from 'zod';
 import { sendEmail } from './email';
-import { createClient } from '@/lib/supabase/server';
+import pool from '@/lib/fluxbase/server';
 import { revalidatePath } from 'next/cache';
 import { addMinutes, differenceInYears } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
+import { v4 as uuidv4 } from 'uuid';
 
 const EmailSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
+    email: z.string().email({ message: 'Please enter a valid email address.' }),
 });
 
 const timeZone = 'Asia/Kolkata';
-
 
 function getISTTimestamp() {
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
-
 
 function getFutureISTTimestamp(minutesToAdd: number) {
     const now = new Date();
@@ -29,286 +27,146 @@ function getFutureISTTimestamp(minutesToAdd: number) {
     return format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", { timeZone });
 }
 
-
 function createModernEmailTemplate({ title, preheader, body, code, name }: { title: string, preheader: string, body: string, code?: string, name?: string }) {
     const greeting = name ? `<p>Hi ${name},</p>` : '';
-    
     return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>${title}</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-            body { margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', Arial, sans-serif; -webkit-text-size-adjust: 100%; }
-            .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
-            .card { background-color: #1a1a1a; border-radius: 12px; padding: 40px; box-sizing: border-box; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
-            .content p { color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; }
-            .code-box { background-color: #27272a; border-radius: 8px; padding: 15px 20px; text-align: center; margin-top: 30px; }
-            .code-box p { font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin: 0; }
-            .copy-hint { text-align: center; margin-top: 8px; }
-            .copy-hint p { font-size: 12px; color: #737373; margin: 0; }
-            .footer { text-align: center; margin-top: 30px; }
-            .footer p { color: #737373; font-size: 12px; }
-
-            @media screen and (max-width: 600px) {
-                .container { padding: 10px; }
-                .card { padding: 20px; }
-                .code-box p { font-size: 24px; letter-spacing: 2px; }
-            }
-        </style>
+        <style>body { font-family: sans-serif; background: #000; color: #fff; padding: 20px; }</style>
     </head>
     <body>
-        <span style="display: none; max-height: 0; overflow: hidden;">${preheader}</span>
-        <div class="container">
-            <div class="card">
-                <div class="header">
-                    <h1>RevaDates</h1>
-                </div>
-                <div class="content">
-                    ${greeting}
-                    <p>${body}</p>
-                </div>
-                ${code ? `
-                <div>
-                    <div class="code-box">
-                        <p>${code}</p>
-                    </div>
-                    <div class="copy-hint">
-                        <p>You can manually copy the code above</p>
-                    </div>
-                </div>
-                ` : ''}
-                <div class="content" style="margin-top: 30px;">
-                    <p>If you did not request this, you can safely ignore this email.</p>
-                </div>
-            </div>
-            <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} RevaDates. All rights reserved.</p>
-            </div>
+        <span style="display: none;">${preheader}</span>
+        <div>
+            <h1>RevaDates</h1>
+            ${greeting}
+            <p>${body}</p>
+            ${code ? `<h2>${code}</h2>` : ''}
         </div>
     </body>
-    </html>
-    `;
+    </html>`;
+}
+
+export async function loginUser(email: string, password?: string) {
+    if (!email || !password) return { error: 'Email and password required' };
+    try {
+        const [rows]: any = await pool.query('SELECT id, name FROM profiles WHERE email = ? AND password = ? LIMIT 1', [email, password]);
+        if (rows.length === 0) return { error: 'Invalid credentials' };
+        return { data: rows[0] };
+    } catch (err: any) {
+        return { error: 'Database connection failed: ' + err.message };
+    }
+}
+
+export async function checkEmailExists(email: string) {
+    try {
+        const [rows]: any = await pool.query('SELECT id FROM profiles WHERE email = ? LIMIT 1', [email]);
+        if (rows.length === 0) return { error: 'No Account Found' };
+        return { data: rows[0] };
+    } catch (err: any) {
+        return { error: 'Database connection failed: ' + err.message };
+    }
 }
 
 export async function createUser(userData: Record<string, any>) {
-  const supabase = createClient();
-  const now = getISTTimestamp();
+    const now = getISTTimestamp();
+    const id = uuidv4();
 
-  const { data: newUser, error: insertError } = await supabase.from('profiles').insert({
-      name: `${userData.firstName} ${userData.lastName}`,
-      email: userData.email,
-      password: userData.password, 
-      dob: `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`,
-      gender: userData.gender,
-      discovery_gender_preference: userData.genderPreference,
-      bio: "",
-      photos: [],
-      created_at: now,
-      updated_at: now,
-  }).select('id').single();
-
-  if (insertError) {
-      return { data: null, error: insertError.message };
-  }
-
-  return { data: newUser, error: null };
+    try {
+        await pool.query(
+            'INSERT INTO profiles (id, name, email, password, dob, gender, discovery_gender_preference, bio, photos, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, `${userData.firstName} ${userData.lastName}`, userData.email, userData.password, `${userData.dobYear}-${userData.dobMonth}-${userData.dobDay}`, userData.gender, userData.genderPreference, "", JSON.stringify([]), now, now]
+        );
+        return { data: { id } };
+    } catch (err: any) {
+        return { data: null, error: err.message };
+    }
 }
 
-
 export async function sendOtpEmail(email: string, firstName: string) {
-  const validatedFields = EmailSchema.safeParse({ email });
+    const validatedFields = EmailSchema.safeParse({ email });
+    if (!validatedFields.success) return { error: 'Invalid email address provided.', otp: null };
 
-  if (!validatedFields.success) {
-    return {
-      error: 'Invalid email address provided.',
-      otp: null,
-    };
-  }
-  
-  const supabase = createClient();
-  const { data: existingUser, error: fetchError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', validatedFields.data.email)
-    .single();
+    try {
+        const [rows]: any = await pool.query('SELECT id FROM profiles WHERE email = ? LIMIT 1', [validatedFields.data.email]);
+        if (rows.length > 0) return { error: 'An account with this email already exists.', otp: null };
 
-  if(existingUser) {
-    return {
-      error: 'An account with this email already exists.',
-      otp: null,
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const emailHtml = createModernEmailTemplate({
+            title: 'Your RevaDates Verification Code',
+            preheader: `Your verification code is ${otp}`,
+            body: 'Welcome to RevaDates! To finish setting up your account, please use the following verification code:',
+            code: otp,
+            name: firstName,
+        });
+        await sendEmail({ to: validatedFields.data.email, subject: 'Your RevaDates Verification Code', html: emailHtml });
+        return { error: null, otp };
+    } catch (e: any) {
+        return { error: 'Failed to process request: ' + e.message, otp: null };
     }
-  }
-
-  try {
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const emailHtml = createModernEmailTemplate({
-        title: 'Your RevaDates Verification Code',
-        preheader: `Your verification code is ${otp}`,
-        body: 'Welcome to RevaDates! To finish setting up your account, please use the following verification code:',
-        code: otp,
-        name: firstName,
-    });
-
-    await sendEmail({
-      to: validatedFields.data.email,
-      subject: 'Your RevaDates Verification Code',
-      html: emailHtml,
-    });
-    return { error: null, otp };
-  } catch (e) {
-    return { error: 'Failed to send verification email. Please try again.', otp: null };
-  }
 }
 
 export async function handleSwipeAction(swiperId: string, swipedId: string, action: 'liked' | 'rejected') {
-  if (!swiperId || !swipedId) {
-    return { error: 'Invalid user IDs provided.' };
-  }
-
-  const supabase = createClient();
-  const now = getISTTimestamp();
-
-  const { error: swipeError } = await supabase.from('swipes').upsert(
-    {
-      swiper_id: swiperId,
-      swiped_id: swipedId,
-      action: action,
-      created_at: now,
-    },
-    { onConflict: 'swiper_id,swiped_id' }
-  );
-
-  if (swipeError) {
-    return { error: 'Could not record your swipe.' };
-  }
-  
-  if (action === 'liked') {
-    const { data: swiperProfile, error: swiperProfileError } = await supabase
-      .from('profiles')
-      .select('name, match_notification')
-      .eq('id', swiperId)
-      .single();
-
-    if (swiperProfile) {
-        await supabase.from('notifications').upsert(
-            {
-                recipient_id: swipedId,
-                sender_id: swiperId,
-                type: 'new_like',
-                message: `${swiperProfile.name} liked your profile!`,
-                created_at: now,
-                is_read: false,
-            },
-            { onConflict: 'recipient_id,sender_id,type', ignoreDuplicates: false }
+    if (!swiperId || !swipedId) return { error: 'Invalid user IDs provided.' };
+    const now = getISTTimestamp();
+    try {
+        await pool.query(
+            'INSERT INTO swipes (swiper_id, swiped_id, action, created_at) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE action=VALUES(action)',
+            [swiperId, swipedId, action, now]
         );
-    }
 
+        if (action === 'liked') {
+            const [swiperRows]: any = await pool.query('SELECT name, match_notification FROM profiles WHERE id = ?', [swiperId]);
+            if (swiperRows.length > 0) {
+                const swiperProfile = swiperRows[0];
+                await pool.query(
+                    'INSERT INTO notifications (recipient_id, sender_id, type, message, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE message=VALUES(message)',
+                    [swipedId, swiperId, 'new_like', `${swiperProfile.name} liked your profile!`, now, false]
+                );
 
-    const { data: mutualLike, error: checkError } = await supabase
-      .from('swipes')
-      .select('swiper_id') 
-      .eq('swiper_id', swipedId)
-      .eq('swiped_id', swiperId)
-      .eq('action', 'liked')
-      .single();
+                const [mutualRows]: any = await pool.query('SELECT swiper_id FROM swipes WHERE swiper_id = ? AND swiped_id = ? AND action = ? LIMIT 1', [swipedId, swiperId, 'liked']);
+                if (mutualRows.length > 0) {
+                    const [swipedRows]: any = await pool.query('SELECT name, match_notification FROM profiles WHERE id = ?', [swipedId]);
+                    const swipedProfile = swipedRows[0];
 
-    if (checkError && checkError.code !== 'PGRST116') { 
-      return { error: 'Could not check for a match.' };
-    }
-    
-    if (mutualLike) {
-        const { data: swipedProfile, error: swipedProfileError } = await supabase
-            .from('profiles')
-            .select('name, match_notification')
-            .eq('id', swipedId)
-            .single();
-      
-        const { data: matchData, error: matchError } = await supabase.from('matches').insert({
-          user1_id: swiperId,
-          user2_id: swipedId,
-          created_at: now,
-        }).select('id').single();
+                    const matchId = uuidv4();
+                    await pool.query('INSERT IGNORE INTO matches (id, user1_id, user2_id, created_at) VALUES (?, ?, ?, ?)', [matchId, swiperId, swipedId, now]);
 
-        if (matchError && matchError.code !== '23505') { 
-          // Match already exists, which is fine, we can proceed.
+                    if (swiperProfile.match_notification) {
+                        await pool.query('INSERT INTO notifications (recipient_id, sender_id, type, message, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?)', [swiperId, swipedId, 'new_match', `You matched with ${swipedProfile.name}!`, now, false]);
+                    }
+                    if (swipedProfile?.match_notification) {
+                        await pool.query('INSERT INTO notifications (recipient_id, sender_id, type, message, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?)', [swipedId, swiperId, 'new_match', `You matched with ${swiperProfile.name}!`, now, false]);
+                    }
+                    revalidatePath('/chats');
+                    revalidatePath('/notifications');
+                    return { match: true, matchId };
+                }
+            }
         }
-
-        const notificationTime = getISTTimestamp();
-        
-        if (swiperProfile?.match_notification) {
-            await supabase.from('notifications').insert({
-                recipient_id: swiperId,
-                sender_id: swipedId,
-                type: 'new_match',
-                message: `You matched with ${swipedProfile?.name}!`,
-                created_at: notificationTime,
-                is_read: false,
-            });
-        }
-        if (swipedProfile?.match_notification) {
-            await supabase.from('notifications').insert({
-                recipient_id: swipedId,
-                sender_id: swiperId,
-                type: 'new_match',
-                message: `You matched with ${swiperProfile?.name}!`,
-                created_at: notificationTime,
-                is_read: false,
-            });
-        }
-        
-        revalidatePath('/chats');
         revalidatePath('/notifications');
-        return { match: true, matchId: matchData?.id };
+        return { success: true };
+    } catch (err) {
+        return { error: 'Could not record your swipe.' };
     }
-  }
-
-  revalidatePath('/notifications');
-  return { success: true };
 }
-
 
 export async function sendPasswordResetOtp(email: string) {
     const validatedFields = EmailSchema.safeParse({ email });
-    if (!validatedFields.success) {
-        return { error: 'Invalid email address.' };
-    }
-
-    const supabase = createClient();
-    
-    const { data: user, error: userError } = await supabase
-        .from('profiles')
-        .select('id, email, name')
-        .eq('email', validatedFields.data.email)
-        .single();
-    
-    if (userError || !user) {
-        return { error: "No account found with that email address." };
-    }
-
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expires = getFutureISTTimestamp(10); 
-
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-            password_reset_token: otp, 
-            password_reset_token_expires_at: expires,
-            updated_at: getISTTimestamp(),
-        })
-        .eq('id', user.id);
-
-    if (updateError) {
-        return { error: 'Could not create a reset code. Please try again.' };
-    }
+    if (!validatedFields.success) return { error: 'Invalid email address.' };
 
     try {
+        const [rows]: any = await pool.query('SELECT id, email, name FROM profiles WHERE email = ? LIMIT 1', [validatedFields.data.email]);
+        if (rows.length === 0) return { error: "No account found with that email address." };
+
+        const user = rows[0];
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const expires = getFutureISTTimestamp(10);
+        await pool.query('UPDATE profiles SET password_reset_token = ?, password_reset_token_expires_at = ?, updated_at = ? WHERE id = ?', [otp, expires, getISTTimestamp(), user.id]);
+
         const firstName = user.name.split(' ')[0];
         const emailHtml = createModernEmailTemplate({
             title: 'Your RevaDates Password Reset Code',
@@ -317,660 +175,364 @@ export async function sendPasswordResetOtp(email: string) {
             code: otp,
             name: firstName
         });
-        await sendEmail({
-            to: user.email,
-            subject: 'Your RevaDates Password Reset Code',
-            html: emailHtml,
-        });
+        await sendEmail({ to: user.email, subject: 'Your RevaDates Password Reset Code', html: emailHtml });
         return { success: true };
-    } catch (e) {
-        return { error: "Could not send the password reset code. Please try again later." };
+    } catch (e: any) {
+        return { error: "Could not send the password reset code: " + e.message };
     }
 }
 
 const PasswordResetSchema = z.object({
-  email: z.string().email(),
-  otp: z.string().length(4, 'OTP must be 4 digits.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
+    email: z.string().email(),
+    otp: z.string().length(4, 'OTP must be 4 digits.'),
+    password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
 export async function resetPasswordWithOtp(email: string, otp: string, password: string) {
     const validatedFields = PasswordResetSchema.safeParse({ email, otp, password });
-    if (!validatedFields.success) {
-        const firstError = validatedFields.error.errors[0]?.message;
-        return { error: firstError || 'Invalid input. Please try again.' };
+    if (!validatedFields.success) return { error: validatedFields.error.errors[0]?.message || 'Invalid input.' };
+
+    try {
+        const [rows]: any = await pool.query('SELECT id, password_reset_token_expires_at FROM profiles WHERE email = ? AND password_reset_token = ? LIMIT 1', [email, otp]);
+        if (rows.length === 0 || !rows[0].password_reset_token_expires_at) return { error: 'Invalid or expired reset code.' };
+
+        const expires = new Date(rows[0].password_reset_token_expires_at);
+        if (expires < new Date()) return { error: 'Invalid or expired reset code.' };
+
+        await pool.query('UPDATE profiles SET password = ?, password_reset_token = NULL, password_reset_token_expires_at = NULL, updated_at = ? WHERE id = ?', [password, getISTTimestamp(), rows[0].id]);
+        return { success: true };
+    } catch (err: any) {
+        return { error: 'Database connection failed: ' + err.message };
     }
-
-    const supabase = createClient();
-
-    const { data: user, error: tokenError } = await supabase
-        .from('profiles')
-        .select('id, password_reset_token_expires_at')
-        .eq('email', validatedFields.data.email)
-        .eq('password_reset_token', validatedFields.data.otp)
-        .single();
-
-    if (tokenError || !user || !user.password_reset_token_expires_at) {
-        return { error: 'Invalid or expired reset code.' };
-    }
-
-    const expires = new Date(user.password_reset_token_expires_at);
-    if (expires < new Date()) {
-        return { error: 'Invalid or expired reset code.' };
-    }
-
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-            password: password, 
-            password_reset_token: null,
-            password_reset_token_expires_at: null,
-            updated_at: getISTTimestamp(),
-        })
-        .eq('id', user.id);
-
-    if (updateError) {
-        return { error: 'Could not update your password.' };
-    }
-
-    return { success: true };
 }
 
 export async function handleUndoSwipeAction(swiperId: string, swipedId: string) {
-  if (!swiperId || !swipedId) {
-    return { error: 'Invalid user IDs provided for undo.' };
-  }
-
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from('swipes')
-    .delete()
-    .eq('swiper_id', swiperId)
-    .eq('swiped_id', swipedId);
-
-  if (error) {
-    return { error: 'Could not undo your last swipe.' };
-  }
-
-  return { success: true };
+    if (!swiperId || !swipedId) return { error: 'Invalid user IDs provided for undo.' };
+    try {
+        await pool.query('DELETE FROM swipes WHERE swiper_id = ? AND swiped_id = ?', [swiperId, swipedId]);
+        return { success: true };
+    } catch (err: any) {
+        return { error: 'Database connection failed: ' + err.message };
+    }
 }
 
 export async function getNotifications(userId: string) {
     if (!userId) return { data: [], error: 'User ID is required.' };
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('notifications')
-        .select(`
-            id,
-            message,
-            created_at,
-            is_read,
-            type,
-            sender_id,
-            sender:sender_id ( name, photos )
-        `)
-        .eq('recipient_id', userId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+        const [rows]: any = await pool.query(`
+            SELECT n.id, n.message, n.created_at, n.is_read, n.type, n.sender_id, p.name as sender_name, p.photos as sender_photos
+            FROM notifications n
+            LEFT JOIN profiles p ON n.sender_id = p.id
+            WHERE n.recipient_id = ?
+            ORDER BY n.created_at DESC
+        `, [userId]);
+        const data = rows.map((r: any) => ({
+            id: r.id, message: r.message, created_at: r.created_at, is_read: r.is_read, type: r.type, sender_id: r.sender_id,
+            sender: { name: r.sender_name, photos: r.sender_photos ? JSON.parse(r.sender_photos) : [] }
+        }));
+        return { data, error: null };
+    } catch (e) {
         return { data: [], error: 'Could not fetch notifications.' };
     }
-
-    return { data, error: null };
 }
 
 export async function markNotificationsAsRead(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
-    const supabase = createClient();
     const now = getISTTimestamp();
-    const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, updated_at: now })
-        .eq('recipient_id', userId)
-        .eq('is_read', false);
-    
-    if (error) {
-        console.error("markNotificationsAsRead error:", error);
-        return { error: 'Could not update notifications.' };
-    }
+    await pool.query('UPDATE notifications SET is_read = true, updated_at = ? WHERE recipient_id = ? AND is_read = false', [now, userId]);
     revalidatePath('/notifications');
     return { success: true };
 }
 
 export async function blockUser(blockerId: string, blockedId: string) {
-  if (!blockerId || !blockedId) {
-    return { error: 'Invalid user IDs provided.' };
-  }
-  const supabase = createClient();
-
-  const { error } = await supabase.rpc('append_to_blocked_users', {
-      user_id: blockerId,
-      blocked_id: blockedId
-  });
-
-  if (error) {
-    return { error: 'Could not block the user.' };
-  }
-
-  await supabase.from('swipes').delete().or(`(swiper_id.eq.${blockerId},swiped_id.eq.${blockedId}),(swiper_id.eq.${blockedId},swiped_id.eq.${blockerId})`);
-  await supabase.from('matches').delete().or(`(user1_id.eq.${blockerId},user2_id.eq.${blockedId}),(user1_id.eq.${blockedId},user2_id.eq.${blockerId})`);
-
-  revalidatePath('/dashboard');
-  return { success: true };
+    if (!blockerId || !blockedId) return { error: 'Invalid user IDs provided.' };
+    try {
+        const [rows]: any = await pool.query('SELECT blocked_users FROM profiles WHERE id = ?', [blockerId]);
+        if (rows.length > 0) {
+            const blocks = rows[0].blocked_users ? JSON.parse(rows[0].blocked_users) : [];
+            if (!blocks.includes(blockedId)) blocks.push(blockedId);
+            await pool.query('UPDATE profiles SET blocked_users = ? WHERE id = ?', [JSON.stringify(blocks), blockerId]);
+        }
+        await pool.query('DELETE FROM swipes WHERE (swiper_id = ? AND swiped_id = ?) OR (swiper_id = ? AND swiped_id = ?)', [blockerId, blockedId, blockedId, blockerId]);
+        await pool.query('DELETE FROM matches WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)', [blockerId, blockedId, blockedId, blockerId]);
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (e) {
+        return { error: 'Could not block the user.' };
+    }
 }
 
 export async function getBlockedUsers(userId: string) {
-  if (!userId) return { data: [], error: 'User ID is required.' };
-  
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('blocked_users')
-    .eq('id', userId)
-    .single();
-
-  if (error || !data || !data.blocked_users) {
-    return { data: [], error: 'Could not fetch blocked users.' };
-  }
-
-  const blockedUserIds = data.blocked_users;
-
-  if (blockedUserIds.length === 0) {
-    return { data: [], error: null };
-  }
-
-  const { data: blockedProfiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('id, name, photos')
-    .in('id', blockedUserIds);
-  
-  if (profilesError) {
-    return { data: [], error: 'Could not fetch blocked user profiles.' };
-  }
-
-  return { data: blockedProfiles, error: null };
+    if (!userId) return { data: [], error: 'User ID is required.' };
+    try {
+        const [rows]: any = await pool.query('SELECT blocked_users FROM profiles WHERE id = ?', [userId]);
+        if (rows.length === 0 || !rows[0].blocked_users) return { data: [], error: 'Could not fetch blocked users.' };
+        const blockedUserIds = JSON.parse(rows[0].blocked_users);
+        if (blockedUserIds.length === 0) return { data: [], error: null };
+        const placeholders = blockedUserIds.map(() => '?').join(',');
+        const [profiles]: any = await pool.query(`SELECT id, name, photos FROM profiles WHERE id IN (${placeholders})`, blockedUserIds);
+        const data = profiles.map((p: any) => ({ ...p, photos: p.photos ? JSON.parse(p.photos) : [] }));
+        return { data, error: null };
+    } catch (e: any) {
+        return { data: [], error: 'Database connection failed: ' + e.message };
+    }
 }
 
 export async function unblockUser(blockerId: string, unblockedId: string) {
-    if (!blockerId || !unblockedId) {
-        return { error: 'Invalid user IDs provided.' };
+    if (!blockerId || !unblockedId) return { error: 'Invalid user IDs provided.' };
+    try {
+        const [rows]: any = await pool.query('SELECT blocked_users FROM profiles WHERE id = ?', [blockerId]);
+        if (rows.length === 0) return { error: 'Could not find user profile.' };
+        const blocks = rows[0].blocked_users ? JSON.parse(rows[0].blocked_users) : [];
+        const newBlocks = blocks.filter((id: string) => id !== unblockedId);
+        await pool.query('UPDATE profiles SET blocked_users = ?, updated_at = ? WHERE id = ?', [JSON.stringify(newBlocks), getISTTimestamp(), blockerId]);
+        revalidatePath('/settings');
+        return { success: true };
+    } catch (e: any) {
+        return { error: 'Database connection failed: ' + e.message };
     }
-    const supabase = createClient();
-
-    const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('blocked_users')
-        .eq('id', blockerId)
-        .single();
-    
-    if (fetchError || !data) {
-        return { error: 'Could not find user profile.' };
-    }
-
-    const currentBlocked = data.blocked_users || [];
-    const newBlocked = currentBlocked.filter((id: string) => id !== unblockedId);
-
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ blocked_users: newBlocked, updated_at: getISTTimestamp() })
-        .eq('id', blockerId);
-
-    if (updateError) {
-        return { error: 'Could not unblock the user.' };
-    }
-
-    revalidatePath('/settings');
-    return { success: true };
 }
 
 export async function getChatsAndMatches(userId: string) {
     if (!userId) return { chats: [], matches: [], error: 'User ID is required.', unreadChatCount: 0, unreadNotificationCount: 0 };
-    const supabase = createClient();
 
-    
-    const { data: allMatches, error: matchesError } = await supabase
-        .from('matches')
-        .select('id, user1_id, user2_id, created_at')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-        .order('created_at', { ascending: false });
+    try {
+        const [mRows]: any = await pool.query('SELECT id, user1_id, user2_id, created_at FROM matches WHERE user1_id = ? OR user2_id = ? ORDER BY created_at DESC', [userId, userId]);
+        const allMatches = mRows;
 
-    if (matchesError) {
+        const [nRows]: any = await pool.query('SELECT COUNT(*) as count FROM notifications WHERE recipient_id = ? AND is_read = false', [userId]);
+        const unreadNotificationCount = nRows[0].count || 0;
+
+        if (!allMatches || allMatches.length === 0) {
+            return { chats: [], matches: [], error: null, unreadChatCount: 0, unreadNotificationCount };
+        }
+
+        const matchIds = allMatches.map((m: any) => m.id);
+        const matchIdsPlaceholders = matchIds.map(() => '?').join(',');
+
+        const [msgRows]: any = await pool.query(`SELECT match_id, content, created_at, is_read, recipient_id FROM messages WHERE match_id IN (${matchIdsPlaceholders}) ORDER BY created_at DESC`, matchIds);
+        const allMessages = msgRows;
+
+        const lastMessageMap = new Map<string, { content: string; created_at: string }>();
+        const unreadCounts = new Map<string, number>();
+        let totalUnreadChatCount = 0;
+
+        if (allMessages) {
+            for (const msg of allMessages) {
+                if (!lastMessageMap.has(msg.match_id)) {
+                    lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
+                }
+                if (msg.recipient_id === userId && !msg.is_read) {
+                    unreadCounts.set(msg.match_id, (unreadCounts.get(msg.match_id) || 0) + 1);
+                    totalUnreadChatCount++;
+                }
+            }
+        }
+
+        const chats = allMatches.filter((m: any) => lastMessageMap.has(m.id));
+        const newMatches = allMatches.filter((m: any) => !lastMessageMap.has(m.id));
+
+        const allMatchedUserIds = allMatches.map((m: any) => (m.user1_id === userId ? m.user2_id : m.user1_id));
+        const matchedUserPlaceholders = allMatchedUserIds.map(() => '?').join(',');
+
+        let profilesById = new Map();
+        if (allMatchedUserIds.length > 0) {
+            const [pRows]: any = await pool.query(`SELECT id, name, photos FROM profiles WHERE id IN (${matchedUserPlaceholders})`, allMatchedUserIds);
+            profilesById = new Map(pRows.map((p: any) => [p.id, { ...p, photos: p.photos ? JSON.parse(p.photos) : [] }]));
+        }
+
+        const formattedChats = chats.map((match: any) => {
+            const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+            const matchedUser = profilesById.get(matchedUserId);
+            const lastMessage = lastMessageMap.get(match.id);
+            return {
+                id: match.id,
+                matchedUser: { id: matchedUser?.id, name: matchedUser?.name, photos: matchedUser?.photos },
+                lastMessage: lastMessage?.content || null,
+                lastMessageTime: lastMessage?.created_at || null,
+                unreadCount: unreadCounts.get(match.id) || 0,
+            };
+        }).sort((a: any, b: any) => {
+            if (!a.lastMessageTime) return 1;
+            if (!b.lastMessageTime) return -1;
+            return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+        });
+
+        const formattedMatches = newMatches.map((match: any) => {
+            const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+            const matchedUser = profilesById.get(matchedUserId);
+            return {
+                id: match.id,
+                matchedUser: { id: matchedUser?.id, name: matchedUser?.name, photos: matchedUser?.photos }
+            };
+        });
+
+        return { chats: formattedChats, matches: formattedMatches, error: null, unreadChatCount: totalUnreadChatCount, unreadNotificationCount };
+    } catch (e) {
         return { chats: [], matches: [], error: 'Could not fetch your matches.', unreadChatCount: 0, unreadNotificationCount: 0 };
     }
-    
-    const { count: unreadNotificationCount } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipient_id', userId)
-        .eq('is_read', false);
-
-    if (!allMatches || allMatches.length === 0) {
-        return { chats: [], matches: [], error: null, unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
-    }
-
-    const matchIds = allMatches.map(m => m.id);
-
-    
-    const { data: allMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select(`
-            match_id,
-            content,
-            created_at,
-            is_read,
-            recipient_id
-        `)
-        .in('match_id', matchIds)
-        .order('created_at', { ascending: false });
-
-    if (messagesError) {
-        return { chats: [], matches: [], error: 'Could not fetch messages.', unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
-    }
-    
-    
-    const lastMessageMap = new Map<string, { content: string; created_at: string }>();
-    if (allMessages) {
-        for (const msg of allMessages) {
-            if (!lastMessageMap.has(msg.match_id)) {
-                lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
-            }
-        }
-    }
-    
-    
-    const unreadCounts = new Map<string, number>();
-    if (allMessages) {
-        for (const msg of allMessages) {
-            if (msg.recipient_id === userId && !msg.is_read) {
-                unreadCounts.set(msg.match_id, (unreadCounts.get(msg.match_id) || 0) + 1);
-            }
-        }
-    }
-
-    let totalUnreadChatCount = 0;
-    if (allMessages) {
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipient_id', userId)
-        .eq('is_read', false);
-      totalUnreadChatCount = count || 0;
-    }
-
-
-    const chats = allMatches.filter(m => lastMessageMap.has(m.id));
-    const newMatches = allMatches.filter(m => !lastMessageMap.has(m.id));
-
-    const allMatchedUserIds = allMatches.map(m => (m.user1_id === userId ? m.user2_id : m.user1_id));
-    const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, photos')
-        .in('id', allMatchedUserIds);
-
-    if (profilesError) {
-        return { chats: [], matches: [], error: 'Could not fetch profiles.', unreadChatCount: 0, unreadNotificationCount: unreadNotificationCount || 0 };
-    }
-
-    const profilesById = new Map(profiles.map(p => [p.id, p]));
-
-    const formattedChats = chats.map(match => {
-        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
-        const matchedUser = profilesById.get(matchedUserId);
-        const lastMessage = lastMessageMap.get(match.id);
-        const unreadCount = unreadCounts.get(match.id) || 0;
-        return {
-            id: match.id,
-            matchedUser: {
-                id: matchedUser?.id,
-                name: matchedUser?.name,
-                photos: matchedUser?.photos,
-            },
-            lastMessage: lastMessage?.content || null,
-            lastMessageTime: lastMessage?.created_at || null,
-            unreadCount: unreadCount,
-        };
-    }).sort((a, b) => {
-        if (!a.lastMessageTime) return 1;
-        if (!b.lastMessageTime) return -1;
-        return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
-    });
-
-    const formattedMatches = newMatches.map(match => {
-        const matchedUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
-        const matchedUser = profilesById.get(matchedUserId);
-        return {
-            id: match.id,
-            matchedUser: {
-                id: matchedUser?.id,
-                name: matchedUser?.name,
-                photos: matchedUser?.photos,
-            }
-        };
-    });
-
-    return { 
-        chats: formattedChats, 
-        matches: formattedMatches, 
-        error: null,
-        unreadChatCount: totalUnreadChatCount,
-        unreadNotificationCount: unreadNotificationCount || 0,
-    };
 }
 
 export async function updateUserProfile(userId: string, updates: { name: string; bio: string; }) {
-    if (!userId) {
-        return { error: 'User ID is required.' };
-    }
-    const supabase = createClient();
-    const now = getISTTimestamp();
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ ...updates, updated_at: now })
-        .eq('id', userId);
-
-    if (error) {
+    if (!userId) return { error: 'User ID is required.' };
+    try {
+        await pool.query('UPDATE profiles SET name = ?, bio = ?, updated_at = ? WHERE id = ?', [updates.name, updates.bio, getISTTimestamp(), userId]);
+        revalidatePath('/profile');
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (e) {
         return { error: 'Could not update your profile.' };
     }
-    revalidatePath('/profile');
-    revalidatePath('/dashboard');
-    return { success: true };
 }
 
 export async function updateUserProfilePhotos(userId: string, photos: string[]) {
-    if (!userId) {
-        return { error: 'User ID is required.' };
-    }
-    const supabase = createClient();
-    const now = getISTTimestamp();
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ photos, updated_at: now })
-        .eq('id', userId);
-
-    if (error) {
+    if (!userId) return { error: 'User ID is required.' };
+    try {
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(photos), getISTTimestamp(), userId]);
+        revalidatePath('/profile');
+        return { success: true };
+    } catch (e) {
         return { error: 'Could not update your photos.' };
     }
-    revalidatePath('/profile');
-    return { success: true };
 }
 
 export async function respondToLike(notificationId: string, recipientId: string, senderId: string, action: 'liked' | 'rejected') {
-    if (!notificationId || !recipientId || !senderId) {
-        return { error: 'Invalid IDs provided.' };
-    }
-
-    const supabase = createClient();
+    if (!notificationId || !recipientId || !senderId) return { error: 'Invalid IDs provided.' };
     const now = getISTTimestamp();
-    
-    
-    const { error: swipeError } = await supabase.from('swipes').upsert(
-        {
-            swiper_id: recipientId,
-            swiped_id: senderId,
-            action: action,
-            created_at: now,
-        },
-        { onConflict: 'swiper_id,swiped_id' }
-    );
+    try {
+        await pool.query('INSERT INTO swipes (swiper_id, swiped_id, action, created_at) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE action=VALUES(action)', [recipientId, senderId, action, now]);
+        await pool.query('DELETE FROM notifications WHERE id = ?', [notificationId]);
 
-    if (swipeError) {
+        if (action === 'liked') {
+            const [rows]: any = await pool.query('SELECT swiper_id FROM swipes WHERE swiper_id = ? AND swiped_id = ? AND action = ? LIMIT 1', [senderId, recipientId, 'liked']);
+            if (rows.length > 0) {
+                const matchId = uuidv4();
+                await pool.query('INSERT IGNORE INTO matches (id, user1_id, user2_id, created_at) VALUES (?, ?, ?, ?)', [matchId, recipientId, senderId, now]);
+
+                const [pRows]: any = await pool.query('SELECT id, name, match_notification FROM profiles WHERE id IN (?, ?)', [recipientId, senderId]);
+                const recipientProfile = pRows.find((p: any) => p.id === recipientId);
+                const senderProfile = pRows.find((p: any) => p.id === senderId);
+
+                if (senderProfile?.match_notification) {
+                    await pool.query('INSERT INTO notifications (recipient_id, sender_id, type, message, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?)', [senderId, recipientId, 'new_match', `You matched with ${recipientProfile?.name}!`, now, false]);
+                }
+                revalidatePath('/chats');
+                revalidatePath('/notifications');
+                return { match: true, matchId };
+            }
+        }
+        revalidatePath('/notifications');
+        return { success: true };
+    } catch (e) {
         return { error: 'Could not record your response.' };
     }
-
-    
-    await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-    
-    
-    if (action === 'liked') {
-         const { data: mutualLike, error: checkError } = await supabase
-            .from('swipes')
-            .select('swiper_id')
-            .eq('swiper_id', senderId) 
-            .eq('swiped_id', recipientId) 
-            .eq('action', 'liked')
-            .single();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-            return { error: 'Could not check for a match.' };
-        }
-        
-        
-        if (mutualLike) {
-            const { data: matchData, error: matchError } = await supabase.from('matches').insert({
-                user1_id: recipientId,
-                user2_id: senderId,
-                created_at: now,
-            }).select('id').single();
-
-            if (matchError && matchError.code !== '23505') { 
-                return { error: 'Could not create the match record.' };
-            }
-            
-            
-            const { data: profiles, error: profilesError } = await supabase
-                .from('profiles')
-                .select('id, name, match_notification')
-                .in('id', [recipientId, senderId]);
-
-            if (!profilesError && profiles) {
-                const recipientProfile = profiles.find(p => p.id === recipientId);
-                const senderProfile = profiles.find(p => p.id === senderId);
-
-                
-                if (senderProfile?.match_notification) {
-                     await supabase.from('notifications').insert({
-                        recipient_id: senderId,
-                        sender_id: recipientId,
-                        type: 'new_match',
-                        message: `You matched with ${recipientProfile?.name}!`,
-                        created_at: now,
-                        is_read: false
-                    });
-                }
-            }
-
-            
-            revalidatePath('/chats');
-            revalidatePath('/notifications');
-            return { match: true, matchId: matchData?.id };
-        }
-    }
-
-    revalidatePath('/notifications');
-    return { success: true };
 }
-
 export async function getChatMessages(matchId: string) {
     if (!matchId) return { data: [], error: 'Match ID is required.' };
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('match_id', matchId)
-        .order('created_at', { ascending: true });
-
-    if (error) {
+    try {
+        const [rows]: any = await pool.query('SELECT * FROM messages WHERE match_id = ? ORDER BY created_at ASC', [matchId]);
+        return { data: rows, error: null };
+    } catch (e) {
         return { data: null, error: 'Could not fetch messages.' };
     }
-    return { data, error: null };
 }
 
 export async function sendMessage(matchId: string, senderId: string, recipientId: string, content: string, tempId?: string) {
-    if (!matchId || !senderId || !content) {
-        return { data: null, error: 'Missing required fields to send message.' };
-    }
-    const supabase = createClient();
+    if (!matchId || !senderId || !content) return { data: null, error: 'Missing required fields to send message.' };
     const now = getISTTimestamp();
-    
-    const { data, error } = await supabase
-        .from('messages')
-        .insert({
-            match_id: matchId,
-            sender_id: senderId,
-            recipient_id: recipientId,
-            content: content,
-            created_at: now,
-        })
-        .select()
-        .single();
-
-    if (error) {
-        console.error('SendMessage Error:', error);
+    const id = uuidv4();
+    try {
+        await pool.query('INSERT INTO messages (id, match_id, sender_id, recipient_id, content, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, matchId, senderId, recipientId, content, now, false]);
+        const [rows]: any = await pool.query('SELECT * FROM messages WHERE id = ?', [id]);
+        const data = rows[0];
+        const returnedData = data ? { ...data, tempId: tempId } : null;
+        revalidatePath(`/chats/${matchId}`);
+        revalidatePath('/chats');
+        return { data: returnedData, error: null };
+    } catch (e) {
         return { data: null, error: 'Could not send the message.' };
     }
-
-    
-    const returnedData = data ? { ...data, tempId: tempId } : null;
-
-    revalidatePath(`/chats/${matchId}`);
-    revalidatePath('/chats');
-    return { data: returnedData, error: null };
 }
-
 
 export async function getMatchDetails(matchId: string, currentUserId: string) {
     if (!matchId) return { data: null, error: 'Match ID required' };
-    const supabase = createClient();
-
-    const { data: match, error: matchError } = await supabase
-        .from('matches')
-        .select('user1_id, user2_id')
-        .eq('id', matchId)
-        .single();
-
-    if (matchError || !match) {
-        return { data: null, error: 'Could not find match details.' };
+    try {
+        const [rows]: any = await pool.query('SELECT user1_id, user2_id FROM matches WHERE id = ? LIMIT 1', [matchId]);
+        if (rows.length === 0) return { data: null, error: 'Could not find match details.' };
+        const match = rows[0];
+        const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
+        const [pRows]: any = await pool.query('SELECT id, name, photos FROM profiles WHERE id = ? LIMIT 1', [otherUserId]);
+        if (pRows.length === 0) return { data: null, error: 'Could not find matched user profile.' };
+        const profile = { ...pRows[0], photos: pRows[0].photos ? JSON.parse(pRows[0].photos) : [] };
+        return { data: profile, error: null };
+    } catch (e) {
+        return { data: null, error: 'Error finding match details.' };
     }
-
-    const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
-
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name, photos')
-        .eq('id', otherUserId)
-        .single();
-
-    if (profileError || !profile) {
-        return { data: null, error: 'Could not find matched user profile.' };
-    }
-
-    return { data: profile, error: null };
 }
 
 export async function markMessagesAsRead(matchId: string, userId: string) {
     if (!matchId || !userId) return { error: 'Match ID and User ID are required.' };
-    const supabase = createClient();
-    const { error } = await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('match_id', matchId)
-        .eq('recipient_id', userId)
-        .eq('is_read', false);
-
-    if (error) {
+    try {
+        await pool.query('UPDATE messages SET is_read = true WHERE match_id = ? AND recipient_id = ? AND is_read = false', [matchId, userId]);
+        revalidatePath(`/chats/${matchId}`);
+        return { success: true };
+    } catch (e) {
         return { error: 'Could not mark messages as read.' };
     }
-    revalidatePath(`/chats/${matchId}`);
-    return { success: true };
 }
-
 
 export async function updateUserLocation(userId: string, lat: number, lon: number) {
     if (!userId) return { error: 'User ID is required.' };
     if (lat === undefined || lon === undefined) return { error: 'Latitude and Longitude are required.' };
-
-    const supabase = createClient();
-    const locationString = `POINT(${lon} ${lat})`;
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ location: locationString, updated_at: getISTTimestamp() })
-        .eq('id', userId);
-
-    if (error) {
+    try {
+        // MySQL does not have a strict PostGIS standard POINT syntax universally applied, passing as string representation for simplicity to replace standard PostGIS calls if any.
+        // Usually, in a real env, ST_PointFromText is used. We will just save lat and lon if columns allow, but previous app used text string `POINT(lon lat)`.
+        const locationString = `POINT(${lon} ${lat})`;
+        await pool.query('UPDATE profiles SET location = ?, updated_at = ? WHERE id = ?', [locationString, getISTTimestamp(), userId]);
+        return { success: true };
+    } catch (e) {
         return { error: 'Could not update your location.' };
     }
-
-    return { success: true };
 }
 
-
 export async function getDistanceBetweenUsers(userA: string, userB: string): Promise<number | null> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase.rpc('get_distance_km', {
-    user_a: userA,
-    user_b: userB,
-  });
-
-  if (error) {
-    console.error('Error getting distance:', error.message);
-    return null;
-  }
-
-  return data;
+    // Assuming MySQL ST_Distance_Sphere is available
+    try {
+        const [rows]: any = await pool.query(`
+            SELECT ST_Distance_Sphere(ST_GeomFromText(p1.location), ST_GeomFromText(p2.location)) / 1000 AS distance_km
+            FROM profiles p1, profiles p2
+            WHERE p1.id = ? AND p2.id = ?
+        `, [userA, userB]);
+        if (rows.length > 0 && rows[0].distance_km !== null) return rows[0].distance_km;
+        return null;
+    } catch (e) {
+        return null;
+    }
 }
 
 export async function getIsMatch(userA: string, userB: string): Promise<boolean> {
     if (!userA || !userB) return false;
-    const supabase = createClient();
-
-    const { data, error } = await supabase
-        .from('matches')
-        .select('id')
-        .or(`(user1_id.eq.${userA},user2_id.eq.${userB}),(user1_id.eq.${userB},user2_id.eq.${userA})`)
-        .limit(1)
-        .single();
-    
-    if (error || !data) {
+    try {
+        const [rows]: any = await pool.query('SELECT id FROM matches WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?) LIMIT 1', [userA, userB, userB, userA]);
+        return rows.length > 0;
+    } catch (e) {
         return false;
     }
-
-    return true;
 }
-
 
 export async function sendLoginOtp(email: string) {
     const validatedFields = EmailSchema.safeParse({ email });
-    if (!validatedFields.success) {
-        return { error: 'Invalid email address.' };
-    }
-
-    const supabase = createClient();
-    
-    const { data: user, error: userError } = await supabase
-        .from('profiles')
-        .select('id, email, name')
-        .eq('email', validatedFields.data.email)
-        .single();
-    
-    if (userError || !user) {
-        return { error: "No account found with that email address." };
-    }
-
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expires = getFutureISTTimestamp(10); 
-
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-            password_reset_token: otp, 
-            password_reset_token_expires_at: expires,
-            updated_at: getISTTimestamp(),
-        })
-        .eq('id', user.id);
-
-    if (updateError) {
-        return { error: 'Could not create a login code. Please try again.' };
-    }
+    if (!validatedFields.success) return { error: 'Invalid email address.' };
 
     try {
+        const [rows]: any = await pool.query('SELECT id, email, name FROM profiles WHERE email = ? LIMIT 1', [validatedFields.data.email]);
+        if (rows.length === 0) return { error: "No account found with that email address." };
+
+        const user = rows[0];
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const expires = getFutureISTTimestamp(10);
+        await pool.query('UPDATE profiles SET password_reset_token = ?, password_reset_token_expires_at = ?, updated_at = ? WHERE id = ?', [otp, expires, getISTTimestamp(), user.id]);
+
         const firstName = user.name.split(' ')[0];
         const emailHtml = createModernEmailTemplate({
             title: 'Your RevaDates Login Code',
@@ -979,174 +541,115 @@ export async function sendLoginOtp(email: string) {
             code: otp,
             name: firstName
         });
-        await sendEmail({
-            to: user.email,
-            subject: 'Your RevaDates Login Code',
-            html: emailHtml,
-        });
+        await sendEmail({ to: user.email, subject: 'Your RevaDates Login Code', html: emailHtml });
         return { success: true };
-    } catch (e) {
-        return { error: "Could not send the login code. Please try again later." };
+    } catch (e: any) {
+        return { error: "Could not process login code request: " + e.message };
     }
 }
 
-
 export async function verifyLoginOtp(email: string, otp: string) {
-    const supabase = createClient();
-
-    const { data: user, error: tokenError } = await supabase
-        .from('profiles')
-        .select('id, password_reset_token_expires_at')
-        .eq('email', email)
-        .eq('password_reset_token', otp)
-        .single();
-
-    if (tokenError || !user || !user.password_reset_token_expires_at) {
-        return { error: 'Invalid or expired login code.', userId: null };
+    try {
+        const [rows]: any = await pool.query('SELECT id, password_reset_token_expires_at FROM profiles WHERE email = ? AND password_reset_token = ? LIMIT 1', [email, otp]);
+        if (rows.length === 0 || !rows[0].password_reset_token_expires_at) return { error: 'Invalid or expired login code.', userId: null };
+        const expires = new Date(rows[0].password_reset_token_expires_at);
+        if (expires < new Date()) return { error: 'Invalid or expired login code.', userId: null };
+        await pool.query('UPDATE profiles SET password_reset_token = NULL, password_reset_token_expires_at = NULL, updated_at = ? WHERE id = ?', [getISTTimestamp(), rows[0].id]);
+        return { success: true, userId: rows[0].id };
+    } catch (e) {
+        return { error: 'Database error', userId: null };
     }
-
-    const expires = new Date(user.password_reset_token_expires_at);
-    if (expires < new Date()) {
-        return { error: 'Invalid or expired login code.', userId: null };
-    }
-
-    
-    await supabase
-        .from('profiles')
-        .update({
-            password_reset_token: null,
-            password_reset_token_expires_at: null,
-            updated_at: getISTTimestamp(),
-        })
-        .eq('id', user.id);
-
-    return { success: true, userId: user.id };
 }
 
 export async function getPotentialProfiles(currentUserId: string) {
-  if (!currentUserId) {
-    return { data: null, error: 'User ID is required.' };
-  }
-  const supabase = createClient();
+    if (!currentUserId) return { data: null, error: 'User ID is required.' };
+    try {
+        const [uRows]: any = await pool.query('SELECT discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users FROM profiles WHERE id = ? LIMIT 1', [currentUserId]);
+        if (uRows.length === 0) return { data: null, error: "Could not load your profile settings." };
+        const { discovery_age_min: minAge, discovery_age_max: maxAge, discovery_gender_preference: genderPreference } = uRows[0];
+        const blockedUsers = uRows[0].blocked_users ? JSON.parse(uRows[0].blocked_users) : [];
 
-  
-  const { data: currentUserProfile, error: currentUserError } = await supabase
-    .from('profiles')
-    .select('discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users')
-    .eq('id', currentUserId)
-    .single();
+        const [sRows]: any = await pool.query('SELECT swiped_id FROM swipes WHERE swiper_id = ?', [currentUserId]);
+        const swipedUserIds = sRows.map((item: any) => item.swiped_id);
 
-  if (currentUserError || !currentUserProfile) {
-    return { data: null, error: "Could not load your profile settings." };
-  }
+        const [mRows]: any = await pool.query('SELECT user1_id, user2_id FROM matches WHERE user1_id = ? OR user2_id = ?', [currentUserId, currentUserId]);
+        const matchedUserIds = mRows.flatMap((m: any) => [m.user1_id, m.user2_id]).filter((id: string) => id !== currentUserId);
 
-  const { 
-      discovery_age_min: minAge, 
-      discovery_age_max: maxAge,
-      discovery_gender_preference: genderPreference, 
-      blocked_users: blockedUsers,
-  } = currentUserProfile;
+        const excludedIds = Array.from(new Set([currentUserId, ...swipedUserIds, ...matchedUserIds, ...blockedUsers]));
 
-  
-  const { data: swipedUsersData, error: swipedError } = await supabase
-    .from('swipes')
-    .select('swiped_id')
-    .eq('swiper_id', currentUserId);
+        let queryStr = 'SELECT *, dob FROM profiles';
+        const params: any[] = [];
+        const conditions: string[] = [];
 
-  if (swipedError) {
-    return { data: null, error: "Could not fetch your swipe history." };
-  }
-  const swipedUserIds = swipedUsersData.map(item => item.swiped_id);
+        if (excludedIds.length > 0) {
+            conditions.push(`id NOT IN (${excludedIds.map(() => '?').join(',')})`);
+            params.push(...excludedIds);
+        }
+        if (genderPreference === 'men') {
+            conditions.push("gender = 'Male'");
+        } else if (genderPreference === 'women') {
+            conditions.push("gender = 'Female'");
+        }
 
-  
-  const { data: matchedUsersData, error: matchedError } = await supabase
-    .from('matches')
-    .select('user1_id, user2_id')
-    .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
-    
-  if (matchedError) {
-    return { data: null, error: "Could not fetch your match history." };
-  }
-  const matchedUserIds = matchedUsersData ? matchedUsersData.flatMap(match => [match.user1_id, match.user2_id]).filter(id => id !== currentUserId) : [];
-  
-  
-  const excludedIds = new Set([
-    currentUserId, 
-    ...swipedUserIds,
-    ...matchedUserIds, 
-    ...(blockedUsers || [])
-  ]);
-  const allExcludedIds = Array.from(excludedIds);
-  
-  
-  let query = supabase
-    .from('profiles')
-    .select('*, dob') 
-    .order('created_at', { ascending: false });
+        if (conditions.length > 0) queryStr += ' WHERE ' + conditions.join(' AND ');
+        queryStr += ' ORDER BY created_at DESC';
 
-  if (allExcludedIds.length > 0) {
-    query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
-  }
+        const [pRows]: any = await pool.query(queryStr, params);
 
-  
-  if (genderPreference === 'men') {
-      query = query.eq('gender', 'Male');
-  } else if (genderPreference === 'women') {
-      query = query.eq('gender', 'Female');
-  }
-  
-  const { data: allProfiles, error: profilesError } = await query;
+        const profilesWithAgeAndDistance = await Promise.all(
+            pRows.map((profile: any) => ({ ...profile, age: differenceInYears(new Date(), new Date(profile.dob)), photos: profile.photos ? JSON.parse(profile.photos) : [] }))
+                .filter((profile: any) => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80))
+                .map(async (profile: any) => {
+                    const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
+                    return { ...profile, distance_meters: distance !== null ? distance * 1000 : null };
+                })
+        );
 
-  if (profilesError) {
-    return { data: null, error: "Could not fetch new profiles." };
-  }
-
-  
-  const profilesWithAgeAndDistance = await Promise.all(
-    allProfiles
-    .map(profile => ({
-      ...profile,
-      age: differenceInYears(new Date(), new Date(profile.dob)),
-    }))
-    .filter(profile => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80))
-    .map(async (profile) => {
-        const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
-        return {
-          ...profile,
-          distance_meters: distance !== null ? distance * 1000 : null,
-        };
-    })
-  );
-
-  return { data: profilesWithAgeAndDistance, error: null };
+        return { data: profilesWithAgeAndDistance, error: null };
+    } catch (e) {
+        return { data: null, error: "Could not fetch new profiles." };
+    }
 }
-
 
 export async function getUnreadCounts(userId: string) {
     if (!userId) return { error: 'User ID is required.', unreadChatCount: 0, unreadNotificationCount: 0 };
-    const supabase = createClient();
-    
     try {
-        const { count: unreadChatCount } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('recipient_id', userId)
-            .eq('is_read', false);
-
-        const { count: unreadNotificationCount } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('recipient_id', userId)
-            .eq('is_read', false);
-            
-        return { error: null, unreadChatCount: unreadChatCount || 0, unreadNotificationCount: unreadNotificationCount || 0 };
-
+        const [cRows]: any = await pool.query('SELECT COUNT(*) as count FROM messages WHERE recipient_id = ? AND is_read = false', [userId]);
+        const [nRows]: any = await pool.query('SELECT COUNT(*) as count FROM notifications WHERE recipient_id = ? AND is_read = false', [userId]);
+        return { error: null, unreadChatCount: cRows[0].count || 0, unreadNotificationCount: nRows[0].count || 0 };
     } catch (e) {
         return { error: 'Failed to fetch counts.', unreadChatCount: 0, unreadNotificationCount: 0 };
     }
 }
-    
 
-    
+export async function getCurrentUserProfile(userId: string) {
+    if (!userId) return { data: null, error: 'User ID required' };
+    try {
+        const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        if (rows.length === 0) return { data: null, error: 'Profile not found' };
+        return { data: { ...rows[0], photos: rows[0].photos ? JSON.parse(rows[0].photos) : [] }, error: null };
+    } catch (e) {
+        return { data: null, error: 'Failed to fetch profile' };
+    }
+}
 
+export async function getUserProfile(userId: string) {
+    if (!userId) return { data: null, error: 'User ID required' };
+    try {
+        const [rows]: any = await pool.query('SELECT * FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        if (rows.length === 0) return { data: null, error: 'Profile not found' };
+        return { data: { ...rows[0], photos: rows[0].photos ? JSON.parse(rows[0].photos) : [] }, error: null };
+    } catch (e) {
+        return { data: null, error: 'Failed to fetch profile' };
+    }
+}
 
+export async function updateUserSettings(userId: string, settings: { discovery_age_min: number; discovery_age_max: number; match_notification: boolean }) {
+    if (!userId) return { error: 'User ID required' };
+    try {
+        await pool.query('UPDATE profiles SET discovery_age_min = ?, discovery_age_max = ?, match_notification = ?, updated_at = ? WHERE id = ?', [settings.discovery_age_min, settings.discovery_age_max, settings.match_notification, getISTTimestamp(), userId]);
+        return { success: true };
+    } catch (e) {
+        return { error: 'Failed to update settings' };
+    }
+}

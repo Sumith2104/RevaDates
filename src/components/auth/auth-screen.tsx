@@ -22,50 +22,50 @@ import {
 import { updateUserLocation } from '@/lib/actions';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 import { LoginOptions } from './login-options';
-import { createClient } from '@/lib/supabase/client';
+
 import { PageLoader } from '../shared/page-loader';
 
 const TYPING_SPEED = 100;
-const phrases = [ "Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free" ];
+const phrases = ["Take It All Off", "Bare It All", "Show Some Skin", "Thirsty For Water", "Lose the Layers", "Drop Everything Now", "Feel The Curve", "Reveal Your Body", "Strip Without Shame", "Go All Natural", "Nothing Left On", "Feel Fully Free"];
 
 function LocationPermissionPrompt({ onComplete, onAllow }: { onComplete: () => void; onAllow: () => Promise<void> }) {
-    const [status, setStatus] = React.useState<'idle' | 'loading'>('idle');
+  const [status, setStatus] = React.useState<'idle' | 'loading'>('idle');
 
-    const handleAllow = async () => {
-        setStatus('loading');
-        await onAllow();
-        setStatus('idle');
-    };
-    
-    return (
-        <AlertDialog open={true}>
-            <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
-                <AlertDialogHeader className="text-center sm:text-center">
-                    <MapPin className="mx-auto h-12 w-12 text-primary mb-2" />
-                    <AlertDialogTitle className="text-white text-lg font-semibold">Enable Location Services</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                        RevaDates uses your location to show you potential matches nearby.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="mt-6 flex flex-col sm:flex-col w-full gap-2">
-                    <AlertDialogAction
-                        onClick={handleAllow}
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md"
-                        disabled={status === 'loading'}
-                    >
-                         {status === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Allow Location
-                    </AlertDialogAction>
-                    <AlertDialogCancel
-                        onClick={onComplete}
-                        className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0"
-                    >
-                        Maybe Later
-                    </AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
+  const handleAllow = async () => {
+    setStatus('loading');
+    await onAllow();
+    setStatus('idle');
+  };
+
+  return (
+    <AlertDialog open={true}>
+      <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
+        <AlertDialogHeader className="text-center sm:text-center">
+          <MapPin className="mx-auto h-12 w-12 text-primary mb-2" />
+          <AlertDialogTitle className="text-white text-lg font-semibold">Enable Location Services</AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-white/70 mt-2">
+            RevaDates uses your location to show you potential matches nearby.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="mt-6 flex flex-col sm:flex-col w-full gap-2">
+          <AlertDialogAction
+            onClick={handleAllow}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-full shadow-md"
+            disabled={status === 'loading'}
+          >
+            {status === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Allow Location
+          </AlertDialogAction>
+          <AlertDialogCancel
+            onClick={onComplete}
+            className="w-full bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0"
+          >
+            Maybe Later
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 
@@ -86,13 +86,11 @@ export function AuthScreen() {
   const scrollToAbout = () => {
     aboutRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
+
   React.useEffect(() => {
-    const supabase = createClient();
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        localStorage.setItem('currentUserId', session.user.id);
+      const userId = localStorage.getItem('currentUserId');
+      if (userId) {
         sessionStorage.setItem('justLoggedIn', 'true');
         setPostLogin(true);
       } else {
@@ -111,13 +109,13 @@ export function AuthScreen() {
   React.useEffect(() => {
     const error = searchParams.get('error');
     if (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: error,
-        });
-        
-        router.replace('/', {scroll: false});
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: error,
+      });
+
+      router.replace('/', { scroll: false });
     }
   }, [searchParams, toast, router]);
 
@@ -147,76 +145,76 @@ export function AuthScreen() {
 
     return () => clearTimeout(timeoutId);
   }, [typedPhrase, activePhrase, isDeleting, checkingAuth, postLogin]);
-  
+
   const handleLocationComplete = React.useCallback(() => {
-      setPostLogin(true);
+    setPostLogin(true);
   }, []);
-  
+
   const attemptToGetLocation = React.useCallback(async (userId: string) => {
     return new Promise<void>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-            const { latitude, longitude } = position.coords;
-            const result = await updateUserLocation(userId, latitude, longitude);
-            if (result.error) {
-                toast({ variant: 'destructive', title: "Location Error", description: "Could not save your location. You can set it manually in your profile." });
-            }
-            handleLocationComplete();
-            resolve();
+          const { latitude, longitude } = position.coords;
+          const result = await updateUserLocation(userId, latitude, longitude);
+          if (result.error) {
+            toast({ variant: 'destructive', title: "Location Error", description: "Could not save your location. You can set it manually in your profile." });
+          }
+          handleLocationComplete();
+          resolve();
         },
         () => {
-            handleLocationComplete();
-            resolve();
+          handleLocationComplete();
+          resolve();
         },
-        { timeout: 5000 } 
+        { timeout: 5000 }
       );
     });
   }, [toast, handleLocationComplete]);
-  
+
   const handleLocationLogic = React.useCallback(async (userId: string) => {
-      if (navigator.permissions) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
-        if (permission.state === 'granted') {
-            await attemptToGetLocation(userId);
-        } else {
-            setView('location');
-        }
+    if (navigator.permissions) {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      if (permission.state === 'granted') {
+        await attemptToGetLocation(userId);
       } else {
-          setView('location');
+        setView('location');
       }
+    } else {
+      setView('location');
+    }
   }, [attemptToGetLocation]);
-  
+
   const handleAllowLocationFromPrompt = React.useCallback(async () => {
     const currentUserId = localStorage.getItem('currentUserId');
     if (!currentUserId) {
-        toast({ variant: 'destructive', title: "User Not Found", description: "Could not find user to update location. Please log in again." });
-        handleLocationComplete();
-        return;
+      toast({ variant: 'destructive', title: "User Not Found", description: "Could not find user to update location. Please log in again." });
+      handleLocationComplete();
+      return;
     }
 
     await new Promise<void>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const result = await updateUserLocation(currentUserId, latitude, longitude);
-                if (result.error) {
-                    toast({ variant: 'destructive', title: "Location Error", description: result.error });
-                } else {
-                    toast({ title: "Location Saved!", description: "We've updated your location." });
-                }
-                handleLocationComplete();
-                resolve();
-            },
-            (error) => {
-                toast({
-                    variant: 'destructive',
-                    title: "Location Access Denied",
-                    description: "You can enable location services in your browser settings to find matches nearby.",
-                });
-                handleLocationComplete();
-                resolve();
-            }
-        );
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const result = await updateUserLocation(currentUserId, latitude, longitude);
+          if (result.error) {
+            toast({ variant: 'destructive', title: "Location Error", description: result.error });
+          } else {
+            toast({ title: "Location Saved!", description: "We've updated your location." });
+          }
+          handleLocationComplete();
+          resolve();
+        },
+        (error) => {
+          toast({
+            variant: 'destructive',
+            title: "Location Access Denied",
+            description: "You can enable location services in your browser settings to find matches nearby.",
+          });
+          handleLocationComplete();
+          resolve();
+        }
+      );
     });
   }, [toast, handleLocationComplete]);
 
@@ -228,16 +226,16 @@ export function AuthScreen() {
   };
 
   const handleLoginSuccess = async (userId: string) => {
-      localStorage.setItem('currentUserId', userId);
-      sessionStorage.setItem('justLoggedIn', 'true');
-      setIsLoginOpen(false);
-      setPostLogin(true);
+    localStorage.setItem('currentUserId', userId);
+    sessionStorage.setItem('justLoggedIn', 'true');
+    setIsLoginOpen(false);
+    setPostLogin(true);
   };
 
   const handleSignupSuccess = async (userId: string) => {
-      localStorage.setItem('currentUserId', userId);
-      sessionStorage.setItem('justLoggedIn', 'true');
-      await handleLocationLogic(userId);
+    localStorage.setItem('currentUserId', userId);
+    sessionStorage.setItem('justLoggedIn', 'true');
+    await handleLocationLogic(userId);
   };
 
   const cardVariants = {
@@ -258,14 +256,14 @@ export function AuthScreen() {
     >
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDelay: '0s', animationDuration: '4s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDelay: '1s', animationDuration: '5s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-blue-500/10 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDelay: '2s', animationDuration: '6s' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '0s', animationDuration: '4s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '1s', animationDuration: '5s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '2s', animationDuration: '6s' }} />
       </div>
-      
+
       <header className="fixed top-0 left-0 right-0 z-20">
         <div className="container mx-auto flex h-20 items-center justify-between px-4">
           <div className="flex items-center gap-2 font-bold text-lg">
@@ -277,14 +275,14 @@ export function AuthScreen() {
         </div>
       </header>
 
-      
+
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/5 blur-[100px]" />
       </div>
-      
+
       <LoginOptions isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} onLoginSuccess={handleLoginSuccess} />
 
-      
+
       <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
         <AnimatePresence mode="wait">
           {view === 'start' && (
@@ -334,7 +332,7 @@ export function AuthScreen() {
               </div>
             </motion.div>
           )}
-           
+
           {view === 'forgot-password' && (
             <motion.div key="forgot-password" {...cardVariants} onClick={(e) => e.stopPropagation()}>
               <ForgotPasswordForm onSwitchToLogin={() => {
@@ -347,43 +345,43 @@ export function AuthScreen() {
           {view === 'signup' && (
             <motion.div key="signup" {...cardVariants} onClick={(e) => e.stopPropagation()}>
               <SignupForm onSwitchToLogin={() => {
-                  setView('start');
-                  setIsLoginOpen(true);
+                setView('start');
+                setIsLoginOpen(true);
               }} onSignupSuccess={handleSignupSuccess} />
             </motion.div>
           )}
 
           {view === 'location' && (
-             <motion.div key="location" {...cardVariants} onClick={(e) => e.stopPropagation()}>
-                <LocationPermissionPrompt onComplete={handleLocationComplete} onAllow={handleAllowLocationFromPrompt} />
-             </motion.div>
+            <motion.div key="location" {...cardVariants} onClick={(e) => e.stopPropagation()}>
+              <LocationPermissionPrompt onComplete={handleLocationComplete} onAllow={handleAllowLocationFromPrompt} />
+            </motion.div>
           )}
 
         </AnimatePresence>
       </div>
 
-      
+
       <div
         ref={aboutRef}
         className="w-full bg-black text-white py-20 px-6 border-t border-white/10"
       >
         <div className="max-w-3xl mx-auto text-center">
-            <ScrollReveal
-                textClassName="text-3xl md:text-4xl font-bold mb-4"
-                baseRotation={-5}
-                baseOpacity={0.2}
-            >
-                About RevaDates
-            </ScrollReveal>
-             <ScrollReveal
-                textClassName="text-zinc-400 text-base md:text-lg leading-relaxed"
-                baseRotation={2}
-                baseOpacity={0.1}
-            >
-                {`RevaDates is your safe space to connect authentically. Whether you're here for sparks, deep conversations, or just fun vibes — you're free to express yourself without judgment.
+          <ScrollReveal
+            textClassName="text-3xl md:text-4xl font-bold mb-4"
+            baseRotation={-5}
+            baseOpacity={0.2}
+          >
+            About RevaDates
+          </ScrollReveal>
+          <ScrollReveal
+            textClassName="text-zinc-400 text-base md:text-lg leading-relaxed"
+            baseRotation={2}
+            baseOpacity={0.1}
+          >
+            {`RevaDates is your safe space to connect authentically. Whether you're here for sparks, deep conversations, or just fun vibes — you're free to express yourself without judgment.
 
 We focus on raw, real connections powered by intuitive design and a privacy-first approach. Join a community that's not afraid to be fully themselves.`}
-            </ScrollReveal>
+          </ScrollReveal>
         </div>
       </div>
     </div>

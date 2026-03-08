@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Edit, Save, Upload, Loader2, Shield, Heart, UserX, MessageSquare, Trash2, Star, VenetianMask, Plus } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
-import { createClient } from '@/lib/supabase/client';
+
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,118 +44,118 @@ import { cn } from "@/lib/utils"
 
 
 type User = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    dob: Date;
-    photos: string[] | null;
-    bio: string;
-    gender: string;
-    updated_at: string;
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  dob: Date;
+  photos: string[] | null;
+  bio: string;
+  gender: string;
+  updated_at: string;
 };
 
 type CombinedMatch = {
+  id: string;
+  matchedUser: {
     id: string;
-    matchedUser: {
-        id: string;
-        name: string;
-        photos: string[] | null;
-    };
+    name: string;
+    photos: string[] | null;
+  };
 }
 
 
 function MatchesDialog({ userId }: { userId: string }) {
-    const [matches, setMatches] = React.useState<CombinedMatch[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-    const { toast } = useToast();
-    const router = useRouter();
+  const [matches, setMatches] = React.useState<CombinedMatch[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const { toast } = useToast();
+  const router = useRouter();
 
-    const fetchMatches = React.useCallback(async () => {
-        setIsLoading(true);
-        const result = await getChatsAndMatches(userId);
-        if (result.error) {
-            toast({ variant: 'destructive', title: 'Could Not Load Matches', description: result.error });
-            setMatches([]);
-        } else {
-            const allMatches: CombinedMatch[] = [
-                ...(result.matches || []).map(m => ({ id: m.id, matchedUser: m.matchedUser })),
-                ...(result.chats || []).map(c => ({ id: c.id, matchedUser: c.matchedUser }))
-            ];
-            const uniqueMatches = Array.from(new Map(allMatches.map(item => [item.matchedUser.id, item])).values());
-            setMatches(uniqueMatches);
-        }
-        setIsLoading(false);
-    }, [userId, toast]);
-    
-    const navigateToChat = (matchId: string) => {
-        const dialogCloseButton = document.querySelector('[data-radix-dialog-close]') as HTMLElement | null;
-        if (dialogCloseButton) {
-            dialogCloseButton.click();
-        }
-        router.push(`/chats/${matchId}`); 
-    };
+  const fetchMatches = React.useCallback(async () => {
+    setIsLoading(true);
+    const result = await getChatsAndMatches(userId);
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Could Not Load Matches', description: result.error });
+      setMatches([]);
+    } else {
+      const allMatches: CombinedMatch[] = [
+        ...(result.matches || []).map((m: any) => ({ id: m.id, matchedUser: m.matchedUser })),
+        ...(result.chats || []).map((c: any) => ({ id: c.id, matchedUser: c.matchedUser }))
+      ];
+      const uniqueMatches = Array.from(new Map(allMatches.map(item => [item.matchedUser.id, item])).values());
+      setMatches(uniqueMatches);
+    }
+    setIsLoading(false);
+  }, [userId, toast]);
 
-    return (
-        <Dialog onOpenChange={(open) => open && fetchMatches()}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="w-full justify-start gap-2">
-                    <Heart className="h-4 w-4" />
-                    My Matches
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="w-full max-w-[330px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
-                <DialogHeader>
-                    <DialogTitle className="text-white">My Matches</DialogTitle>
-                    <DialogDescription className="text-white/70">
-                        These are the people you have mutually liked.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="max-h-[400px] pr-4">
-                  <div className="space-y-4 py-4 text-white">
-                      {isLoading && (
-                           [...Array(3)].map((_, i) => (
-                              <div key={i} className="flex items-center space-x-4">
-                                  <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
-                                  <div className="space-y-2">
-                                      <Skeleton className="h-4 w-[150px] bg-white/20" />
-                                  </div>
-                              </div>
-                           ))
-                      )}
-                      {!isLoading && matches.length === 0 && (
-                          <div className="text-center text-white/70 py-10">
-                              <Heart className="mx-auto h-12 w-12 mb-4" />
-                              <h2 className="text-xl font-semibold text-white">No Matches Yet</h2>
-                              <p>Keep swiping to find your perfect match!</p>
-                          </div>
-                      )}
-                      {!isLoading && matches.map(match => (
-                          <div 
-                            key={match.id} 
-                            className="flex items-center justify-between text-white p-2 rounded-md hover:bg-white/10 cursor-pointer"
-                            onClick={() => navigateToChat(match.id)}
-                          >
-                              <div className="flex items-center gap-4">
-                                  <Avatar>
-                                      {match.matchedUser.photos?.[0] && (
-                                        <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} />
-                                      )}
-                                      <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="font-medium">{match.matchedUser.name}</span>
-                              </div>
-                              <MessageSquare className="h-5 w-5 text-white/70" />
-                          </div>
-                      ))}
+  const navigateToChat = (matchId: string) => {
+    const dialogCloseButton = document.querySelector('[data-radix-dialog-close]') as HTMLElement | null;
+    if (dialogCloseButton) {
+      dialogCloseButton.click();
+    }
+    router.push(`/chats/${matchId}`);
+  };
+
+  return (
+    <Dialog onOpenChange={(open) => open && fetchMatches()}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-start gap-2">
+          <Heart className="h-4 w-4" />
+          My Matches
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="w-full max-w-[330px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
+        <DialogHeader>
+          <DialogTitle className="text-white">My Matches</DialogTitle>
+          <DialogDescription className="text-white/70">
+            These are the people you have mutually liked.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="max-h-[400px] pr-4">
+          <div className="space-y-4 py-4 text-white">
+            {isLoading && (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[150px] bg-white/20" />
                   </div>
-                </ScrollArea>
-                <DialogClose asChild>
-                    <button className="sr-only" data-radix-dialog-close>Close</button>
-                </DialogClose>
-            </DialogContent>
-        </Dialog>
-    )
+                </div>
+              ))
+            )}
+            {!isLoading && matches.length === 0 && (
+              <div className="text-center text-white/70 py-10">
+                <Heart className="mx-auto h-12 w-12 mb-4" />
+                <h2 className="text-xl font-semibold text-white">No Matches Yet</h2>
+                <p>Keep swiping to find your perfect match!</p>
+              </div>
+            )}
+            {!isLoading && matches.map(match => (
+              <div
+                key={match.id}
+                className="flex items-center justify-between text-white p-2 rounded-md hover:bg-white/10 cursor-pointer"
+                onClick={() => navigateToChat(match.id)}
+              >
+                <div className="flex items-center gap-4">
+                  <Avatar>
+                    {match.matchedUser.photos?.[0] && (
+                      <AvatarImage src={match.matchedUser.photos[0]} alt={match.matchedUser.name} />
+                    )}
+                    <AvatarFallback>{getInitials(match.matchedUser.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{match.matchedUser.name}</span>
+                </div>
+                <MessageSquare className="h-5 w-5 text-white/70" />
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        <DialogClose asChild>
+          <button className="sr-only" data-radix-dialog-close>Close</button>
+        </DialogClose>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function ProfileView({ user: initialUser }: { user: User }) {
@@ -166,14 +166,14 @@ export function ProfileView({ user: initialUser }: { user: User }) {
   const [saving, setSaving] = React.useState(false);
   const [deletingPhoto, setDeletingPhoto] = React.useState<string | null>(null);
 
-  const supabase = createClient();
+
   const { toast } = useToast();
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
-  
+
   const handleSave = async () => {
     setSaving(true);
     const result = await updateUserProfile(user.id, {
@@ -183,18 +183,18 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     setSaving(false);
 
     if (result.error) {
-        toast({
-            variant: 'destructive',
-            title: 'Could Not Save Profile',
-            description: result.error,
-        });
+      toast({
+        variant: 'destructive',
+        title: 'Could Not Save Profile',
+        description: result.error,
+      });
     } else {
-        toast({
-            title: 'Profile Saved',
-            description: 'Your profile has been updated successfully.',
-        });
-        setIsEditing(false);
-        router.refresh();
+      toast({
+        title: 'Profile Saved',
+        description: 'Your profile has been updated successfully.',
+      });
+      setIsEditing(false);
+      router.refresh();
     }
   };
 
@@ -203,71 +203,45 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (!file) return;
 
     setUploading(true);
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    const filePath = `${user.id}/${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('photos')
-      .upload(filePath, file);
 
-    if (uploadError) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: uploadError.message,
-      });
-      setUploading(false);
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('photos')
-      .getPublicUrl(filePath);
-      
-    if (publicUrl) {
-      const updatedPhotos = [publicUrl, ...(user.photos || [])];
-      setUser(prev => ({...prev, photos: updatedPhotos}));
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      const updatedPhotos = [base64String, ...(user.photos || [])];
+      setUser(prev => ({ ...prev, photos: updatedPhotos }));
       const result = await updateUserProfilePhotos(user.id, updatedPhotos);
-       if (!result.error) {
-        toast({
-            title: 'Photo Uploaded',
-            description: 'Your new photo is now your primary one.',
-        });
+      if (!result.error) {
+        toast({ title: 'Photo Uploaded', description: 'Your new photo is now your primary one.' });
         router.refresh();
       } else {
-        toast({
-            variant: 'destructive',
-            title: 'Could Not Save Photo',
-            description: result.error,
-        });
+        toast({ variant: 'destructive', title: 'Could Not Save Photo', description: result.error });
       }
-    }
-    
-    setUploading(false);
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSetAsPrimary = async (photoToMakePrimary: string) => {
     if (!user.photos) return;
     const currentPhotos = [...user.photos];
     const newPrimaryIndex = currentPhotos.findIndex(p => p === photoToMakePrimary);
-    if (newPrimaryIndex <= 0) return; 
+    if (newPrimaryIndex <= 0) return;
 
     const newPrimaryPhoto = currentPhotos.splice(newPrimaryIndex, 1)[0];
     const newPhotoOrder = [newPrimaryPhoto, ...currentPhotos];
-    
-    setUser(prev => ({...prev, photos: newPhotoOrder}));
+
+    setUser(prev => ({ ...prev, photos: newPhotoOrder }));
     const result = await updateUserProfilePhotos(user.id, newPhotoOrder);
     if (!result.error) {
-        toast({ title: 'Main Photo Updated', description: "Your primary photo has been changed." });
-        router.refresh();
+      toast({ title: 'Main Photo Updated', description: "Your primary photo has been changed." });
+      router.refresh();
     } else {
-        setUser(prev => ({...prev, photos: user.photos})); 
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: result.error,
-        });
+      setUser(prev => ({ ...prev, photos: user.photos }));
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: result.error,
+      });
     }
   }
 
@@ -275,45 +249,24 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     if (!deletingPhoto || !user.photos) return;
 
     const currentPhotoUrl = deletingPhoto;
-    setDeletingPhoto(null); 
+    setDeletingPhoto(null);
 
-    
+
     const newPhotoList = user.photos.filter(p => p !== currentPhotoUrl);
     setUser(prev => ({ ...prev, photos: newPhotoList }));
 
-    const urlParts = currentPhotoUrl.split('/');
-    const bucketName = 'photos';
-    const bucketIndex = urlParts.indexOf(bucketName);
-    
-    if (bucketIndex === -1 || bucketIndex + 1 >= urlParts.length) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not determine file path for deletion.' });
-      setUser(prev => ({...prev, photos: user.photos})); 
-      return;
-    }
-    const filePath = urlParts.slice(bucketIndex + 1).join('/');
-
-    
-    const { error: storageError } = await supabase.storage.from(bucketName).remove([filePath]);
-
-    if (storageError) {
-        toast({ variant: 'destructive', title: 'Storage Error', description: `Could not delete photo: ${storageError.message}` });
-        setUser(prev => ({...prev, photos: user.photos})); 
-        return;
-    }
-
-    
     const result = await updateUserProfilePhotos(user.id, newPhotoList);
-    
+
     if (!result.error) {
-        toast({ title: 'Photo Removed' });
-        router.refresh(); 
+      toast({ title: 'Photo Removed' });
+      router.refresh();
     } else {
-        toast({
-            variant: 'destructive',
-            title: 'Could Not Remove Photo',
-            description: result.error,
-        });
-        setUser(prev => ({...prev, photos: user.photos})); 
+      toast({
+        variant: 'destructive',
+        title: 'Could Not Remove Photo',
+        description: result.error,
+      });
+      setUser(prev => ({ ...prev, photos: user.photos }));
     }
   }
 
@@ -322,58 +275,58 @@ export function ProfileView({ user: initialUser }: { user: User }) {
 
   return (
     <>
-    <div className="container mx-auto max-w-4xl p-4 space-y-6">
-      <Card className="bg-white/5 backdrop-blur-md border-white/10">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-3xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Profile</CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)} disabled={saving}>
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : isEditing ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
-              <span className="sr-only">{isEditing ? 'Save Profile' : 'Edit Profile'}</span>
-            </Button>
-          </div>
-           <div className="flex items-center gap-4 pt-4">
-                <div className="relative w-20 h-20">
-                    <Avatar className="h-20 w-20">
-                      {userPhotos[0] && (
-                        <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
-                      )}
-                      <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
-                        {getInitials(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button
-                        size="icon"
-                        className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                    >
-                        {uploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4" />}
-                        <span className="sr-only">Add photo</span>
-                    </Button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        disabled={uploading}
-                    />
-                </div>
-                <div className="flex-grow">
-                    {isEditing ? (
-                        <Input name="name" value={user.name} onChange={handleInputChange} className="text-xl" placeholder="Your Name" />
-                    ) : (
-                        <p className="text-2xl font-semibold">{user.name}, {age}</p>
-                    )}
-                     <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                        <VenetianMask className="h-4 w-4" />
-                        <p>{user.gender}</p>
-                     </div>
-                </div>
+      <div className="container mx-auto max-w-4xl p-4 space-y-6">
+        <Card className="bg-white/5 backdrop-blur-md border-white/10">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-3xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Profile</CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)} disabled={saving}>
+                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : isEditing ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
+                <span className="sr-only">{isEditing ? 'Save Profile' : 'Edit Profile'}</span>
+              </Button>
             </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+            <div className="flex items-center gap-4 pt-4">
+              <div className="relative w-20 h-20">
+                <Avatar className="h-20 w-20">
+                  {userPhotos[0] && (
+                    <AvatarImage src={userPhotos[0]} alt={user.name} className="object-cover" />
+                  )}
+                  <AvatarFallback className="bg-muted text-foreground text-2xl font-bold flex items-center justify-center">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  size="icon"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  <span className="sr-only">Add photo</span>
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  disabled={uploading}
+                />
+              </div>
+              <div className="flex-grow">
+                {isEditing ? (
+                  <Input name="name" value={user.name} onChange={handleInputChange} className="text-xl" placeholder="Your Name" />
+                ) : (
+                  <p className="text-2xl font-semibold">{user.name}, {age}</p>
+                )}
+                <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                  <VenetianMask className="h-4 w-4" />
+                  <p>{user.gender}</p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <div>
               <Label htmlFor="bio">About Me</Label>
               {isEditing ? (
@@ -394,81 +347,81 @@ export function ProfileView({ user: initialUser }: { user: User }) {
                 </div>
               </>
             )}
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-white/5 backdrop-blur-md border-white/10">
-        <CardHeader>
-          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Gallery</CardTitle>
-        </CardHeader>
-        <CardContent>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 backdrop-blur-md border-white/10">
+          <CardHeader>
+            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">My Gallery</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {userPhotos.map((photo, index) => (
+              {userPhotos.map((photo, index) => (
                 <div key={photo} className="aspect-square relative rounded-lg overflow-hidden group">
-                <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
-                {isEditing && (
+                  <Image src={photo} alt={`User photo ${index + 1}`} fill className="object-cover" />
+                  {isEditing && (
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {index > 0 && (
+                      {index > 0 && (
                         <Button size="sm" variant="outline" className="bg-black/50 text-white hover:bg-black/70 border-white/50" onClick={() => handleSetAsPrimary(photo)}>
-                            <Star className="h-4 w-4 mr-2" />
-                        Primary
+                          <Star className="h-4 w-4 mr-2" />
+                          Primary
                         </Button>
-                        )}
-                        <Button size="sm" variant="destructive" className="bg-red-800/80" onClick={() => setDeletingPhoto(photo)}>
+                      )}
+                      <Button size="sm" variant="destructive" className="bg-red-800/80" onClick={() => setDeletingPhoto(photo)}>
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
-                        </Button>
+                      </Button>
                     </div>
-                )}
-                {index === 0 && (
+                  )}
+                  {index === 0 && (
                     <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-bold rounded shadow-lg">
-                        MAIN
+                      MAIN
                     </div>
-                )}
+                  )}
                 </div>
-            ))}
-            {isEditing && userPhotos.length < 8 && (
-                <div 
-                className={cn(
+              ))}
+              {isEditing && userPhotos.length < 8 && (
+                <div
+                  className={cn(
                     "aspect-square relative rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50",
                     uploading && "cursor-not-allowed opacity-50"
-                )}
-                onClick={() => !uploading && fileInputRef.current?.click()}
+                  )}
+                  onClick={() => !uploading && fileInputRef.current?.click()}
                 >
-                <div className="text-center">
+                  <div className="text-center">
                     {uploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /> : <Upload className="mx-auto h-8 w-8 text-muted-foreground" />}
                     <p className="text-sm text-muted-foreground mt-2">{uploading ? 'Uploading...' : 'Add Photo'}</p>
+                  </div>
                 </div>
-                </div>
-            )}
+              )}
             </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card className="bg-white/5 backdrop-blur-md border-white/10">
+        <Card className="bg-white/5 backdrop-blur-md border-white/10">
           <CardHeader>
-              <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Connections</CardTitle>
+            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Connections</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-              <MatchesDialog userId={user.id} />
-              <BlockedUsersDialog userId={user.id} />
+            <MatchesDialog userId={user.id} />
+            <BlockedUsersDialog userId={user.id} />
           </CardContent>
-      </Card>
-    </div>
-    <AlertDialog open={!!deletingPhoto} onOpenChange={(open) => !open && setDeletingPhoto(null)}>
+        </Card>
+      </div>
+      <AlertDialog open={!!deletingPhoto} onOpenChange={(open) => !open && setDeletingPhoto(null)}>
         <AlertDialogContent className="w-full max-w-[330px] rounded-lg p-6 text-center shadow-2xl bg-white/10 backdrop-blur-lg">
-            <AlertDialogHeader className="text-center sm:text-center">
-                <AlertDialogTitle className="text-white text-lg font-semibold">Delete Photo?</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-white/70 mt-2">
-                    Are you sure you want to delete this photo? This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
-                <AlertDialogAction onClick={handleDeletePhoto} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Delete</AlertDialogAction>
-                <AlertDialogCancel onClick={() => setDeletingPhoto(null)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
-            </AlertDialogFooter>
+          <AlertDialogHeader className="text-center sm:text-center">
+            <AlertDialogTitle className="text-white text-lg font-semibold">Delete Photo?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-white/70 mt-2">
+              Are you sure you want to delete this photo? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6 flex flex-row sm:justify-center justify-center gap-4">
+            <AlertDialogAction onClick={handleDeletePhoto} className="w-28 bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full shadow-md">Delete</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setDeletingPhoto(null)} className="w-28 bg-white hover:bg-gray-100 hover:text-black text-black px-6 py-2 rounded-full shadow-md mt-0">Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
     </>
   );
 }

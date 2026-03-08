@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Shield, LogOut, Loader2, Bell, XIcon, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { getBlockedUsers, unblockUser } from '@/lib/actions';
+import { getBlockedUsers, unblockUser, getUserProfile, updateUserSettings } from '@/lib/actions';
 import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
@@ -29,122 +29,117 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export function BlockedUsersDialog({ userId }: { userId: string }) {
-    const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-    const [isUnblocking, setIsUnblocking] = React.useState<string | null>(null);
-    const { toast } = useToast();
+  const [blockedUsers, setBlockedUsers] = React.useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isUnblocking, setIsUnblocking] = React.useState<string | null>(null);
+  const { toast } = useToast();
 
-    const fetchBlockedUsers = React.useCallback(async () => {
-        setIsLoading(true);
-        const result = await getBlockedUsers(userId);
-        if (result.error) {
-            toast({ variant: 'destructive', title: 'Could Not Load Blocked Users', description: result.error });
-            setBlockedUsers([]);
-        } else {
-            setBlockedUsers(result.data as UserProfile[]);
-        }
-        setIsLoading(false);
-    }, [userId, toast]);
-
-    const handleUnblock = async (unblockedId: string) => {
-        setIsUnblocking(unblockedId);
-        const result = await unblockUser(userId, unblockedId);
-        if (result.error) {
-            toast({ variant: 'destructive', title: 'Could Not Unblock User', description: result.error });
-        } else {
-            toast({ title: 'User Unblocked' });
-            setBlockedUsers(prev => prev.filter(u => u.id !== unblockedId));
-        }
-        setIsUnblocking(null);
+  const fetchBlockedUsers = React.useCallback(async () => {
+    setIsLoading(true);
+    const result = await getBlockedUsers(userId);
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Could Not Load Blocked Users', description: result.error });
+      setBlockedUsers([]);
+    } else {
+      setBlockedUsers(result.data as UserProfile[]);
     }
+    setIsLoading(false);
+  }, [userId, toast]);
 
-    return (
-        <Dialog onOpenChange={(open) => open && fetchBlockedUsers()}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="w-full justify-start gap-2">
-                    <Shield className="h-4 w-4" />
-                    Blocked Users
+  const handleUnblock = async (unblockedId: string) => {
+    setIsUnblocking(unblockedId);
+    const result = await unblockUser(userId, unblockedId);
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Could Not Unblock User', description: result.error });
+    } else {
+      toast({ title: 'User Unblocked' });
+      setBlockedUsers(prev => prev.filter(u => u.id !== unblockedId));
+    }
+    setIsUnblocking(null);
+  }
+
+  return (
+    <Dialog onOpenChange={(open) => open && fetchBlockedUsers()}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-start gap-2">
+          <Shield className="h-4 w-4" />
+          Blocked Users
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
+        <DialogHeader>
+          <DialogTitle className="text-white">Blocked Users</DialogTitle>
+          <DialogDescription className="text-white/70">
+            Users you have blocked will appear here. You can unblock them at any time.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="max-h-[400px] pr-4">
+          <div className="space-y-4 py-4 text-white">
+            {isLoading && (
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[150px] bg-white/20" />
+                </div>
+              </div>
+            )}
+            {!isLoading && blockedUsers.length === 0 && (
+              <div className="text-center text-white/70 py-10">
+                <UserX className="mx-auto h-12 w-12 mb-4" />
+                <h2 className="text-xl font-semibold text-white">No Blocked Users</h2>
+                <p>You haven't blocked anyone yet.</p>
+              </div>
+            )}
+            {!isLoading && blockedUsers.map(user => (
+              <div key={user.id} className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={user.photos?.[0]} alt={user.name} width={48} height={48} className="object-cover" />
+                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{user.name}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleUnblock(user.id)}
+                  disabled={isUnblocking === user.id}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  {isUnblocking === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XIcon className="h-4 w-4" />}
+                  <span className="sr-only">Unblock {user.name}</span>
                 </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white/10 backdrop-blur-lg shadow-2xl rounded-lg">
-                <DialogHeader>
-                    <DialogTitle className="text-white">Blocked Users</DialogTitle>
-                    <DialogDescription className="text-white/70">
-                        Users you have blocked will appear here. You can unblock them at any time.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="max-h-[400px] pr-4">
-                  <div className="space-y-4 py-4 text-white">
-                      {isLoading && (
-                          <div className="flex items-center space-x-4">
-                              <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
-                              <div className="space-y-2">
-                                  <Skeleton className="h-4 w-[150px] bg-white/20" />
-                              </div>
-                          </div>
-                      )}
-                      {!isLoading && blockedUsers.length === 0 && (
-                          <div className="text-center text-white/70 py-10">
-                              <UserX className="mx-auto h-12 w-12 mb-4" />
-                              <h2 className="text-xl font-semibold text-white">No Blocked Users</h2>
-                              <p>You haven't blocked anyone yet.</p>
-                          </div>
-                      )}
-                      {!isLoading && blockedUsers.map(user => (
-                          <div key={user.id} className="flex items-center justify-between text-white">
-                              <div className="flex items-center gap-4">
-                                  <Avatar>
-                                      <AvatarImage src={user.photos?.[0]} alt={user.name} width={48} height={48} className="object-cover" />
-                                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="font-medium">{user.name}</span>
-                              </div>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleUnblock(user.id)}
-                                  disabled={isUnblocking === user.id}
-                                  className="text-white/70 hover:text-white hover:bg-white/10"
-                              >
-                                  {isUnblocking === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XIcon className="h-4 w-4" />}
-                                  <span className="sr-only">Unblock {user.name}</span>
-                              </Button>
-                          </div>
-                      ))}
-                  </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    )
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function SettingsView({ userId }: { userId: string }) {
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  
+
   const [ageRange, setAgeRange] = React.useState([18, 80]);
   const [matchNotification, setMatchNotification] = React.useState(true);
 
-  
+
   const debouncedAgeRange = useDebounce(ageRange, 500);
   const debouncedMatchNotification = useDebounce(matchNotification, 500);
 
-  
+
   React.useEffect(() => {
     if (!userId) return;
 
     const fetchSettings = async () => {
       setLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('discovery_age_min, discovery_age_max, match_notification')
-        .eq('id', userId)
-        .single();
-      
+      const { data, error } = await getUserProfile(userId);
+
       if (error) {
         toast({ variant: 'destructive', title: 'Could Not Load Settings', description: "We couldn't retrieve your current settings. Please try again later." });
       } else if (data) {
@@ -157,31 +152,26 @@ export function SettingsView({ userId }: { userId: string }) {
     fetchSettings();
   }, [userId, toast]);
 
-  
+
   React.useEffect(() => {
     if (loading || !userId) return;
 
     const saveSettings = async () => {
-        setSaving(true);
-        const supabase = createClient();
-        
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                discovery_age_min: debouncedAgeRange[0],
-                discovery_age_max: debouncedAgeRange[1],
-                match_notification: debouncedMatchNotification,
-            })
-            .eq('id', userId);
-        
-        setSaving(false);
-        if (error) {
-            toast({ variant: 'destructive', title: 'Could Not Save Settings', description: error.message });
-        } else {
-            localStorage.setItem('profileSettingsChanged', 'true');
-        }
+      setSaving(true);
+      const { error } = await updateUserSettings(userId, {
+        discovery_age_min: debouncedAgeRange[0],
+        discovery_age_max: debouncedAgeRange[1],
+        match_notification: debouncedMatchNotification,
+      });
+
+      setSaving(false);
+      if (error) {
+        toast({ variant: 'destructive', title: 'Could Not Save Settings', description: error as string });
+      } else {
+        localStorage.setItem('profileSettingsChanged', 'true');
+      }
     };
-    
+
     saveSettings();
   }, [debouncedAgeRange, debouncedMatchNotification, userId, loading, toast]);
 
@@ -191,7 +181,7 @@ export function SettingsView({ userId }: { userId: string }) {
     sessionStorage.clear();
     router.push('/');
   };
-  
+
   if (loading) {
     return (
       <div className="container mx-auto max-w-2xl p-4">
@@ -207,7 +197,7 @@ export function SettingsView({ userId }: { userId: string }) {
               <Skeleton className="h-5 w-full" />
               <Skeleton className="h-2 w-1/4 ml-auto" />
             </div>
-             <div className="space-y-4">
+            <div className="space-y-4">
               <Skeleton className="h-4 w-1/4" />
               <Skeleton className="h-10 w-full" />
             </div>
@@ -220,7 +210,7 @@ export function SettingsView({ userId }: { userId: string }) {
         </Card>
         <Card className="mt-6">
           <CardHeader>
-             <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-6 w-1/4" />
           </CardHeader>
           <CardContent className="pt-6">
             <Skeleton className="h-10 w-full" />
@@ -241,7 +231,7 @@ export function SettingsView({ userId }: { userId: string }) {
   return (
     <div className="container mx-auto max-w-2xl p-4">
       <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Settings</h1>
-      
+
       <Card className="bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -255,8 +245,8 @@ export function SettingsView({ userId }: { userId: string }) {
         <CardContent className="space-y-8 pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <Label htmlFor="age-range">Age Range</Label>
-                <span>{ageRange[0]} - {ageRange[1]}</span>
+              <Label htmlFor="age-range">Age Range</Label>
+              <span>{ageRange[0]} - {ageRange[1]}</span>
             </div>
             <Slider
               id="age-range"
@@ -272,13 +262,13 @@ export function SettingsView({ userId }: { userId: string }) {
 
       <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Security & Privacy</CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Security & Privacy</CardTitle>
         </CardHeader>
         <CardContent>
-            <BlockedUsersDialog userId={userId} />
+          <BlockedUsersDialog userId={userId} />
         </CardContent>
       </Card>
-      
+
       <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
           <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Notifications</CardTitle>
@@ -300,13 +290,13 @@ export function SettingsView({ userId }: { userId: string }) {
 
       <Card className="mt-6 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader>
-            <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Account</CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Account</CardTitle>
         </CardHeader>
         <CardContent>
-            <Button className="w-full justify-start gap-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg transition-all duration-300 hover:scale-[1.02]" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Logout
-            </Button>
+          <Button className="w-full justify-start gap-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg transition-all duration-300 hover:scale-[1.02]" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </CardContent>
       </Card>
     </div>

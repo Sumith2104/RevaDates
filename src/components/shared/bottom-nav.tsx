@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import * as React from 'react';
 import { useNotifications } from '@/context/notifications-context';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { createClient } from '@/lib/supabase/client';
+
 import { getUnreadCounts } from '@/lib/actions';
 
 export function BottomNav() {
@@ -32,30 +32,20 @@ export function BottomNav() {
     };
     oneTimeRefresh();
 
-    const client = createClient();
-    const channel = client
-      .channel('realtime-messages-increment')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${currentUserId}`,
-        },
-        (payload) => {
-          if (pathname.startsWith('/chats/')) {
-            return;
-          }
-          
-          setUnreadChats((prev) => prev + 1);
-        }
-      )
-      .subscribe();
+    let intervalId: NodeJS.Timeout;
 
-    return () => {
-      client.removeChannel(channel);
+    const pollUnreadCounts = async () => {
+      if (pathname.startsWith('/chats/')) return;
+      const counts = await getUnreadCounts(currentUserId);
+      if (counts && !counts.error) {
+        setUnreadChats(counts.unreadChatCount);
+        setUnreadNotifications(counts.unreadNotificationCount);
+      }
     };
+
+    intervalId = setInterval(pollUnreadCounts, 10000);
+
+    return () => clearInterval(intervalId);
   }, [currentUserId, setUnreadChats, pathname, setUnreadNotifications]);
 
 

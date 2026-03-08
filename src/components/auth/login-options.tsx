@@ -3,10 +3,10 @@
 
 import * as React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LoginForm } from './login-form';
 import { OtpLoginForm } from './otp-login-form';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@/lib/supabase/client';
-import { sendLoginOtp } from '@/lib/actions';
+import { checkEmailExists, sendLoginOtp } from '@/lib/actions';
 
 interface LoginOptionsProps {
     isOpen: boolean;
@@ -31,17 +30,13 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
     const [isPasswordLoading, setIsPasswordLoading] = React.useState(false);
     const [isOtpLoading, setIsOtpLoading] = React.useState(false);
     const { toast } = useToast();
-    const supabase = createClient();
+
 
     const handleEmailContinue = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsPasswordLoading(true);
 
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', email)
-            .single();
+        const { data, error } = await checkEmailExists(email);
 
         if (error || !data) {
             toast({
@@ -55,7 +50,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
 
         setIsPasswordLoading(false);
     }
-    
+
     const handleOtpLogin = async () => {
         if (!email) {
             toast({ variant: 'destructive', title: 'Email Required', description: 'Please enter your email to receive a login code.' });
@@ -92,13 +87,13 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
         'email-password': 'Log in',
         'email-otp': 'Enter Your Code'
     }[step];
-    
+
     const goBack = () => {
-        if(step === 'email-password' || step === 'email-otp') {
+        if (step === 'email-password' || step === 'email-otp') {
             setStep('options');
         }
     }
-    
+
     const isLoading = isPasswordLoading || isOtpLoading;
 
     return (
@@ -124,7 +119,7 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                         >
                             {step === 'options' && (
                                 <div className="space-y-4">
-                                     <form onSubmit={handleEmailContinue}>
+                                    <form onSubmit={handleEmailContinue}>
                                         <div className="grid w-full items-center gap-1.5 text-left">
                                             <Label htmlFor="email" className="text-sm">Email address</Label>
                                             <Input
@@ -144,17 +139,17 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
                                     </form>
 
                                     <div className="relative my-4">
-                                      <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-white/20" />
-                                      </div>
-                                      <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-card px-2 text-muted-foreground">or</span>
-                                      </div>
+                                        <div className="absolute inset-0 flex items-center">
+                                            <span className="w-full border-t border-white/20" />
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="bg-card px-2 text-muted-foreground">or</span>
+                                        </div>
                                     </div>
-                                    
+
                                     <div className="space-y-3">
-                                         <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isOtpLoading || !email}>
-                                             {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Button onClick={handleOtpLogin} variant="outline" className="w-full rounded-full" disabled={isOtpLoading || !email}>
+                                            {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Continue with Email & OTP
                                         </Button>
                                     </div>
@@ -163,14 +158,14 @@ export function LoginOptions({ isOpen, onOpenChange, onLoginSuccess }: LoginOpti
 
                             {step === 'email-password' && (
                                 <LoginForm
-                                    onSwitchToForgotPassword={() => {}}
+                                    onSwitchToForgotPassword={() => { }}
                                     onLoginSuccess={onLoginSuccess}
                                     email={email}
                                 />
                             )}
-                            
+
                             {step === 'email-otp' && (
-                                <OtpLoginForm 
+                                <OtpLoginForm
                                     email={email}
                                     onLoginSuccess={onLoginSuccess}
                                 />
