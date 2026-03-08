@@ -25,22 +25,16 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
 import { getCurrentUserProfile } from '@/lib/actions';
 
+const PAGE_SIZE = 50;
+const PRELOAD_THRESHOLD = 10; // preload next batch when this many cards remain
 
 function shuffle(array: any[]) {
   let currentIndex = array.length, randomIndex;
-
-
   while (currentIndex > 0) {
-
-
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
-
-
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
   }
-
   return array;
 }
 
@@ -51,11 +45,17 @@ export default function DashboardPage() {
   const [swipedHistory, setSwipedHistory] = React.useState<UserProfile[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showPhotoPrompt, setShowPhotoPrompt] = React.useState(false);
+  const [offset, setOffset] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [isFetchingMore, setIsFetchingMore] = React.useState(false);
   const { toast } = useToast();
 
+  // Fetch initial or refreshed page
   const fetchProfiles = React.useCallback(async (skipCache = false) => {
     if (!currentUserId) return;
     setLoading(true);
+    setOffset(0);
+    setHasMore(true);
 
     if (!skipCache) {
       try {
@@ -63,11 +63,8 @@ export default function DashboardPage() {
         const cachedHistory = localStorage.getItem(`swipedHistory_${currentUserId}`);
         if (cachedProfiles) {
           setAllUsers(JSON.parse(cachedProfiles));
-          if (cachedHistory) {
-            setSwipedHistory(JSON.parse(cachedHistory));
-          }
+          if (cachedHistory) setSwipedHistory(JSON.parse(cachedHistory));
           setLoading(false);
-
           return;
         }
       } catch (error) {
@@ -75,28 +72,26 @@ export default function DashboardPage() {
       }
     }
 
-
     const resultProfile = await getCurrentUserProfile(currentUserId);
-
     if (resultProfile.error || !resultProfile.data) {
       toast({ variant: 'destructive', title: "Could not load your profile", description: "Please try logging in again." });
       setLoading(false);
       return;
     }
     const currentUserProfile = resultProfile.data;
-
     if (!currentUserProfile.photos || currentUserProfile.photos.length === 0) {
       setShowPhotoPrompt(true);
     }
 
-    const result = await getPotentialProfiles(currentUserId);
-
+    const result = await getPotentialProfiles(currentUserId, 0, PAGE_SIZE);
     if (result.error) {
       toast({ variant: 'destructive', title: "Database Error", description: result.error });
       setAllUsers([]);
     } else {
       const freshUsers = shuffle(result.data as UserProfile[]);
       setAllUsers(freshUsers);
+      setHasMore(result.hasMore ?? false);
+      setOffset(PAGE_SIZE);
       try {
         localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(freshUsers));
         localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify([]));
@@ -105,9 +100,30 @@ export default function DashboardPage() {
         console.warn("Could not save profiles to cache", error);
       }
     }
-
     setLoading(false);
   }, [currentUserId, toast]);
+
+  // Background preload of the next page
+  const fetchMoreProfiles = React.useCallback(async () => {
+    if (!currentUserId || isFetchingMore || !hasMore) return;
+    setIsFetchingMore(true);
+    const result = await getPotentialProfiles(currentUserId, offset, PAGE_SIZE);
+    if (!result.error && result.data && result.data.length > 0) {
+      const moreUsers = shuffle(result.data as UserProfile[]);
+      setAllUsers(prev => {
+        const merged = [...prev, ...moreUsers];
+        try {
+          if (currentUserId) localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(merged));
+        } catch { }
+        return merged;
+      });
+      setHasMore(result.hasMore ?? false);
+      setOffset(prev => prev + PAGE_SIZE);
+    } else {
+      setHasMore(false);
+    }
+    setIsFetchingMore(false);
+  }, [currentUserId, isFetchingMore, hasMore, offset]);
 
   React.useEffect(() => {
     if (currentUserId) {
@@ -121,13 +137,18 @@ export default function DashboardPage() {
     }
   }, [currentUserId, fetchProfiles]);
 
+  // Trigger preload when user reaches card 40 (10 cards remaining)
+  React.useEffect(() => {
+    if (allUsers.length <= PRELOAD_THRESHOLD && hasMore && !isFetchingMore && !loading) {
+      fetchMoreProfiles();
+    }
+  }, [allUsers.length, hasMore, isFetchingMore, loading, fetchMoreProfiles]);
 
   const handleSwipeActionWrapper = (swipedUser: UserProfile) => {
-    const newUsers = allUsers.filter(u => u.id !== swipedUser.id)
+    const newUsers = allUsers.filter(u => u.id !== swipedUser.id);
     const newHistory = [swipedUser, ...swipedHistory];
     setAllUsers(newUsers);
     setSwipedHistory(newHistory);
-
     try {
       if (currentUserId) {
         localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
@@ -140,22 +161,15 @@ export default function DashboardPage() {
 
   const handleUndo = async () => {
     if (swipedHistory.length === 0 || !currentUserId) return;
-
     const lastSwipedUser = swipedHistory[0];
     const result = await handleUndoSwipeAction(currentUserId, lastSwipedUser.id);
-
     if (result.error) {
-      toast({
-        variant: "destructive",
-        title: "Undo Failed",
-        description: result.error,
-      });
+      toast({ variant: "destructive", title: "Undo Failed", description: result.error });
     } else {
       const newHistory = swipedHistory.slice(1);
       const newUsers = [lastSwipedUser, ...allUsers];
       setAllUsers(newUsers);
       setSwipedHistory(newHistory);
-
       try {
         localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(newUsers));
         localStorage.setItem(`swipedHistory_${currentUserId}`, JSON.stringify(newHistory));
@@ -165,14 +179,9 @@ export default function DashboardPage() {
     }
   };
 
-  if ((loading && allUsers.length === 0) || userLoading) {
-    return <PageLoader />;
-  }
+  if ((loading && allUsers.length === 0) || userLoading) return <PageLoader />;
 
-  const handlePromptLater = () => {
-    setShowPhotoPrompt(false);
-  }
-
+  const handlePromptLater = () => setShowPhotoPrompt(false);
   const noMoreProfiles = !allUsers || allUsers.length === 0;
 
   return (
@@ -204,7 +213,14 @@ export default function DashboardPage() {
               </Button>
             </div>
           ) : (
-            <SwipeDeck users={allUsers} currentUserId={currentUserId!} onSwipe={handleSwipeActionWrapper} onRefresh={() => fetchProfiles(true)} onUndo={handleUndo} canUndo={swipedHistory.length > 0} />
+            <SwipeDeck
+              users={allUsers}
+              currentUserId={currentUserId!}
+              onSwipe={handleSwipeActionWrapper}
+              onRefresh={() => fetchProfiles(true)}
+              onUndo={handleUndo}
+              canUndo={swipedHistory.length > 0}
+            />
           )}
         </div>
       </AppShell>

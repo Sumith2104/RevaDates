@@ -561,7 +561,7 @@ export async function verifyLoginOtp(email: string, otp: string) {
     }
 }
 
-export async function getPotentialProfiles(currentUserId: string) {
+export async function getPotentialProfiles(currentUserId: string, offset: number = 0, limit: number = 50) {
     if (!currentUserId) return { data: null, error: 'User ID is required.' };
     try {
         const [uRows]: any = await pool.query('SELECT discovery_age_min, discovery_age_max, discovery_gender_preference, blocked_users FROM profiles WHERE id = ? LIMIT 1', [currentUserId]);
@@ -592,22 +592,27 @@ export async function getPotentialProfiles(currentUserId: string) {
         }
 
         if (conditions.length > 0) queryStr += ' WHERE ' + conditions.join(' AND ');
-        queryStr += ' ORDER BY created_at DESC';
+        // Fetch extra rows to account for ones filtered out by age; we slice to 'limit' after in-memory filtering
+        queryStr += ` ORDER BY created_at DESC LIMIT ${limit * 3} OFFSET ${offset}`;
 
         const [pRows]: any = await pool.query(queryStr, params);
 
-        const profilesWithAgeAndDistance = await Promise.all(
-            pRows.map((profile: any) => ({ ...profile, age: differenceInYears(new Date(), new Date(profile.dob)), photos: profile.photos ? JSON.parse(profile.photos) : [] }))
-                .filter((profile: any) => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80))
-                .map(async (profile: any) => {
-                    const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
-                    return { ...profile, distance_meters: distance !== null ? distance * 1000 : null };
-                })
+        const filtered = pRows
+            .map((profile: any) => ({ ...profile, age: differenceInYears(new Date(), new Date(profile.dob)), photos: profile.photos ? JSON.parse(profile.photos) : [] }))
+            .filter((profile: any) => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80));
+
+        const page = filtered.slice(0, limit);
+
+        const profilesWithDistance = await Promise.all(
+            page.map(async (profile: any) => {
+                const distance = await getDistanceBetweenUsers(currentUserId, profile.id);
+                return { ...profile, distance_meters: distance !== null ? distance * 1000 : null };
+            })
         );
 
-        return { data: profilesWithAgeAndDistance, error: null };
+        return { data: profilesWithDistance, error: null, hasMore: filtered.length > limit };
     } catch (e) {
-        return { data: null, error: "Could not fetch new profiles." };
+        return { data: null, error: "Could not fetch new profiles.", hasMore: false };
     }
 }
 
