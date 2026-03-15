@@ -126,23 +126,14 @@ export default function ChatPage() {
     React.useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        // SSE subscription — fires instantly when webhook reaches this client
+        // SSE subscription — fires when Fluxbase webhook broadcasts to this client
         const unsubscribe = subscribe('messages', (event) => {
             const belongsToChat = event.new?.match_id === chatId || event.old?.match_id === chatId;
             if (belongsToChat) fetchMessages();
         });
 
-        // Polling fallback — ensures messages arrive even if webhook can't reach
-        // this client (localhost dev, Vercel serverless isolated memory, etc.)
-        const poll = setInterval(() => {
-            if (!loadingMessages) fetchMessages();
-        }, 3000);
-
-        return () => {
-            unsubscribe();
-            clearInterval(poll);
-        };
-    }, [chatId, currentUserId, subscribe, fetchMessages, loadingMessages]);
+        return () => unsubscribe();
+    }, [chatId, currentUserId, subscribe, fetchMessages]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
