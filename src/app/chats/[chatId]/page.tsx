@@ -82,6 +82,11 @@ export default function ChatPage() {
         loadChat();
     }, [chatId, currentUserId]);
 
+    // Auto-scroll to bottom whenever messages update
+    React.useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
     const handleMarkAsRead = React.useCallback(async () => {
         if (!chatId || !currentUserId) return;
         await markMessagesAsRead(chatId, currentUserId);
@@ -121,14 +126,12 @@ export default function ChatPage() {
     React.useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        // Subscribe to real-time updates for messages
+        // Subscribe to real-time messages updates for this chat via SSE
         const unsubscribe = subscribe('messages', (event) => {
-            // If the new message belongs to this chat, refresh
-            if (event.type === 'row.inserted' && event.new?.match_id === chatId) {
-                fetchMessages();
-            }
-            // If a message was updated (e.g., marked as read), refresh
-            if (event.type === 'row.updated' && event.new?.match_id === chatId) {
+            // Accept any event on this chat — Fluxbase may send different type strings
+            // e.g. 'INSERT', 'row.inserted', 'UPDATE', 'row.updated'
+            const belongsToChat = event.new?.match_id === chatId || event.old?.match_id === chatId;
+            if (belongsToChat) {
                 fetchMessages();
             }
         });
