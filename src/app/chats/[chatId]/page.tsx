@@ -156,14 +156,23 @@ export default function ChatPage() {
 
         setMessages(prev => [...prev, optimisticMessage]);
 
-        const result = await sendMessage(chatId, currentUserId, matchedUser.id, content, tempId);
-        
-        if (result.error || !result.data) {
-             setNewMessage(content);
-             setMessages(prev => prev.filter(m => m.id !== tempId));
-        } else {
-            
-            setMessages(prev => prev.map(m => m.id === tempId ? result.data as Message : m));
+        try {
+            // Use direct API route instead of server action to avoid RSC serialization overhead
+            const res = await fetch('/api/chat/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ matchId: chatId, senderId: currentUserId, recipientId: matchedUser.id, content, tempId }),
+            });
+            const result = await res.json();
+            if (result.error || !result.data) {
+                setNewMessage(content);
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+            } else {
+                setMessages(prev => prev.map(m => m.id === tempId ? { ...result.data } as Message : m));
+            }
+        } catch {
+            setNewMessage(content);
+            setMessages(prev => prev.filter(m => m.id !== tempId));
         }
     };
     
