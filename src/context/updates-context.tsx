@@ -1,7 +1,7 @@
 // src/context/updates-context.tsx
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useCallback } from 'react';
 
 type UpdateEvent = {
     type: string;
@@ -17,26 +17,17 @@ type UpdatesContextType = {
 const UpdatesContext = createContext<UpdatesContextType | undefined>(undefined);
 
 export function UpdatesProvider({ children }: { children: React.ReactNode }) {
-    const [listeners, setListeners] = useState<Map<string, Set<(event: UpdateEvent) => void>>>(new Map());
+    // Use a ref so the SSE effect never needs to re-run when subscriptions change
+    const listenersRef = useRef<Map<string, Set<(event: UpdateEvent) => void>>>(new Map());
 
     const subscribe = useCallback((table: string, callback: (event: UpdateEvent) => void) => {
-        setListeners(prev => {
-            const next = new Map(prev);
-            if (!next.has(table)) {
-                next.set(table, new Set());
-            }
-            next.get(table)!.add(callback);
-            return next;
-        });
+        if (!listenersRef.current.has(table)) {
+            listenersRef.current.set(table, new Set());
+        }
+        listenersRef.current.get(table)!.add(callback);
 
         return () => {
-            setListeners(prev => {
-                const next = new Map(prev);
-                if (next.has(table)) {
-                    next.get(table)!.delete(callback);
-                }
-                return next;
-            });
+            listenersRef.current.get(table)?.delete(callback);
         };
     }, []);
 
@@ -44,17 +35,20 @@ export function UpdatesProvider({ children }: { children: React.ReactNode }) {
         let eventSource: EventSource | null = null;
         let retryCount = 0;
         const maxRetries = 5;
+        let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
         const connect = () => {
             console.log('[UpdatesContext] Connecting to SSE...');
-            // We use our own bridge to keep Fluxbase API keys secure on the server.
-            // Our bridge is updated to support Fluxbase v4.0 payloads.
             eventSource = new EventSource('/api/updates');
+
+            eventSource.onopen = () => {
+                console.log('[UpdatesContext] SSE connection established.');
+                retryCount = 0;
+            };
 
             eventSource.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    // Standardize Fluxbase v4.0 payload to our UpdateEvent type
                     const normalizedEvent: UpdateEvent = {
                         type: data.type || data.event_type,
                         table: data.table || data.table_id,
@@ -62,39 +56,35 @@ export function UpdatesProvider({ children }: { children: React.ReactNode }) {
                         old: data.old || data.data?.old
                     };
 
-                    const tableListeners = listeners.get(normalizedEvent.table);
+                    const tableListeners = listenersRef.current.get(normalizedEvent.table);
                     if (tableListeners) {
-                        tableListeners.forEach(callback => callback(normalizedEvent));
+                        tableListeners.forEach(cb => cb(normalizedEvent));
                     }
-                } catch (err) {
-                    // Ignore non-JSON messages (like heartbeats)
+                } catch {
+                    // Ignore non-JSON messages (heartbeats etc.)
                 }
             };
 
-            eventSource.onerror = (err) => {
-                console.error('[UpdatesContext] SSE connection error:', err);
+            eventSource.onerror = () => {
+                console.error('[UpdatesContext] SSE connection error, will retry...');
                 eventSource?.close();
-                
+
                 if (retryCount < maxRetries) {
                     retryCount++;
                     const delay = Math.pow(2, retryCount) * 1000;
                     console.log(`[UpdatesContext] Retrying in ${delay / 1000}s...`);
-                    setTimeout(connect, delay);
+                    retryTimeout = setTimeout(connect, delay);
                 }
-            };
-
-            eventSource.onopen = () => {
-                console.log('[UpdatesContext] SSE connection established.');
-                retryCount = 0;
             };
         };
 
         connect();
 
         return () => {
+            if (retryTimeout) clearTimeout(retryTimeout);
             eventSource?.close();
         };
-    }, [listeners]);
+    }, []); // ← empty dep array: connect once and never re-run
 
     return (
         <UpdatesContext.Provider value={{ subscribe }}>
