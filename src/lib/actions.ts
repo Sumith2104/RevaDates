@@ -636,7 +636,6 @@ export async function markMessagesAsRead(matchId: string, userId: string) {
     if (!matchId || !userId) return { error: 'Match ID and User ID are required.' };
     try {
         await pool.query('UPDATE messages SET is_read = true WHERE match_id = ? AND recipient_id = ? AND is_read = false', [matchId, userId]);
-        revalidatePath(`/chats/${matchId}`);
         return { success: true };
     } catch (e) {
         return { error: 'Could not mark messages as read.' };
