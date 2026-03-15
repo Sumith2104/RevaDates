@@ -59,7 +59,28 @@ export default function ChatPage() {
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-    // ... existing effects and helpers ...
+    // Initial load: fetch match details and messages
+    React.useEffect(() => {
+        if (!chatId || !currentUserId) return;
+
+        async function loadChat() {
+            const matchData = await getMatchDetails(chatId, currentUserId!);
+            if (matchData.error || !matchData.data) {
+                setLoadingMessages(false);
+                return;
+            }
+            setMatchedUser(matchData.data as UserProfile);
+
+            const messagesData = await getChatMessages(chatId);
+            if (!messagesData.error && messagesData.data) {
+                setMessages(messagesData.data as Message[]);
+                await markMessagesAsRead(chatId, currentUserId!);
+            }
+            setLoadingMessages(false);
+        }
+
+        loadChat();
+    }, [chatId, currentUserId]);
 
     const handleMarkAsRead = React.useCallback(async () => {
         if (!chatId || !currentUserId) return;
