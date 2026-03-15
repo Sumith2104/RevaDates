@@ -52,40 +52,55 @@ export default function NotificationsPage() {
     const router = useRouter();
 
     React.useEffect(() => {
-        async function fetchData(initialLoad = false) {
-            
-            if (!currentUserId) {
-                if (initialLoad) setLoading(false);
-                return;
-            }
-            if (initialLoad) setLoading(true);
+        if (!currentUserId) return;
 
-            const result = await getNotifications(currentUserId);
-            
+        // ── Initial load ──────────────────────────────────────────────
+        async function initialLoad() {
+            setLoading(true);
+            const result = await getNotifications(currentUserId!);
             if (result.error) {
                 setError(result.error);
             } else {
-                setNotifications(prev => {
-                    const newNotifications = result.data as Notification[];
-                    
-                    if (JSON.stringify(prev) !== JSON.stringify(newNotifications)) {
-                        return newNotifications;
-                    }
-                    return prev;
-                });
-                
-                
-                await markNotificationsAsRead(currentUserId);
+                setNotifications(result.data as Notification[]);
+                // Mark all as read once on page open
+                await markNotificationsAsRead(currentUserId!);
             }
-
-            if (initialLoad) setLoading(false);
+            setLoading(false);
         }
 
-        fetchData(true); 
+        // ── Re-fetch without marking read (called on webhook push) ────
+        async function refreshNotifications() {
+            const result = await getNotifications(currentUserId!);
+            if (!result.error) {
+                setNotifications(prev => {
+                    const next = result.data as Notification[];
+                    return JSON.stringify(prev) !== JSON.stringify(next) ? next : prev;
+                });
+            }
+        }
 
-        const interval = setInterval(() => fetchData(false), 5000); 
+        initialLoad();
 
-        return () => clearInterval(interval); 
+        // ── SSE subscription (Fluxbase webhook → /api/updates) ────────
+        const es = new EventSource('/api/updates');
+
+        es.onmessage = (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                const table = payload.table as string | undefined;
+                // Only re-fetch when the notifications table changes
+                if (table === 'notifications') {
+                    refreshNotifications();
+                }
+            } catch { /* ignore parse errors */ }
+        };
+
+        es.onerror = () => {
+            // EventSource auto-reconnects on error — nothing to do here
+            console.warn('[SSE] Connection lost, will auto-reconnect...');
+        };
+
+        return () => es.close();
     }, [currentUserId]);
 
 

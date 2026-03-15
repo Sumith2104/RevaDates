@@ -61,7 +61,13 @@ export default function ChatPage() {
 
     // ... existing effects and helpers ...
 
+    const handleMarkAsRead = React.useCallback(async () => {
+        if (!chatId || !currentUserId) return;
+        await markMessagesAsRead(chatId, currentUserId);
+    }, [chatId, currentUserId]);
+
     const fetchMessages = React.useCallback(async () => {
+
         const messagesData = await getChatMessages(chatId);
         if (!messagesData.error && messagesData.data) {
             const newMessages = messagesData.data as Message[];

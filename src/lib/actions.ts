@@ -1,24 +1,72 @@
 'use server';
  
-// Hex utilities to bypass Fluxbase slash-mangling bug
-function encodeToHex(str: string): string {
-    return Buffer.from(str, 'utf8').toString('hex');
+// =============================================================================
+// PHOTO KEY ENCODING
+// Fluxbase has a SQL string corruption bug that mangles slashes AND JSON
+// delimiters (brackets, quotes). We work around this by:
+// 1. base64url-encoding each s3Key (produces only A-Za-z0-9-_ chars)
+// 2. Joining keys with '|' instead of using JSON arrays
+// This means the stored value looks like: "abc123|def456" (no special chars)
+// =============================================================================
+
+function encodePhotoKey(key: string): string {
+    return Buffer.from(key, 'utf8')
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
 }
 
-function decodeFromHex(hex: string): string {
-    // Basic check: s3Keys with slashes are already mangled, whereas hex won't have slashes
-    // However, if it's already a full URL, we leave it alone (legacy)
-    if (hex.startsWith('http')) return hex;
+function decodePhotoKey(encoded: string): string {
+    if (!encoded) return '';
+    if (encoded.startsWith('http')) return encoded; // legacy presigned URL – skip
+
+    // Try base64url decode
     try {
-        const decoded = Buffer.from(hex, 'hex').toString('utf8');
-        // If it was valid hex and contains indicators of an s3Key (like / or buckets), it's probably ours
-        if (decoded.includes('/') || decoded.includes('buckets')) return decoded;
-        return hex; // Fallback to raw if decoding doesn't look right
-    } catch (e) {
-        return hex;
-    }
+        const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = b64.length % 4;
+        const padded = pad ? b64 + '='.repeat(4 - pad) : b64;
+        const decoded = Buffer.from(padded, 'base64').toString('utf8');
+        if (decoded.includes('/') || decoded.includes('project_') || decoded.includes('buckets')) {
+            return decoded;
+        }
+    } catch (_) { /* not base64 */ }
+
+    // Legacy: try hex decode (from previous attempt)
+    try {
+        if (/^[0-9a-f]+$/i.test(encoded) && encoded.length % 2 === 0) {
+            const decoded = Buffer.from(encoded, 'hex').toString('utf8');
+            if (decoded.includes('/') || decoded.includes('buckets')) return decoded;
+        }
+    } catch (_) { /* not hex */ }
+
+    return encoded; // return as-is (could be a short key with no slashes)
 }
- 
+
+/** Serialise an array of s3Keys for DB storage (pipe-separated base64url). */
+function encodePhotosForDB(keys: string[]): string {
+    return keys.map(encodePhotoKey).join('|');
+}
+
+/** Parse the DB photos value back to decoded s3Keys. */
+function decodePhotosFromDB(raw: string | null | undefined): string[] {
+    if (!raw) return [];
+
+    // Old JSON format (starts with '[')
+    if (raw.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(raw.replace(/\*/g, '"')); // fix Fluxbase * corruption
+            if (Array.isArray(parsed)) {
+                return parsed.map(decodePhotoKey).filter(Boolean);
+            }
+        } catch (_) { /* ignore */ }
+        return []; // corrupted JSON – discard
+    }
+
+    // New pipe-separated format
+    return raw.split('|').filter(Boolean).map(decodePhotoKey).filter(Boolean);
+}
+
 
 import { z } from 'zod';
 import { sendEmail } from './email';
@@ -249,8 +297,12 @@ export async function getNotifications(userId: string) {
         `, [userId]);
         
         const data = await Promise.all(rows.map(async (r: any) => {
-            const rawPhotos = r.sender_photos ? JSON.parse(r.sender_photos) : [];
-            const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
+            let resolvedPhotos: string[] = [];
+            try {
+                const rawPhotos = decodePhotosFromDB(r.sender_photos);
+                const urls = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
+                resolvedPhotos = urls.filter(Boolean) as string[];
+            } catch (_) { /* ignore photo errors */ }
             return {
                 id: r.id, 
                 message: r.message, 
@@ -260,7 +312,7 @@ export async function getNotifications(userId: string) {
                 sender_id: r.sender_id,
                 sender: { 
                     name: r.sender_name, 
-                    photos: resolvedPhotos.filter(Boolean) as string[]
+                    photos: resolvedPhotos
                 }
             };
         }));
@@ -273,7 +325,7 @@ export async function getNotifications(userId: string) {
 export async function markNotificationsAsRead(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
     const now = getISTTimestamp();
-    await pool.query('UPDATE notifications SET is_read = true, updated_at = ? WHERE recipient_id = ? AND is_read = false', [now, userId]);
+    await pool.query('UPDATE notifications SET is_read = true WHERE recipient_id = ? AND is_read = false', [userId]);
     revalidatePath('/notifications');
     return { success: true };
 }
@@ -374,7 +426,7 @@ export async function getChatsAndMatches(userId: string) {
             const [pRows]: any = await pool.query(`SELECT id, name, photos FROM profiles WHERE id IN (${matchedUserPlaceholders})`, allMatchedUserIds);
             
             const resolvedProfiles = await Promise.all(pRows.map(async (p: any) => {
-                const rawPhotos = p.photos ? JSON.parse(p.photos).map(decodeFromHex) : [];
+                const rawPhotos = decodePhotosFromDB(p.photos);
                 const resolvedPhotos = await Promise.all(rawPhotos.map((photo: string) => getPresignedUrl(photo)));
                 return [p.id, { ...p, photos: resolvedPhotos.filter(Boolean) as string[] }];
             }));
@@ -429,11 +481,9 @@ export async function updateUserProfile(userId: string, updates: { name: string;
 export async function updateUserProfilePhotos(userId: string, photos: string[]) {
     if (!userId) return { error: 'User ID is required.' };
     try {
-        // Ensure we only save strings that looks like s3Keys (not full URLs)
         const cleanPhotos = photos.filter(p => p && !p.startsWith('http'));
-        // Hex encode to bypass Fluxbase mangling
-        const hexPhotos = cleanPhotos.map(p => encodeToHex(p));
-        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
+        const encoded = encodePhotosForDB(cleanPhotos);
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [encoded, getISTTimestamp(), userId]);
         revalidatePath('/profile');
         return { success: true };
     } catch (e) {
@@ -451,28 +501,13 @@ export async function addUserPhotoAction(userId: string, s3Key: string) {
         const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
         if (rows.length === 0) return { error: 'Profile not found' };
         
-        const photosRaw = rows[0].photos;
-        let currentPhotos: string[] = [];
-        if (photosRaw) {
-            try {
-                const parsed = JSON.parse(photosRaw);
-                currentPhotos = Array.isArray(parsed) ? parsed.map(decodeFromHex) : [];
-            } catch (pErr) {
-                console.error(`[PhotoAction] JSON Parse Error:`, pErr);
-            }
-        }
-        
-        console.log(`[PhotoAction] Current photos (decoded):`, currentPhotos);
-        
-        // Add new key, then hex-encode the whole array for saving
+        const currentPhotos = decodePhotosFromDB(rows[0].photos);
         const updatedPhotos = [s3Key, ...currentPhotos];
-        const hexPhotos = updatedPhotos.map(encodeToHex);
+        const encoded = encodePhotosForDB(updatedPhotos);
         
-        const sqlResult: any = await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
-        console.log(`[PhotoAction] Update query finished. Result:`, JSON.stringify(sqlResult));
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [encoded, getISTTimestamp(), userId]);
         
         const presignedUrl = await getPresignedUrl(s3Key);
-        
         revalidatePath('/profile');
         return { success: true, presignedUrl };
     } catch (e: any) {
@@ -487,15 +522,12 @@ export async function deletePhotoAction(userId: string, keyToDelete: string) {
         const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
         if (rows.length === 0) return { error: 'Profile not found' };
         
-        let currentPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        const currentPhotos = decodePhotosFromDB(rows[0].photos);
         const updatedPhotos = currentPhotos.filter((k: string) => k !== keyToDelete && !keyToDelete.includes(k));
+        const encoded = encodePhotosForDB(updatedPhotos);
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [encoded, getISTTimestamp(), userId]);
         
-        const hexPhotos = updatedPhotos.map(encodeToHex);
-        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
-        
-        // Resolve new URLs
         const resolvedPhotos = await Promise.all(updatedPhotos.map((p: string) => getPresignedUrl(p)));
-        
         revalidatePath('/profile');
         return { success: true, photos: resolvedPhotos.filter(Boolean) as string[] };
     } catch (e) {
@@ -509,20 +541,17 @@ export async function setPrimaryPhotoAction(userId: string, keyToMakePrimary: st
         const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
         if (rows.length === 0) return { error: 'Profile not found' };
         
-        let currentPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        const currentPhotos = decodePhotosFromDB(rows[0].photos);
         const index = currentPhotos.findIndex((k: string) => k === keyToMakePrimary || keyToMakePrimary.includes(k));
         
         if (index === -1) return { error: 'Photo not found in profile' };
         
         const key = currentPhotos.splice(index, 1)[0];
         const updatedPhotos = [key, ...currentPhotos];
+        const encoded = encodePhotosForDB(updatedPhotos);
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [encoded, getISTTimestamp(), userId]);
         
-        const hexPhotos = updatedPhotos.map(encodeToHex);
-        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
-        
-        // Resolve new URLs
         const resolvedPhotos = await Promise.all(updatedPhotos.map((p: string) => getPresignedUrl(p)));
-        
         revalidatePath('/profile');
         return { success: true, photos: resolvedPhotos.filter(Boolean) as string[] };
     } catch (e) {
@@ -735,7 +764,7 @@ export async function getPotentialProfiles(currentUserId: string, offset: number
 
         const filtered = await Promise.all(pRows.map(async (profile: any) => {
             const age = differenceInYears(new Date(), new Date(profile.dob));
-            const rawPhotos = profile.photos ? JSON.parse(profile.photos).map(decodeFromHex) : [];
+            const rawPhotos = decodePhotosFromDB(profile.photos);
             const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
             return { 
                 ...profile, 
@@ -780,14 +809,8 @@ export async function getCurrentUserProfile(userId: string) {
         
         console.log(`[DB] Raw photos for getCurrentUserProfile(${userId}):`, rows[0].photos);
         
-        let rawPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
-        // Data Cleanup: filter out full URLs that might have been accidentally saved
+        const rawPhotos = decodePhotosFromDB(rows[0].photos);
         const cleanPhotos = rawPhotos.filter((p: string) => p && !p.startsWith('http'));
-        
-        // If we found corruption, let's fix it in the DB silently
-        if (cleanPhotos.length !== rawPhotos.length) {
-            await pool.query('UPDATE profiles SET photos = ? WHERE id = ?', [JSON.stringify(cleanPhotos), userId]);
-        }
         
         const resolvedPhotos = await Promise.all(cleanPhotos.map((p: string) => getPresignedUrl(p)));
         return { data: { ...rows[0], photos: resolvedPhotos.filter(Boolean) as string[] }, error: null };
@@ -804,14 +827,8 @@ export async function getUserProfile(userId: string) {
         
         console.log(`[DB] Raw photos for getUserProfile(${userId}):`, rows[0].photos);
         
-        let rawPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
-        // Data Cleanup: filter out full URLs that might have been accidentally saved
+        const rawPhotos = decodePhotosFromDB(rows[0].photos);
         const cleanPhotos = rawPhotos.filter((p: string) => p && !p.startsWith('http'));
-
-        // If we found corruption, let's fix it in the DB silently
-        if (cleanPhotos.length !== rawPhotos.length) {
-            await pool.query('UPDATE profiles SET photos = ? WHERE id = ?', [JSON.stringify(cleanPhotos), userId]);
-        }
 
         const resolvedPhotos = await Promise.all(cleanPhotos.map((p: string) => getPresignedUrl(p)));
         return { data: { ...rows[0], photos: resolvedPhotos.filter(Boolean) as string[] }, error: null };

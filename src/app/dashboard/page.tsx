@@ -62,7 +62,15 @@ export default function DashboardPage() {
         const cachedProfiles = localStorage.getItem(`cachedProfiles_${currentUserId}`);
         const cachedHistory = localStorage.getItem(`swipedHistory_${currentUserId}`);
         if (cachedProfiles) {
-          setAllUsers(JSON.parse(cachedProfiles));
+          const parsed: UserProfile[] = JSON.parse(cachedProfiles);
+          // Deduplicate and remove self from cached data
+          const seen = new Set<string>();
+          const deduped = parsed.filter(u => {
+            if (u.id === currentUserId || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+          });
+          setAllUsers(deduped);
           if (cachedHistory) setSwipedHistory(JSON.parse(cachedHistory));
           setLoading(false);
           return;
@@ -88,7 +96,9 @@ export default function DashboardPage() {
       toast({ variant: 'destructive', title: "Database Error", description: result.error });
       setAllUsers([]);
     } else {
-      const freshUsers = shuffle(result.data as UserProfile[]);
+      // Filter out the current user (safety net on top of DB exclusion)
+      const filtered = (result.data as UserProfile[]).filter(u => u.id !== currentUserId);
+      const freshUsers = shuffle(filtered);
       setAllUsers(freshUsers);
       setHasMore(result.hasMore ?? false);
       setOffset(PAGE_SIZE);
@@ -109,9 +119,14 @@ export default function DashboardPage() {
     setIsFetchingMore(true);
     const result = await getPotentialProfiles(currentUserId, offset, PAGE_SIZE);
     if (!result.error && result.data && result.data.length > 0) {
-      const moreUsers = shuffle(result.data as UserProfile[]);
+      const moreUsers = shuffle(
+        (result.data as UserProfile[]).filter(u => u.id !== currentUserId)
+      );
       setAllUsers(prev => {
-        const merged = [...prev, ...moreUsers];
+        // Deduplicate by id to prevent same profile appearing twice across pages
+        const existingIds = new Set(prev.map(u => u.id));
+        const newUnique = moreUsers.filter(u => !existingIds.has(u.id));
+        const merged = [...prev, ...newUnique];
         try {
           if (currentUserId) localStorage.setItem(`cachedProfiles_${currentUserId}`, JSON.stringify(merged));
         } catch { }

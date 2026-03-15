@@ -394,17 +394,22 @@ export function SwipeDeck({ users: initialUsers, currentUserId, onSwipe, onRefre
 
          
         <div style={{ display: 'none' }}>
-          {users.slice(Math.max(0, activeIndex - 3), activeIndex).reverse().map(user => (
-            user.photos && user.photos.length > 0 && (
-              <Image
-                key={`preload-${user.id}`}
-                src={user.photos[0]}
-                alt={`Preload ${user.name}`}
-                width={600}
-                height={800}
-              />
-            )
-          ))}
+          {(() => {
+            const seenIds = new Set<string>();
+            return users.slice(Math.max(0, activeIndex - 3), activeIndex).reverse().map(user => {
+              if (seenIds.has(user.id) || !user.photos || user.photos.length === 0) return null;
+              seenIds.add(user.id);
+              return (
+                <Image
+                  key={`preload-${user.id}`}
+                  src={user.photos[0]}
+                  alt={`Preload ${user.name}`}
+                  width={600}
+                  height={800}
+                />
+              );
+            });
+          })()}
         </div>
       </div>
     </>
