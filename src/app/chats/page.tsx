@@ -13,10 +13,12 @@ import { Input } from '@/components/ui/input';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
 import { useNotifications } from '@/context/notifications-context';
+import { useUpdates } from '@/context/updates-context';
 
 export default function ChatsPage() {
     const { user: userId, loading: userLoading } = useCurrentUser();
     const { setUnreadChats, setUnreadNotifications } = useNotifications();
+    const { subscribe } = useUpdates();
     const [matches, setMatches] = React.useState<Match[]>([]);
     const [chats, setChats] = React.useState<Chat[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -24,43 +26,46 @@ export default function ChatsPage() {
     const [searchTerm, setSearchTerm] = React.useState('');
     const router = useRouter();
 
-    React.useEffect(() => {
+    const fetchData = React.useCallback(async (initialLoad = false) => {
         if (!userId) {
+            if(initialLoad) setLoading(false);
             return;
         }
 
-        async function fetchData(initialLoad = false) {
-            if (!userId) {
-                if(initialLoad) setLoading(false);
-                return;
-            }
+        if(initialLoad) setLoading(true);
+        
+        const result = await getChatsAndMatches(userId);
+        
+        if (result.error) {
+            setError(result.error);
+            setMatches([]);
+            setChats([]);
+        } else {
+            setMatches(result.matches as Match[]);
+            setChats(result.chats as Chat[]);
+            setUnreadChats(result.unreadChatCount);
+            setUnreadNotifications(result.unreadNotificationCount);
+        }
+        if(initialLoad) setLoading(false);
+    }, [userId, setUnreadChats, setUnreadNotifications]);
 
-            if(initialLoad) setLoading(true);
-            
-            const result = await getChatsAndMatches(userId);
-            
-            if (result.error) {
-                setError(result.error);
-                setMatches([]);
-                setChats([]);
-            } else {
-                setMatches(result.matches as Match[]);
-                setChats(result.chats as Chat[]);
-                setUnreadChats(result.unreadChatCount);
-                setUnreadNotifications(result.unreadNotificationCount);
-            }
-            if(initialLoad) setLoading(false);
+    React.useEffect(() => {
+        if (userLoading || !userId) {
+            return;
         }
 
         fetchData(true);
 
-        const interval = setInterval(() => {
-            fetchData(false);
-        }, 5000);
+        // Subscribe to messages and matches for real-time list updates
+        const unsubscribeMessages = subscribe('messages', () => fetchData(false));
+        const unsubscribeMatches = subscribe('matches', () => fetchData(false));
 
-        return () => clearInterval(interval);
+        return () => {
+            unsubscribeMessages();
+            unsubscribeMatches();
+        };
 
-    }, [userId, setUnreadChats, setUnreadNotifications]);
+    }, [userId, userLoading, fetchData, subscribe]);
     
     const filteredChats = React.useMemo(() => {
         if (!searchTerm) {
@@ -78,9 +83,7 @@ export default function ChatsPage() {
     return (
         <AppShell>
             <div className="flex-1 flex flex-col">
-                
                 <div className="flex-1 flex flex-col p-4 space-y-6">
-                    
                     <div>
                         <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">New Matches</h1>
                         {matches.length === 0 ? (
@@ -97,7 +100,6 @@ export default function ChatsPage() {
                         )}
                     </div>
 
-                    
                     <div className="flex-1 flex flex-col min-h-0">
                         <div className="flex justify-between items-center mb-4">
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Messages</h1>

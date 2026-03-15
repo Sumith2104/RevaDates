@@ -31,22 +31,8 @@ export function BottomNav() {
       }
     };
     oneTimeRefresh();
-
-    let intervalId: NodeJS.Timeout;
-
-    const pollUnreadCounts = async () => {
-      if (pathname.startsWith('/chats/')) return;
-      const counts = await getUnreadCounts(currentUserId);
-      if (counts && !counts.error) {
-        setUnreadChats(counts.unreadChatCount);
-        setUnreadNotifications(counts.unreadNotificationCount);
-      }
-    };
-
-    intervalId = setInterval(pollUnreadCounts, 10000);
-
-    return () => clearInterval(intervalId);
-  }, [currentUserId, setUnreadChats, pathname, setUnreadNotifications]);
+    // Polling removed as it's now handled via SSE in NotificationsProvider
+  }, [currentUserId, setUnreadChats, setUnreadNotifications]);
 
 
   const navItems = [

@@ -1,9 +1,30 @@
 'use server';
+ 
+// Hex utilities to bypass Fluxbase slash-mangling bug
+function encodeToHex(str: string): string {
+    return Buffer.from(str, 'utf8').toString('hex');
+}
+
+function decodeFromHex(hex: string): string {
+    // Basic check: s3Keys with slashes are already mangled, whereas hex won't have slashes
+    // However, if it's already a full URL, we leave it alone (legacy)
+    if (hex.startsWith('http')) return hex;
+    try {
+        const decoded = Buffer.from(hex, 'hex').toString('utf8');
+        // If it was valid hex and contains indicators of an s3Key (like / or buckets), it's probably ours
+        if (decoded.includes('/') || decoded.includes('buckets')) return decoded;
+        return hex; // Fallback to raw if decoding doesn't look right
+    } catch (e) {
+        return hex;
+    }
+}
+ 
 
 import { z } from 'zod';
 import { sendEmail } from './email';
 import pool from '@/lib/fluxbase/server';
 import { revalidatePath } from 'next/cache';
+import { getPresignedUrl } from './fluxbase/storage';
 import { addMinutes, differenceInYears } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
 import { v4 as uuidv4 } from 'uuid';
@@ -226,9 +247,22 @@ export async function getNotifications(userId: string) {
             WHERE n.recipient_id = ?
             ORDER BY n.created_at DESC
         `, [userId]);
-        const data = rows.map((r: any) => ({
-            id: r.id, message: r.message, created_at: r.created_at, is_read: r.is_read, type: r.type, sender_id: r.sender_id,
-            sender: { name: r.sender_name, photos: r.sender_photos ? JSON.parse(r.sender_photos) : [] }
+        
+        const data = await Promise.all(rows.map(async (r: any) => {
+            const rawPhotos = r.sender_photos ? JSON.parse(r.sender_photos) : [];
+            const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
+            return {
+                id: r.id, 
+                message: r.message, 
+                created_at: r.created_at, 
+                is_read: r.is_read, 
+                type: r.type, 
+                sender_id: r.sender_id,
+                sender: { 
+                    name: r.sender_name, 
+                    photos: resolvedPhotos.filter(Boolean) as string[]
+                }
+            };
         }));
         return { data, error: null };
     } catch (e) {
@@ -338,7 +372,14 @@ export async function getChatsAndMatches(userId: string) {
         let profilesById = new Map();
         if (allMatchedUserIds.length > 0) {
             const [pRows]: any = await pool.query(`SELECT id, name, photos FROM profiles WHERE id IN (${matchedUserPlaceholders})`, allMatchedUserIds);
-            profilesById = new Map(pRows.map((p: any) => [p.id, { ...p, photos: p.photos ? JSON.parse(p.photos) : [] }]));
+            
+            const resolvedProfiles = await Promise.all(pRows.map(async (p: any) => {
+                const rawPhotos = p.photos ? JSON.parse(p.photos).map(decodeFromHex) : [];
+                const resolvedPhotos = await Promise.all(rawPhotos.map((photo: string) => getPresignedUrl(photo)));
+                return [p.id, { ...p, photos: resolvedPhotos.filter(Boolean) as string[] }];
+            }));
+            
+            profilesById = new Map(resolvedProfiles);
         }
 
         const formattedChats = chats.map((match: any) => {
@@ -388,11 +429,104 @@ export async function updateUserProfile(userId: string, updates: { name: string;
 export async function updateUserProfilePhotos(userId: string, photos: string[]) {
     if (!userId) return { error: 'User ID is required.' };
     try {
-        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(photos), getISTTimestamp(), userId]);
+        // Ensure we only save strings that looks like s3Keys (not full URLs)
+        const cleanPhotos = photos.filter(p => p && !p.startsWith('http'));
+        // Hex encode to bypass Fluxbase mangling
+        const hexPhotos = cleanPhotos.map(p => encodeToHex(p));
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
         revalidatePath('/profile');
         return { success: true };
     } catch (e) {
         return { error: 'Could not update your photos.' };
+    }
+}
+
+export async function addUserPhotoAction(userId: string, s3Key: string) {
+    console.log(`[PhotoAction] Called with userId: ${userId}, s3Key: ${s3Key}`);
+    if (!userId || !s3Key) {
+        console.error('[PhotoAction] Missing userId or s3Key');
+        return { error: 'Missing information' };
+    }
+    try {
+        const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        if (rows.length === 0) return { error: 'Profile not found' };
+        
+        const photosRaw = rows[0].photos;
+        let currentPhotos: string[] = [];
+        if (photosRaw) {
+            try {
+                const parsed = JSON.parse(photosRaw);
+                currentPhotos = Array.isArray(parsed) ? parsed.map(decodeFromHex) : [];
+            } catch (pErr) {
+                console.error(`[PhotoAction] JSON Parse Error:`, pErr);
+            }
+        }
+        
+        console.log(`[PhotoAction] Current photos (decoded):`, currentPhotos);
+        
+        // Add new key, then hex-encode the whole array for saving
+        const updatedPhotos = [s3Key, ...currentPhotos];
+        const hexPhotos = updatedPhotos.map(encodeToHex);
+        
+        const sqlResult: any = await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
+        console.log(`[PhotoAction] Update query finished. Result:`, JSON.stringify(sqlResult));
+        
+        const presignedUrl = await getPresignedUrl(s3Key);
+        
+        revalidatePath('/profile');
+        return { success: true, presignedUrl };
+    } catch (e: any) {
+        console.error(`[PhotoAction] CRITICAL ERROR:`, e);
+        return { error: 'Failed to add photo: ' + e.message };
+    }
+}
+
+export async function deletePhotoAction(userId: string, keyToDelete: string) {
+    if (!userId || !keyToDelete) return { error: 'Missing information' };
+    try {
+        const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        if (rows.length === 0) return { error: 'Profile not found' };
+        
+        let currentPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        const updatedPhotos = currentPhotos.filter((k: string) => k !== keyToDelete && !keyToDelete.includes(k));
+        
+        const hexPhotos = updatedPhotos.map(encodeToHex);
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
+        
+        // Resolve new URLs
+        const resolvedPhotos = await Promise.all(updatedPhotos.map((p: string) => getPresignedUrl(p)));
+        
+        revalidatePath('/profile');
+        return { success: true, photos: resolvedPhotos.filter(Boolean) as string[] };
+    } catch (e) {
+        return { error: 'Failed to delete photo' };
+    }
+}
+
+export async function setPrimaryPhotoAction(userId: string, keyToMakePrimary: string) {
+    if (!userId || !keyToMakePrimary) return { error: 'Missing information' };
+    try {
+        const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        if (rows.length === 0) return { error: 'Profile not found' };
+        
+        let currentPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        const index = currentPhotos.findIndex((k: string) => k === keyToMakePrimary || keyToMakePrimary.includes(k));
+        
+        if (index === -1) return { error: 'Photo not found in profile' };
+        
+        const key = currentPhotos.splice(index, 1)[0];
+        const updatedPhotos = [key, ...currentPhotos];
+        
+        const hexPhotos = updatedPhotos.map(encodeToHex);
+        await pool.query('UPDATE profiles SET photos = ?, updated_at = ? WHERE id = ?', [JSON.stringify(hexPhotos), getISTTimestamp(), userId]);
+        
+        // Resolve new URLs
+        const resolvedPhotos = await Promise.all(updatedPhotos.map((p: string) => getPresignedUrl(p)));
+        
+        revalidatePath('/profile');
+        return { success: true, photos: resolvedPhotos.filter(Boolean) as string[] };
+    } catch (e) {
+        return { error: 'Failed to set primary photo' };
     }
 }
 
@@ -463,7 +597,9 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
         const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
         const [pRows]: any = await pool.query('SELECT id, name, photos FROM profiles WHERE id = ? LIMIT 1', [otherUserId]);
         if (pRows.length === 0) return { data: null, error: 'Could not find matched user profile.' };
-        const profile = { ...pRows[0], photos: pRows[0].photos ? JSON.parse(pRows[0].photos) : [] };
+        const rawPhotos = pRows[0].photos ? JSON.parse(pRows[0].photos) : [];
+        const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
+        const profile = { ...pRows[0], photos: resolvedPhotos.filter(Boolean) as string[] };
         return { data: profile, error: null };
     } catch (e) {
         return { data: null, error: 'Error finding match details.' };
@@ -597,11 +733,20 @@ export async function getPotentialProfiles(currentUserId: string, offset: number
 
         const [pRows]: any = await pool.query(queryStr, params);
 
-        const filtered = pRows
-            .map((profile: any) => ({ ...profile, age: differenceInYears(new Date(), new Date(profile.dob)), photos: profile.photos ? JSON.parse(profile.photos) : [] }))
-            .filter((profile: any) => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80));
-
-        const page = filtered.slice(0, limit);
+        const filtered = await Promise.all(pRows.map(async (profile: any) => {
+            const age = differenceInYears(new Date(), new Date(profile.dob));
+            const rawPhotos = profile.photos ? JSON.parse(profile.photos).map(decodeFromHex) : [];
+            const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
+            return { 
+                ...profile, 
+                age, 
+                photos: resolvedPhotos.filter(Boolean) as string[] 
+            };
+        }));
+        
+        const page = filtered
+            .filter((profile: any) => profile.age >= (minAge || 18) && profile.age <= (maxAge || 80))
+            .slice(0, limit);
 
         const profilesWithDistance = await Promise.all(
             page.map(async (profile: any) => {
@@ -630,9 +775,22 @@ export async function getUnreadCounts(userId: string) {
 export async function getCurrentUserProfile(userId: string) {
     if (!userId) return { data: null, error: 'User ID required' };
     try {
-        const [rows]: any = await pool.query('SELECT photos FROM profiles WHERE id = ? LIMIT 1', [userId]);
+        const [rows]: any = await pool.query('SELECT * FROM profiles WHERE id = ? LIMIT 1', [userId]);
         if (rows.length === 0) return { data: null, error: 'Profile not found' };
-        return { data: { ...rows[0], photos: rows[0].photos ? JSON.parse(rows[0].photos) : [] }, error: null };
+        
+        console.log(`[DB] Raw photos for getCurrentUserProfile(${userId}):`, rows[0].photos);
+        
+        let rawPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        // Data Cleanup: filter out full URLs that might have been accidentally saved
+        const cleanPhotos = rawPhotos.filter((p: string) => p && !p.startsWith('http'));
+        
+        // If we found corruption, let's fix it in the DB silently
+        if (cleanPhotos.length !== rawPhotos.length) {
+            await pool.query('UPDATE profiles SET photos = ? WHERE id = ?', [JSON.stringify(cleanPhotos), userId]);
+        }
+        
+        const resolvedPhotos = await Promise.all(cleanPhotos.map((p: string) => getPresignedUrl(p)));
+        return { data: { ...rows[0], photos: resolvedPhotos.filter(Boolean) as string[] }, error: null };
     } catch (e) {
         return { data: null, error: 'Failed to fetch profile' };
     }
@@ -643,7 +801,20 @@ export async function getUserProfile(userId: string) {
     try {
         const [rows]: any = await pool.query('SELECT * FROM profiles WHERE id = ? LIMIT 1', [userId]);
         if (rows.length === 0) return { data: null, error: 'Profile not found' };
-        return { data: { ...rows[0], photos: rows[0].photos ? JSON.parse(rows[0].photos) : [] }, error: null };
+        
+        console.log(`[DB] Raw photos for getUserProfile(${userId}):`, rows[0].photos);
+        
+        let rawPhotos = rows[0].photos ? JSON.parse(rows[0].photos).map(decodeFromHex) : [];
+        // Data Cleanup: filter out full URLs that might have been accidentally saved
+        const cleanPhotos = rawPhotos.filter((p: string) => p && !p.startsWith('http'));
+
+        // If we found corruption, let's fix it in the DB silently
+        if (cleanPhotos.length !== rawPhotos.length) {
+            await pool.query('UPDATE profiles SET photos = ? WHERE id = ?', [JSON.stringify(cleanPhotos), userId]);
+        }
+
+        const resolvedPhotos = await Promise.all(cleanPhotos.map((p: string) => getPresignedUrl(p)));
+        return { data: { ...rows[0], photos: resolvedPhotos.filter(Boolean) as string[] }, error: null };
     } catch (e) {
         return { data: null, error: 'Failed to fetch profile' };
     }
@@ -656,5 +827,59 @@ export async function updateUserSettings(userId: string, settings: { discovery_a
         return { success: true };
     } catch (e) {
         return { error: 'Failed to update settings' };
+    }
+}
+
+export async function uploadImageAction(formData: FormData) {
+    const file = formData.get('file') as File;
+    if (!file) return { error: 'No file provided' };
+
+    const baseUrl = (process.env.FLUX_URL || 'https://api.fluxbase.io').trim();
+    const projectId = process.env.FLUX_PROJECT_ID?.trim();
+    const apiKey = process.env.FLUX_API?.trim();
+    const bucketId = (process.env.FLUX_BUCKET || 'photos').trim();
+
+    if (!projectId || !apiKey) {
+        return { error: 'Server configuration error: Missing Fluxbase credentials' };
+    }
+
+    const uploadUrl = baseUrl.endsWith('/api')
+        ? `${baseUrl}/storage/upload`
+        : `${baseUrl}/api/storage/upload`;
+
+    const fluxFormData = new FormData();
+    fluxFormData.append('file', file);
+    fluxFormData.append('projectId', projectId);
+    fluxFormData.append('bucketId', bucketId);
+
+    try {
+        console.log(`[UploadAction] Attempting upload to: ${uploadUrl} for bucket: ${bucketId}`);
+        const response = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: fluxFormData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[UploadAction] Fluxbase Error ${response.status}:`, errorText);
+            return { error: `Fluxbase Storage Error ${response.status}: ${errorText}` };
+        }
+
+        const data = await response.json();
+        console.log('[UploadAction] Success:', JSON.stringify(data));
+        
+        // V4.0 spec returns s3_key inside a file object
+        const s3Key = data.file?.s3_key || data.s3Key || data.key || (data.url ? data.url.split('/').pop() : null);
+
+        if (s3Key) {
+            return { s3Key };
+        }
+
+        return { error: 'Upload successful but no s3_key returned from Fluxbase' };
+    } catch (err: any) {
+        return { error: `Server-side upload error: ${err.message}` };
     }
 }

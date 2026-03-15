@@ -204,39 +204,45 @@ export function ProfileView({ user: initialUser }: { user: User }) {
 
     setUploading(true);
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
-      const updatedPhotos = [base64String, ...(user.photos || [])];
-      setUser(prev => ({ ...prev, photos: updatedPhotos }));
-      const result = await updateUserProfilePhotos(user.id, updatedPhotos);
-      if (!result.error) {
-        toast({ title: 'Photo Uploaded', description: 'Your new photo is now your primary one.' });
-        router.refresh();
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { uploadImageAction } = await import('@/lib/actions');
+      const { s3Key, error } = await uploadImageAction(formData);
+
+      if (error || !s3Key) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error || 'No key returned' });
       } else {
-        toast({ variant: 'destructive', title: 'Could Not Save Photo', description: result.error });
+        const { addUserPhotoAction } = await import('@/lib/actions');
+        const result = await addUserPhotoAction(user.id, s3Key);
+        
+        if (!result.error && result.presignedUrl) {
+          setUser(prev => ({ ...prev, photos: [result.presignedUrl as string, ...(prev.photos || [])] }));
+          toast({ title: 'Photo Uploaded', description: 'Your new photo is now your primary one.' });
+          router.refresh();
+        } else {
+          toast({ variant: 'destructive', title: 'Could Not Save Photo', description: result.error || 'Failed to get display URL' });
+        }
       }
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Upload Error', description: err.message });
+    } finally {
       setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleSetAsPrimary = async (photoToMakePrimary: string) => {
     if (!user.photos) return;
-    const currentPhotos = [...user.photos];
-    const newPrimaryIndex = currentPhotos.findIndex(p => p === photoToMakePrimary);
-    if (newPrimaryIndex <= 0) return;
-
-    const newPrimaryPhoto = currentPhotos.splice(newPrimaryIndex, 1)[0];
-    const newPhotoOrder = [newPrimaryPhoto, ...currentPhotos];
-
-    setUser(prev => ({ ...prev, photos: newPhotoOrder }));
-    const result = await updateUserProfilePhotos(user.id, newPhotoOrder);
-    if (!result.error) {
+    
+    const { setPrimaryPhotoAction } = await import('@/lib/actions');
+    const result = await setPrimaryPhotoAction(user.id, photoToMakePrimary);
+    
+    if (!result.error && result.photos) {
+      setUser(prev => ({ ...prev, photos: result.photos as string[] }));
       toast({ title: 'Main Photo Updated', description: "Your primary photo has been changed." });
       router.refresh();
     } else {
-      setUser(prev => ({ ...prev, photos: user.photos }));
       toast({
         variant: 'destructive',
         title: 'Update Failed',
@@ -251,13 +257,11 @@ export function ProfileView({ user: initialUser }: { user: User }) {
     const currentPhotoUrl = deletingPhoto;
     setDeletingPhoto(null);
 
+    const { deletePhotoAction } = await import('@/lib/actions');
+    const result = await deletePhotoAction(user.id, currentPhotoUrl);
 
-    const newPhotoList = user.photos.filter(p => p !== currentPhotoUrl);
-    setUser(prev => ({ ...prev, photos: newPhotoList }));
-
-    const result = await updateUserProfilePhotos(user.id, newPhotoList);
-
-    if (!result.error) {
+    if (!result.error && result.photos) {
+      setUser(prev => ({ ...prev, photos: result.photos as string[] }));
       toast({ title: 'Photo Removed' });
       router.refresh();
     } else {
@@ -266,7 +270,6 @@ export function ProfileView({ user: initialUser }: { user: User }) {
         title: 'Could Not Remove Photo',
         description: result.error,
       });
-      setUser(prev => ({ ...prev, photos: user.photos }));
     }
   }
 

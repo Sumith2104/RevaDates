@@ -5,7 +5,11 @@ import type {NextConfig} from 'next';
 const supabaseHostname = 'babzgrswhtfxqqolfjpi.supabase.co';
 
 const nextConfig: NextConfig = {
-  
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -20,6 +24,12 @@ const nextConfig: NextConfig = {
         hostname: supabaseHostname,
         port: '',
         pathname: '/storage/v1/object/public/photos/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fluxbase-storage.s3.ap-south-1.amazonaws.com',
+        port: '',
+        pathname: '/**',
       },
     ],
   },

@@ -32,6 +32,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageLoader } from '@/components/shared/page-loader';
+import { useUpdates } from '@/context/updates-context';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -42,14 +43,15 @@ const formatDateSeparator = (dateStr: string) => {
     return format(zonedDate, 'MMMM d, yyyy');
 };
 
-
 export default function ChatPage() {
     const router = useRouter();
     const params = useParams();
     const { toast } = useToast();
     const { user: currentUserId, loading: userLoading } = useCurrentUser();
+    const { subscribe } = useUpdates();
     const chatId = params.chatId as string;
     
+    // ... existing state ...
     const [matchedUser, setMatchedUser] = React.useState<UserProfile | null>(null);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [newMessage, setNewMessage] = React.useState('');
@@ -57,91 +59,55 @@ export default function ChatPage() {
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = React.useState(false);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = React.useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
+    // ... existing effects and helpers ...
 
-    React.useEffect(() => {
-      scrollToBottom();
-    }, [messages, scrollToBottom]);
-
-    const handleMarkAsRead = React.useCallback(async () => {
-        if (!chatId || !currentUserId) return;
-        await markMessagesAsRead(chatId, currentUserId);
-    }, [chatId, currentUserId]);
-
-    React.useEffect(() => {
-        if (!currentUserId || !chatId) return;
-
-        // Attempt to load user from sessionStorage first for instant UI
-        try {
-            const cachedUser = sessionStorage.getItem(`chat-user-${chatId}`);
-            if (cachedUser) {
-                setMatchedUser(JSON.parse(cachedUser));
-            }
-        } catch (error) {
-            console.warn("Could not read cached user from sessionStorage", error);
-        }
-
-        async function fetchInitialData() {
-            setLoadingMessages(true);
+    const fetchMessages = React.useCallback(async () => {
+        const messagesData = await getChatMessages(chatId);
+        if (!messagesData.error && messagesData.data) {
+            const newMessages = messagesData.data as Message[];
             
-            // Fetch fresh details in the background, or if cache fails
-            if (!matchedUser) {
-                const matchDetails = await getMatchDetails(chatId, currentUserId!);
-                if (matchDetails.error || !matchDetails.data) {
-                    router.push('/chats');
-                    return;
-                }
-                setMatchedUser(matchDetails.data as UserProfile);
-            }
+            // Only update state if there are actual new messages or status changes
+            setMessages(prevMessages => {
+                const optimisticMessages = prevMessages.filter(m => m.tempId);
+                const finalMessages = [...newMessages];
+                
+                optimisticMessages.forEach(optMsg => {
+                    if (!finalMessages.some(sMsg => sMsg.id === optMsg.id || sMsg.tempId === optMsg.tempId)) {
+                        finalMessages.push(optMsg);
+                    }
+                });
 
-            const messagesData = await getChatMessages(chatId);
-            if (messagesData.error || !messagesData.data) {
-                // Handle error
-            } else {
-                setMessages(messagesData.data as Message[]);
+                if (JSON.stringify(finalMessages) !== JSON.stringify(prevMessages)) {
+                    return finalMessages;
+                }
+                return prevMessages;
+            });
+
+            // Mark as read if any new message is for the current user
+            const hasNewUnread = newMessages.some(m => m.recipient_id === currentUserId && !m.is_read);
+            if (hasNewUnread) {
                 handleMarkAsRead();
             }
-            setLoadingMessages(false);
         }
-        fetchInitialData();
-    }, [chatId, currentUserId, router, handleMarkAsRead]);
-    
-    
+    }, [chatId, currentUserId, handleMarkAsRead]);
+
     React.useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        const interval = setInterval(async () => {
-            const messagesData = await getChatMessages(chatId);
-            if (!messagesData.error && messagesData.data) {
-                const newMessages = messagesData.data as Message[];
-                const hasNewUnread = newMessages.some(m => m.recipient_id === currentUserId && !m.is_read);
-                if (hasNewUnread) {
-                    handleMarkAsRead();
-                }
-
-                setMessages(prevMessages => {
-                    const optimisticMessages = prevMessages.filter(m => m.tempId);
-                    
-                    const finalMessages = [...newMessages];
-                    
-                    optimisticMessages.forEach(optMsg => {
-                        if (!finalMessages.some(sMsg => sMsg.id === optMsg.id || sMsg.tempId === optMsg.tempId)) {
-                            finalMessages.push(optMsg);
-                        }
-                    });
-
-                    if (finalMessages.length !== prevMessages.length || JSON.stringify(finalMessages) !== JSON.stringify(prevMessages)) {
-                         return finalMessages;
-                    }
-                    return prevMessages;
-                });
+        // Subscribe to real-time updates for messages
+        const unsubscribe = subscribe('messages', (event) => {
+            // If the new message belongs to this chat, refresh
+            if (event.type === 'row.inserted' && event.new?.match_id === chatId) {
+                fetchMessages();
             }
-        }, 3000); 
+            // If a message was updated (e.g., marked as read), refresh
+            if (event.type === 'row.updated' && event.new?.match_id === chatId) {
+                fetchMessages();
+            }
+        });
 
-        return () => clearInterval(interval);
-    }, [chatId, currentUserId, handleMarkAsRead]);
+        return () => unsubscribe();
+    }, [chatId, currentUserId, subscribe, fetchMessages]);
 
 
     const handleSendMessage = async (e: React.FormEvent) => {
