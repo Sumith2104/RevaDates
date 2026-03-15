@@ -626,7 +626,7 @@ export async function getMatchDetails(matchId: string, currentUserId: string) {
         const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
         const [pRows]: any = await pool.query('SELECT id, name, photos FROM profiles WHERE id = ? LIMIT 1', [otherUserId]);
         if (pRows.length === 0) return { data: null, error: 'Could not find matched user profile.' };
-        const rawPhotos = pRows[0].photos ? JSON.parse(pRows[0].photos) : [];
+        const rawPhotos = decodePhotosFromDB(pRows[0].photos);
         const resolvedPhotos = await Promise.all(rawPhotos.map((p: string) => getPresignedUrl(p)));
         const profile = { ...pRows[0], photos: resolvedPhotos.filter(Boolean) as string[] };
         return { data: profile, error: null };
