@@ -606,11 +606,8 @@ export async function sendMessage(matchId: string, senderId: string, recipientId
     const id = uuidv4();
     try {
         await pool.query('INSERT INTO messages (id, match_id, sender_id, recipient_id, content, created_at, is_read) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, matchId, senderId, recipientId, content, now, false]);
-        const [rows]: any = await pool.query('SELECT * FROM messages WHERE id = ?', [id]);
-        const data = rows[0];
-        const returnedData = data ? { ...data, tempId: tempId } : null;
-        revalidatePath(`/chats/${matchId}`);
-        revalidatePath('/chats');
+        // Build return data directly — no extra SELECT roundtrip needed
+        const returnedData = { id, match_id: matchId, sender_id: senderId, recipient_id: recipientId, content, created_at: now, is_read: false, tempId };
         return { data: returnedData, error: null };
     } catch (e) {
         return { data: null, error: 'Could not send the message.' };
