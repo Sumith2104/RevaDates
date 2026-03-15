@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         );
 
         return NextResponse.json({
-            data: { id, match_id: matchId, sender_id: senderId, recipient_id: recipientId, content, created_at: now, is_read: false, tempId },
+            data: { id, match_id: matchId, sender_id: senderId, recipient_id: recipientId, content, created_at: now, is_read: false },
             error: null
         });
     } catch (e: any) {
